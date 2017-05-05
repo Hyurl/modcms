@@ -1,0 +1,26 @@
+.panel{margin-bottom: 0;}
+.user-edit-table td{cursor: pointer;padding: 0 !important;}
+.user-edit-table td:nth-child(1)>label{width: 100%;padding: 8px;cursor: pointer;}
+#user-edit-form>button[type=submit]{display: none;}
+#set-avatar, #set-protection{display: none;}
+#set-avatar{padding-left: 10px;}
+#user-avatar{max-width: 128px;max-height: 128px;background-color: rgba(0,0,0,0.3);display: block;}
+#select-avatar{margin: 10px 0 20px;}
+#user_password, #old_password{padding-right: 30px;}
+input+i.glyphicon{display: none;float: right;margin: -25px 10px 0 -25px;}
+#user-center{padding: 10px;margin-top: -20px;}
+.user-thumbnail{margin: -10px -10px 0 -10px;height: 200px;border-radius: 0 !important;background: transparent url(../../img/thumbnail.jpg) no-repeat fixed center; background-size: cover;}
+.user-avatar{height: 64px;width: 64px;margin-right: 10px;overflow: hidden;border: 2px solid #eee;margin-top: 165px;float: right;background-color: #eee;}
+.user-avatar>img{max-height: 100%;max-width: 100%;}
+.user-display-name{margin-top: 11px;padding-right: 73px;text-align: right;color: #888;}
+.user-desc{color: #888;margin-bottom: 15px;font-size: 12px;text-align: right;}
+.user-activities{background-color: #eee;margin:0 -10px;overflow: auto;}
+.user-activities>div{margin-top: 20px;background-color: #fff;padding: 0 10px;}
+.user-activities>div>h4{border-bottom: 1px solid #dedede;margin: 0 -10px;padding: 20px 10px 15px;}
+.user-activities>div>h4>small{float: right;}
+.user-avatar{text-align: center;}
+.user-avatar i{font-size: 48px;margin-top: 6px;}
+.activity-contents{min-height: 20px;}
+#user-center .activity-contents>div{border-bottom: 1px solid #eee;}
+#user-center .activity-contents>div:last-child{border-bottom: none;padding-bottom: 5px;}
+#user-center .activity-contents>div>p{overflow: hidden;text-overflow: ellipsis;white-space: nowrap;color: gray;}

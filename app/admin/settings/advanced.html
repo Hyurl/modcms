@@ -1,0 +1,169 @@
+<div class="settings-option">
+	<h4>{lang('admin.templateSetting')}</h4>
+	<div>
+		<label for="site-home-template">{lang('admin.siteHomeTemplate')}</label>
+		<input type="text" class="form-control" id="site-home-template" name="site.home.template" value="{config('site.home.template')}" placeholder="{lang('admin.underTemplatePath')}">
+	</div>
+	<div>
+		<label for="user-template">{lang('admin.userTemplate')}</label>
+		<input type="text" class="form-control" id="user-template" name="user.template" value="{config('user.template')}" placeholder="{lang('admin.underTemplatePath')}">
+	</div>
+	<div>
+		<label for="category-template">{lang('admin.categoryTemplate')}</label>
+		<input type="text" class="form-control" id="category-template" name="category.template" value="{config('category.template')}" placeholder="{lang('admin.underTemplatePath')}">
+	</div>
+	<div>
+		<label for="post-template">{lang('admin.postTemplate')}</label>
+		<input type="text" class="form-control" id="post-template" name="post.template" value="{config('post.template')}" placeholder="{lang('admin.underTemplatePath')}">
+	</div>
+	<p class="settings-desc">
+		{lang('admin.templateDesc')}
+	</p>
+</div>
+<div class="settings-option">
+	<h4>{lang('admin.errorPage')}</h4>
+	<div>
+		<label for="site-errorpage-403">{lang('admin.page403')}</label>
+		<input type="text" class="form-control" id="site-errorpage-403" name="site.errorPage.403" value="{config('site.errorPage.403')}" placeholder="{lang('admin.underTemplatePath')}">
+	</div>
+	<div>
+		<label for="site-errorpage-404">{lang('admin.page404')}</label>
+		<input type="text" class="form-control" id="site-errorpage-404" name="site.errorPage.404" value="{config('site.errorPage.404')}" placeholder="{lang('admin.underTemplatePath')}">
+	</div>
+	<div>
+		<label for="site-errorpage-500">{lang('admin.page500')}</label>
+		<input type="text" class="form-control" id="site-errorpage-500" name="site.errorPage.500" value="{config('site.errorPage.500')}" placeholder="{lang('admin.underTemplatePath')}">
+	</div>
+	<p class="settings-desc">
+		{lang('admin.errorPageDesc')}
+	</p>
+</div>
+<div class="settings-option">
+	<h4>{lang('admin.maintenance')}</h4>
+	<div>
+		<label for="site-maintenance-pages">{lang('admin.maintenancePages')}</label>
+		<input type="text" class="form-control" id="site-maintenance-pages" name="site.maintenance.pages" value="{config('site.maintenance.pages')}" placeholder="{lang('admin.maintenancePagesTip')}">
+	</div>
+	<div>
+		<label for="site-maintenance-exception">{lang('admin.maintenanceException')}</label>
+		<input type="text" class="form-control" id="site-maintenance-exception" name="site.maintenance.exception" value="{config('site.maintenance.exception')}" placeholder="{lang('admin.maintenanceExceptionTip')}">
+	</div>
+	<div>
+		<label for="site-maintenance-report">{lang('admin.maintenanceReport')}</label>
+		<input type="text" class="form-control" id="site-maintenance-report" name="site.maintenance.report" value="{config('site.maintenance.report')}" placeholder="{lang('admin.maintenanceReportTip')}">
+	</div>
+	<p class="settings-desc">
+		{lang('admin.maintenanceDesc')}
+	</p>
+</div>
+<div class="settings-option">
+	<h4>Session</h4>
+	<div>
+		<label for="mod-session-name">{lang('admin.name')}</label>
+		<input type="text" class="form-control" id="mod-session-name" name="mod.session.name" value="{config('mod.session.name')}"  placeholder="{lang('admin.sessionNameTip')}">
+	</div>
+	<div>
+		<label for="mod-session-maxlifetime">{lang('admin.lifeTime')}</label>
+		<input type="text" class="form-control" id="mod-session-maxlifetime" name="mod.session.maxLifeTime" value="{config('mod.session.maxLifeTime')}" placeholder="{lang('admin.lifeTimeTip')}">
+	</div>
+	<div>
+		<label for="mod-session-savepath">{lang('admin.savePath')}</label>
+		<input type="text" class="form-control" id="mod-session-savepath" name="mo.session.savePath" value="{config('mod.session.savePath')}"  placeholder="{lang('admin.underRootPath')}">
+	</div>
+	<p class="settings-desc">
+		{lang('admin.sessionDesc')}
+	</p>
+</div>
+<div class="settings-option">
+	<h4>{lang('admin.socketServer')}</h4>
+	<div>
+		<label for="mod-socket-server-port">{lang('admin.port')}</label>
+		<input type="number" class="form-control" id="mod-socket-server-port" name="mod.SocketServer.port" value="{config('mod.SocketServer.port')}" value="{lang('admin.socketPortTip')}">
+	</div>
+	<div>
+		<label for="check-modphp-update">{lang('admin.startSocketServer')}</label>
+		<button type="button" class="btn btn-default{$wsRunable ? '' : ' disabled'}" title="{$wsUnrunableWarning}" style="{$wsOn ? 'display: none' : ''}" id="start-socket-server" data-loading-text="{lang('admin.starting')}">{lang('admin.start')}</button>
+		<span style="{!$wsOn ? 'display: none' : ''}">{lang('admin.socketStartedTip')}</span>
+	</div>
+	<p class="settings-desc">
+		{lang('admin.socketPortDesc')}
+	</p>
+</div>
+<div class="settings-option">
+	<h4>{lang('admin.database')}</h4>
+	!{$isSqlite = config('mod.database.type') == 'sqlite'}
+	!{$dbDrivers = PDO::getAvailableDrivers()}
+	<div>
+		<label for="mod-database-type">{lang('admin.databaseType')}</label>
+		<select class="form-control" name="mod.database.type" id="mod-database-type">
+			<if data="in_array('mysql', $dbDrivers)">
+				<option value="mysql"{!$isSqlite ? ' selected' : ''}>MySQL</option>
+			</if>
+			<if data="in_array('sqlite', $dbDrivers)">
+				<option value="sqlite"{$isSqlite ? ' selected' : ''}>SQLite</option>
+			</if>
+		</select>
+	</div>
+	<div>
+		<label for="mod-database-host">{lang('admin.host')}</label>
+		<input type="text" class="form-control" id="mod-database-host" name="mod.database.host" value="{config('mod.database.host')}" placeholder="{lang('admin.databaseDefaultTip')}">
+	</div>
+	<div>
+		<label for="mod-database-name">{lang('admin.name')}</label>
+		<input type="text" class="form-control" id="mod-database-name" name="mod.database.name" value="{config('mod.database.name')}" placeholder="{lang('admin.dbNameDefaultTip')}">
+	</div>
+	<div>
+		<label for="mod-database-port">{lang('admin.port')}</label>
+		<input type="number" class="form-control" id="mod-database-port" name="mod.database.port" value="{config('mod.database.port')}" placeholder="{lang('admin.dbPortDefaultTip')}">
+	</div>
+	<div>
+		<label for="mod-database-username">{lang('user.name')}</label>
+		<input type="text" class="form-control" id="mod-database-username" name="mod.database.username" value="{config('mod.database.username')}" placeholder="{lang('admin.dbUsernameTip')}">
+	</div>
+	<div>
+		<label for="mod-database-password">{lang('user.password')}</label>
+		<input type="password" class="form-control" id="mod-database-password" name="mod.database.password" value="{config('mod.database.password')}" placeholder="{lang('user.passwordTip')}">
+		<if data="!is_agent('Edge/14')">
+			<i class="glyphicon glyphicon-eye-open"></i>
+		</if>
+	</div>
+	<div>
+		<label for="mod-database-prefix">{lang('admin.tablePrefix')}</label>
+		<input type="text" class="form-control" id="mod-database-prefix" name="mod.database.prefix" value="{config('mod.database.prefix')}" placeholder="{lang('admin.dbPrefixTip')}">
+	</div>
+	<div>
+		<label for="clear-database">{lang('admin.cleanDatabase')}</label>
+		<span><a href="{ADMIN_URL}advanced/delete-trash.html">{lang('admin.gotoClean')}</a></span>
+	</div>
+	<p class="settings-desc">
+		{lang('admin.databaseDesc')}
+	</p>
+</div>
+<div class="settings-option">
+	<h4>{lang('admin.others')}</h4>
+	<div>
+		<label for="mod-timezone">{lang('admin.timezone')}</label>
+		<input type="text" class="form-control" id="mod-timezone" name="mod.timezong" value="{config('mod.timezone')}">
+	</div>
+	<div>
+		<label for="file-upload-savepath">{lang('file.uploadSavePath')}</label>
+		<input type="text" class="form-control" id="file-upload-savepath" name="file.upload.savePath" value="{config('file.upload.savePath')}" placeholder="{lang('admin.underTemplatePath')}">
+	</div>
+	<p class="settings-desc">
+		{lang('file.uploadSavePathDesc')}
+	</p>
+	<div>
+		<label for="mod-escape-tags">{lang('admin.escapeTags')}</label>
+		<input type="text" class="form-control" id="mod-escape-tags" name="mod.escapeTags" value="{config('mod.escapeTags')}" placeholder="{lang('admin.escapeTagsTip')}">
+	</div>
+	<p class="settings-desc">
+		{lang('admin.escapeTagsDesc')}
+	</p>
+	<div>
+		<label for="mod-output-buffering">{lang('admin.outputBuffering')}</label>
+		<input type="number" class="form-control" id="mod-output-buffering" name="mod.outputBuffering" value="{config('mod.outputBuffering')}"  placeholder="{lang('admin.outputBufferingTip')}">
+	</div>
+	<p class="settings-desc">
+		{lang('admin.outputBufferingDesc')}		
+	</p>
+</div>

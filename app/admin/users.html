@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="{__LANG__}">
+<head>
+	<include data="head.html">
+	<title>{$title}</title>
+</head>
+<body data-menu="users">
+	<div class="container">
+		<if data="empty($_GET['user_id']) && empty($_GET['action'])">
+			<!-- 用户列表 -->
+			<ul class="nav nav-tabs" role="tablist" id="user-list-tabs">
+				<li role="presentation">
+					<a href="javascript:;">{lang('admin.all')}({$userCount['all']})</a>
+				</li>
+				<li role="presentation">
+					<a href="javascript:;" data-level="5">{lang('user.admin')}({$userCount['admin']})</a>
+				</li>
+				<li role="presentation">
+					<a href="javascript:;" data-level="4">{lang('user.editor')}({$userCount['editor']})</a>
+				</li>
+				<li role="presentation">
+					<a href="users.html?action=add">{lang('admin.add')}</a>
+				</li>
+			</ul>
+			<div class="table-responsive">
+				<table class="table table-hover" id="user-list-table">
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>{lang('user.name')}</th>
+							<th>{lang('user.nickname')}</th>
+							<th>{lang('user.gender')}</th>
+							<th>{lang('user.email')}</th>
+						</tr>
+					</thead>
+					<tbody>
+						!{$id = 1}
+						<while data="get_multi_user()">
+							<tr data-id="{user_id()}">
+								<td>{$id++}</td>
+								<td>
+									<a title="{$lang['viewUserCenter']}" href="users.html?user_id={user_id()}">
+										{user_name()}
+									</a>
+								</td>
+								<td>{user_nickname()}</td>
+								<td>{@$userGender[user_gender()]}</td>
+								<td>{user_email()}</td>
+							</tr>
+						</while>
+					</tbody>
+				</table>
+			</div>
+			<elseif data="!empty($_GET['action'])">
+				<!-- 用户编辑页面 -->
+				<ul class="nav nav-tabs" role="tablist" id="user-edit-tabs">
+					<li role="presentation" class="active">
+						<a href="javascript:;" data-id="set-basic">{lang('user.baseInfo')}</a>
+					</li>
+					<li role="presentation">
+						<a href="javascript:;" data-id="set-avatar">{lang('user.avatar')}</a>
+					</li>
+					<li role="presentation">
+						<a href="javascript:;" data-id="set-protection">{lang('user.privacy')}</a>
+					</li>
+				</ul>
+				<form action="{site_url()}mod.php?user::{$_GET['action']}" method="post" role="from" id="user-edit-form">
+					<if data="$_GET['action'] == 'update'">
+						<input type="hidden" name="user_id" value="{user_id()}">
+					</if>
+					<button type="submit">Submit</button>
+					<table id="set-basic" class="table table-hover user-edit-table">
+						<tbody>
+							<tr>
+								<td><label for="user_name">{lang('user.name')}</label></td>
+								<td><input type="text" id="user_name" name="user_name" placeholder="{lang('user.usernameTip')}" value="{user_name()}"></td>
+							</tr>
+							<tr>
+								<td><label for="user_nickname">{lang('user.nickname')}</label></td>
+								<td><input type="text" id="user_nickname" name="user_nickname" placeholder="{lang('user.nicknameTip')}" value="{user_nickname()}"></td>
+							</tr>
+							<tr>
+								<td><label for="user_gender">{lang('user.gender')}</label></td>
+								<td>
+									<foreach data="$userGender as $k => $v">
+										<label class="radio-inline">
+											<input type="radio" name="user_gender" value="{$k}"{user_gender() == $k ? ' checked' : ''} />{$v}
+										</label>
+									</foreach>
+								</td>
+							</tr>
+							<tr>
+								<td><label for="user_realname">{lang('user.realname')}</label></td>
+								<td><input type="text" id="user_realname" name="user_realname" placeholder="{$lang['realnameTip']}" value="{user_realname()}"></td>
+							</tr>
+							<tr>
+								<td><label for="user_identity">{lang('user.identity')}</label></td>
+								<td><input type="text" id="user_identity" name="user_identity" placeholder="{$lang['identityTip']}" value="{user_identity()}"></td>
+							</tr>
+							<tr>
+								<td><label for="user_company">{lang('user.company')}</label></td>
+								<td><input type="text" id="user_company" name="user_company" placeholder="{$lang['companyTip']}" value="{user_company()}"></td>
+							</tr>
+							<tr>
+								<td><label for="user_number">{lang('user.number')}</label></td>
+								<td><input type="text" id="user_number" name="user_number" placeholder="{lang('user.userNumberTip')}" value="{user_number()}"></td>
+							</tr>
+							<tr>
+								<td><label for="user_email">{lang('user.email')}</label></td>
+								<td><input type="email" id="user_email" name="user_email" placeholder="{lang('user.userEmailTip')}" value="{user_email()}"></td>
+							</tr>
+							<tr>
+								<td><label for="user_tel">{lang('user.tel')}</label></td>
+								<td><input type="tel" id="user_tel" name="user_tel" placeholder="{lang('user.userTelTip')}" value="{user_tel()}"></td>
+							</tr>
+							<tr>
+								<td><label for="user_desc">{lang('user.desc')}</label></td>
+								<td><textarea name="user_desc" id="user_desc" rows="2" placeholder="{$lang['descTip']}">{user_desc()}</textarea></td>
+							</tr>
+							<if data="is_admin() && user_id() != me_id()">
+								<tr>
+									<td><label for="user_level">{lang('user.group')}</label></td>
+									<td>
+										<select name="user_level" id="user_level">
+											<foreach data="$userLevel as $k => $v">
+												<if data="$k == 5 && me_id() != 1 || $k == 0">
+													<continue>
+												</if>
+												<option value="{$k}"{user_level() == $k ? ' selected' : ''}>
+													{$v}
+												</option>
+											</foreach>
+										</select>
+									</td>
+								</tr>
+							</if>
+						</tbody>
+					</table>
+					<div id="set-avatar">
+						<input type="hidden" name="user_avatar" value="{user_avatar()}">
+						<h4>{lang('user.currentAvatar')}</h4>
+						<img {!user_avatar() ? 'style="display:none"' : ''}src="{get_user_avatar(128, user_avatar())}" data-origin="{get_user_avatar(128, user_avatar())}" alt="{lang('user.avatar')}" id="user-avatar">
+						<button type="button" class="btn btn-success" id="select-avatar">{lang('file.selectImage')}</button>
+					</div>
+					<table id="set-protection" class="table table-hover user-edit-table">
+						<tbody>
+							<if data="me_id() == user_id()">
+								<tr>
+									<td><label for="old_password">{lang('user.oldPassword')}</label></td>
+									<td>
+										<input type="text" id="old_password" name="old_password" placeholder="{lang('user.oldPasswordTip')}">
+										<if data="!is_agent('Edge/14')">
+											<i class="glyphicon glyphicon-eye-open"></i>
+										</if>
+									</td>
+								</tr>
+							</if>
+							<tr>
+								<td><label for="user_password">{lang('user.newPassword')}</label></td>
+								<td>
+									<input type="text" id="user_password" name="user_password" placeholder="{$lang['newPasswordTip']}">
+									<if data="!is_agent('Edge/14')">
+										<i class="glyphicon glyphicon-eye-open"></i>
+									</if>
+								</td>
+							</tr>
+							<tr>
+								<td><label for="user_protect">{$lang['protectInfo']}</label></td>
+								<td>
+									<select name="user_protect[]" id="user_protect" multiple>
+										<foreach data="$userProtect as $k => $v">
+											<option value="{$k}"{(user_protect() && in_array($k, user_protect())) ? ' selected' : ''}>
+												{$v}
+											</option>
+										</foreach>
+									</select>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</form>
+				<form id="jquery-upload-form" action="{SITE_URL}mod.php?file::upload" method="post" enctype="multipart/form-data" style="display:none">
+					<input type="hidden" name="file_desc" value="用于头像的图片"/>
+					<input type="file" name="file" accept="image/png,image/jpeg,image/gif,image/bmp"/>
+				</form>
+			</elseif>
+			<elseif data="get_user()">
+				<!-- 用户个人中心页面 -->
+				<div id="user-center">
+					<div class="user-thumbnail">
+					    <div class="user-avatar">
+					    	<if data="user_avatar()">
+					    		<img src="{get_user_avatar()}" alt="{lang('user.avatar')}">
+								<else>
+									<i class="glyphicon glyphicon-user media-icon"></i>
+								</else>
+					    	</if>
+					    </div>
+					</div>
+					<div class="user-display-name">
+						<p>
+							{user_nickname() ?: user_name()} 
+							<small>({$userLevel[user_level()]})</small>
+						</p>
+					</div>
+					<div class="user-desc">
+						<p>{user_desc()}</p>
+					</div>
+					<div class="user-activities">
+						<!-- 文章 -->
+						<if data="(!in_array('posts.html', $privileges['admin']) || user_level() == config('user.level.admin')) && (!in_array('posts.html', $privileges['editor']) || user_level() >= config('user.level.editor'))">
+							<div>
+								<h4>
+									{$lang['postTitle']}
+									<if data="get_multi_post(array('user_id'=>user_id(), 'sequence'=>'desc'))">
+										!{get_multi_post(0)}
+										<if data="$_GET['user_id'] == ME_ID || IS_AUTH">
+											<small>
+												<a title="{lang('admin.viewMore')}" href="posts.html?user_id={user_id()}">{lang('admin.more')} »</a>
+											</small>
+										</if>
+									</if>
+								</h4>
+								<div class="activity-contents">
+									<while data="get_multi_post()">
+										<div>
+											<h5>
+												<a title="{lang('admin.viewDetails')}" target="_blank" href="{get_post_link()}" title="{post_title()}">
+													{post_title()}
+												</a>
+												<small>{get_post_date()}</small>
+											</h5>
+											<p>{get_post_desc(200)}</p>
+										</div>
+									</while>
+								</div>
+							</div>
+						</if>
+						<!-- 评论 -->
+						<if data="(!in_array('comments.html', $privileges['admin']) || user_level() == config('user.level.admin')) && (!in_array('comments.html', $privileges['editor']) || user_level() >= config('user.level.editor'))">
+							<div>
+								<h4>
+									{$lang['commentTitle']}
+									<if data="get_multi_comment(array('user_id'=>user_id(), 'sequence'=>'desc'))">
+										!{get_multi_comment(0)}
+										<if data="$_GET['user_id'] == ME_ID || IS_AUTH">
+											<small>
+												<a title="{lang('admin.viewMore')}" href="comments.html?user_id={user_id()}">{lang('admin.more')} »</a>
+											</small>
+										</if>
+									</if>
+								</h4>
+								<div class="activity-contents">
+									<while data="get_multi_comment()">
+										<div>
+											<h5>
+												<?php $a = '<a title="'.lang('comment.viewCommentsOfThisPost').'" href="comments.html?post_id='.comment_post('id').'">'; ?>
+												<?php echo lang('comment.postOnWhatDateToWhichPost', get_comment_date(), $a.comment_post('title').'</a>'); ?>
+											</h5>
+											<p>
+												<if data="comment_parent()">
+													<?php
+														$isMe = comment_parent('user_id') == ME_ID;
+														$parent = $isMe ? lang('user.me') : (comment_parent('user_nickname') ?: comment_parent('user_name'));
+														$lang = comment_parent('user_gender') == 'female' ? lang('user.viewHerUserCenter') : lang('user.viewHisUserCenter');
+														$lang = $isMe ? lang('user.viewMyUserCenter') : $lang;
+													?>
+													<a title="{$lang}" href="users.html?user_id={comment_parent('user_id')}">
+														@{$parent}
+													</a>
+												</if>
+												{comment_content()}
+											</p>
+										</div>
+									</while>
+								</div>
+							</div>
+						</if>
+					</div>
+				</div>
+			</elseif>
+		</if>
+	</div>
+	<script>
+		TOTAL = {_user('total') ?: 0};
+		PAGES = {_user('pages') ?: 0};
+		Lang = {
+			serverConnectionError: "{lang('admin.serverConnectionError')}",
+			change: "{lang('admin.change')}",
+			prevPage: "{lang('admin.prevPage')}",
+			nextPage: "{lang('admin.nextPage')}",
+			edit: "{lang('admin.edit')}",
+			delete: "{lang('admin.delete')}",
+			giveup: "{lang('admin.giveup')}",
+			submit: "{lang('admin.submit')}",
+			male: "{lang('user.userGenders.male')}",
+			female: "{lang('user.userGenders.female')}",
+			viewMyUserCenter: "{lang('user.viewMyUserCenter')}",
+			viewHisUserCenter: "{lang('user.viewHisUserCenter')}",
+			viewHerUserCenter: "{lang('user.viewHerUserCenter')}",
+			deleteWarning: "{lang('admin.deleteWarning')}",
+			noDeleteItemWarning: "{lang('admin.noDeleteItemWarning')}",
+			successTip: "{lang('admin.successTip')}",
+			failWarning: "{lang('admin.failWarning')}",
+			successCountTip: "{lang('admin.successCountTip', '<successCount>')}",
+			failCountWarning: "{lang('admin.failCountWarning', '<successCount>', '<failCount>')}",
+			addedTip: "{lang('admin.addedTip')}",
+			updatedTip: "{lang('admin.updatedTip')}",
+		};
+	</script>
+	<include data="foot.html">
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="{__LANG__}">
+<head>
+	<include data="head.html">
+	<title>{$title}</title> 
+	<style>
+	.container{margin-top: 20px;}
+	.settings-list>li{padding: 0;}
+	.settings-list>li:first-child{border-top: none;}
+	.settings-list>li>a{color: #000;padding: 10px;display: block;}
+	.list-group-item{border-bottom: none;}
+	li[role="separator"]{background-color: #eee;}
+	li[role="separator"]+li{border-top: none;}
+	#site-logo-preview{margin-top: 10px;margin-bottom: 10px;border: 1px solid #eee;width: 240px;height: 80px;}
+	#site-logo-preview>img{max-width: 100%;max-height: 100%;}
+	</style>
+</head>
+<body data-menu="settings">
+	<if data="empty($_GET['content'])">
+		<div class="container">
+			<ul class="list-group settings-list">
+				<foreach data="$settings as $k => $v">
+					<li class="list-group-item">
+						<a href="settings.html?content={$k}">{$v}</a>
+					</li>
+				</foreach>
+				<li role="separator"></li>
+				<li id="list-group-item-update" class="list-group-item"><a href="settings.html?content=update">{lang('admin.update')}</a></li>
+			</ul>
+		</div>
+		<else>
+			<div class="container" style="margin-top:0">
+				<if data="$_GET['content'] != 'update'">
+					<form id="settings-edit-form" action="{site_url()}mod.php?mod::config" method="post">
+				</if>
+				<switch data="$_GET['content']">
+					<case data="'advanced'">
+						<include data="settings/advanced.html">
+					</case>
+					<case data="'comment'">
+						<include data="settings/comment.html">
+					</case>
+					<case data="'common'">
+						<include data="settings/common.html">
+					</case>
+					<case data="'file'">
+						<include data="settings/file.html">
+					</case>
+					<case data="'post'">
+						<include data="settings/post.html">
+					</case>
+					<case data="'update'">
+						<include data="settings/update.html">
+					</case>
+					<case data="'user'">
+						<include data="settings/user.html">
+					</case>
+				</switch>
+				<if data="$_GET['content'] != 'update'">
+					<button type="submit" style="display: none">Submit</button>
+					</form>
+				</if>
+				<if data="$_GET['content'] == 'common'">
+					<form id="jquery-upload-form" action="{SITE_URL}mod.php?file::upload" method="post" enctype="multipart/form-data" style="display:none">
+						<input type="hidden" name="file_desc" value="用于网站 LOGO 的图片。"/>
+						<input type="file" name="file" accept="image/png,image/jpeg,image/gif,image/bmp"/>
+					</form>
+				</if>
+			</div>
+		</else>
+	</if>
+	<script>
+	Lang = {
+		reset: "{lang('admin.reset')}",
+		submitChange: "{lang('admin.submitChange')}",
+		updatedTip: "{lang('admin.updatedTip')}",
+		newVersionTip: "{lang('admin.newVersionTip')}",
+		viewUpdateLog: "{lang('admin.viewUpdateLog')}",
+		noNewVersionTip: "{lang('admin.noNewVersionTip')}",
+		serverConnectionError: "{lang('admin.serverConnectionError')}",
+		submitSettingsWarning: "{lang('admin.submitSettingsWarning')}",
+		changeSiteFuncWarning: "{lang('admin.changeSiteFuncWarning')}",
+		socketStartedTip: "{lang('admin.socketStartedTip')}",
+		startSocketWarning: "{lang('admin.startSocketWarning')}",
+		dbSqliteTip: "{lang('admin.dbSqliteTip')}",
+	};
+	</script>
+	<include data="foot.html">
+</body>
+</html>

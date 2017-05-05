@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="{__LANG__}">
+<head>
+	<include data="../head.html">
+	<title>{lang('admin.cleanDatabase')}</title>
+	<style>
+	button{margin: 20px 10px !important;}
+	#onekey-clean{display: none;}
+	#trash-list-div{display: none;}
+	</style>
+</head>
+<body data-menu="settings">
+	<div class="container">
+		<ul class="nav nav-tabs" role="tablist">
+			<li role="presentation" class="active">
+				<a href="javascript:;">{lang('admin.cleanDatabase')}</a>
+			</li>
+		</ul>
+		<div id="trash-list-div" class="table-responsive">
+			<table class="table table-striped table-hover">
+				<thead>
+					<tr>
+						<th>{lang('admin.module')}</th>
+						<th>{lang('admin.')}</th>
+						<th>{lang('admin.action')}</th>
+					</tr>
+				</thead>
+				<tbody></tbody>
+			</table>
+		</div>
+		<button id="start-test" data-loading-text="{lang('admin.detecting')}" class="btn btn-primary">{lang('admin.detect')}</button>
+		<button id="onekey-clean" data-loading-text="{lang('admin.cleaning')}" class="btn btn-primary">{lang('admin.cleanAll')}</button>
+	</div>
+	<script>
+	Tables = {$tablesJSON};
+	Lang = {
+		noCleanableData: "{lang('admin.noCleanableData')}",
+		serverConnectionError: "{lang('admin.serverConnectionError')}",
+		dataCleanComplete: "{lang('admin.dataCleanComplete')}",
+		clean: "{lang('admin.clean')}",
+		deleteTrashHelp: "{lang('admin.deleteTrashHelp')}"
+	};
+	</script>
+	<include data="../foot.html">
+</body>
+</html>

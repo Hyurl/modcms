@@ -1,0 +1,39 @@
+<?php include(admin_dir('php/common.php')); ?>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no,minimal-ui">
+<!-- 载入 CSS -->
+<import data="css/bootstrap.min.css">
+<import data="css/style.css">
+<if data="file_exists(admin_dir('css/'.$DISPLAY_BASE.'.css'))">
+	<import data="css/$DISPLAY_BASE.css">
+</if>
+<import data="js/storage.js">
+<script>
+	/** 定义常量 */
+	const CMS_VERSION = '{CMS_VERSION}'; //CMS 版本
+	const MOD_VERSION = '{MOD_VERSION}'; //ModPHP 版本
+	const SITE_URL = '{SITE_URL}'; //网站根目录地址
+	const ADMIN_URL = '{ADMIN_URL}'; //后台根目录地址
+	const IS_LOGINED = {config('mod.installed') && IS_LOGINED ?: 0}; //是否已登录
+	const IS_ADMIN = {config('mod.installed') && IS_ADMIN ?: 0}; //是否管理员
+	const IS_EDITOR = {config('mod.installed') && IS_EDITOR ?: 0}; //是否编辑
+	const IS_AUTH = IS_ADMIN || IS_EDITOR; //是否为管理员或编辑
+	const ME_ID = {config('mod.installed') ? (me_id() ?: 0) : 0}; //当前用户 ID
+	const VERSION_URLS = JSON.parse('{json_encode($VERSION_URLS)}'); //更新链接
+	/** _window 父窗口 */
+	_window = window.parent;
+	/** _document 父窗口文档 */
+	_document = _window.document;
+	var path = location.pathname,
+		index = path.lastIndexOf('/'),
+		baseName = path.substring(index >= 0 ? index+1 : 0, path.length);
+	if(window.parent == window && baseName != 'login.html' && baseName != 'install.html'){
+		storage('ModAdminURL', location.href);
+		location.href = SITE_URL+'admin/';
+	}else if(window.parent != window && (baseName == 'login.html' || baseName == 'install.html')){
+		storage('ModAdminURL', null);
+		_window.location.href = SITE_URL+'admin/'+baseName;
+	}
+</script>

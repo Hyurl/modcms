@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="{__LANG__}">
+<head>
+	<include data="head.html">
+	<import data="js/date.js">
+	<title>{$title}</title>
+	<style>
+	#comment-list-div{min-height: 20px;}
+	.comment-at{margin-right: 5px;}
+	</style>
+</head>
+<body data-menu="comments">
+	<div class="container">
+		<ul class="nav nav-tabs" role="tablist" id="comment-list-tabs">
+			<if data="IS_AUTH">
+				<li role="presentation">
+					<a href="comments.html">{lang('admin.all')}({$commentCount['all']})</a>
+				</li>
+			</if>
+			<li role="presentation" data="person">
+				<a href="comments.html?user_id={@$_GET['user_id'] ?: me_id()}&tablist=person">
+					{$tabPerson}({$commentCount['person']})
+				</a>
+			</li>
+			<if data="!empty($_GET['user_id']) || !empty($_GET['commentsTo'])">
+				<li role="presentation" data="commentsTo">
+					<a href="comments.html?tablist=commentsTo&commentsTo=true&user_id={@$_GET['user_id'] ?: me_id()}">
+						{$tabReply}({$commentCount['to']})
+					</a>
+				</li>
+			</if>
+			<li role="presentation" data="unreviewed">
+				<a href="comments.html?comment_status=0{@$_GET['user_id'] ? '&user_id='.$_GET['user_id'] :''}&tablist=unreviewed">
+					{lang('comment.unreviewed')}({$commentCount['unreviewed']})
+				</a>
+			</li>
+			<if data="!empty($_GET['post_id'])">
+				<li role="presentation" class="active">
+					<a href="#">{lang('comment.commentsOfThisPost')}({$commentCount['post']})</a>
+				</li>
+				<elseif data="!empty($_GET['comment_id'])">
+					<li role="presentation" class="active">
+						<a href="#">{lang('comment.currentComment')}</a>
+					</li>
+				</elseif>
+			</if>
+		</ul>
+		<div id="comment-list-div">
+			<while data="get_multi_comment($arg)">
+				<div class="media" data-id="{comment_id()}" data-user-id="{comment_user('id')}" data-status="{comment_status()}" data-user-email="{comment_user('email')}" data-comment-ip="{the_comment('ip')}">
+					<div class="media-left">
+						<div class="media-logo">
+							<if data="comment_user('avatar')">
+								<img src="{get_user_avatar(64, comment_user('avatar'))}" alt="{lang('user.avatar')}">
+								<else>
+									<i class="glyphicon glyphicon-user media-icon"></i>
+								</else>
+							</if>
+						</div>
+					</div>
+					<div class="media-body">
+						<if data="empty($_GET['user_id']) || !empty($_GET['commentsTo'])">
+							<h4 class="media-heading">
+								<?php
+									$isMe = comment_user('id') == ME_ID;
+									$user = $isMe ? lang('user.me') : (comment_user('nickname') ?: comment_user('name'));
+									$lang = comment_user('gender') == 'female' ? lang('comment.viewHerComments') : lang('comment.viewHisComments');
+									$lang = $isMe ? lang('comment.viewMyComments') : $lang;
+								?>
+								<if data="IS_AUTH">
+									<a title="{$lang}" href="comments.html?user_id={comment_user('id')}&tablist=person">
+										{$user}
+									</a>
+									<else>
+										{$user}
+									</else>
+								</if>
+							</h4>
+						</if>
+						<p class="media-content">
+							<if data="empty($_GET['commentsTo']) && comment_parent()">
+								<?php 
+									$isMe = comment_parent('user_id') == ME_ID;
+									$parent = $isMe ? lang('user.me') : (comment_parent('user_nickname') ?: comment_parent('user_name'));
+									$lang = comment_parent('user_gender') == 'female' ? lang('comment.viewHerComments') : lang('comment.viewHisComments');
+									$lang = $isMe ? lang('comment.viewMyComments') : $lang;
+								?>
+								<if data="IS_AUTH || $isMe">
+									<a title="{$lang}" href="comments.html?user_id={comment_parent('user_id')}&tablist=person">
+										<span class="comment-at">@{$parent}</span>
+									</a>
+									<else>
+										<span class="comment-at">@{$parent}</span>
+									</else>
+								</if>
+							</if>
+							<span class="comment-content">{comment_content()}</span>
+						</p>
+						<p class="media-meta">
+							<if data="empty($_GET['post_id'])">
+								<?php $a = '<a title="'.lang('comment.viewCommentsOfThisPost').'" href="comments.html?post_id='.comment_post('id').'">'; ?>
+								<?php echo lang('comment.postOnWhatDateToWhichPost', get_comment_date(), $a.comment_post('title').'</a>'); ?>
+								<else>
+									{lang('comment.postOnWhatDate', get_comment_date())}
+								</else>
+							</if>
+						</p>
+					</div>
+				</div>
+			</while>
+		</div>
+	</div>
+	<div class="modal fade" id="comment-modal">
+		<div class="modal-dialog">
+			<form action="{SITE_URL}mod.php?comment::update" method="post">
+				<input type="hidden" name="comment_ip" value="{get_client_ip()}">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+						<h4 class="modal-title">{lang('comment.editComment')}</h4>
+					</div>
+					<div class="modal-body">
+						<textarea class="form-control" name="comment_content" rows="3" required></textarea>
+					</div>
+					<div class="modal-footer">
+						<button type="submit" class="btn btn-success">{lang('admin.submit')}</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+	<div class="modal fade" id="comment-modal-blacklist">
+		<div class="modal-dialog">
+			<form action="{SITE_URL}mod.php?blacklist::add" method="post">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+						<h4 class="modal-title">{lang('blacklist.blackOptions')}</h4>
+					</div>
+					<div class="modal-body">
+						<div class="checkbox-inline">
+							<label>
+								<input type="checkbox" name="blacklist_uid" value=""> {lang('user.uid')}
+							</label>
+						</div>
+						<div class="checkbox-inline">
+							<label>
+								<input type="checkbox" name="blacklist_email" value=""> {lang('user.email')}
+							</label>
+						</div>
+						<div class="checkbox-inline">
+							<label>
+								<input type="checkbox" name="blacklist_ip" value=""> IP
+							</label>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="submit" class="btn btn-success">{lang('admin.submit')}</button>
+						<button type="reset" class="btn btn-default" style="display:none">Reset</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+	<script>
+		TOTAL = {_comment('total') ?: 0};
+		PAGES = {_comment('pages') ?: 0};
+		COMMENT_REVIEW = {config('comment.review') ?: 0}; //评论审核
+		Lang = {
+			serverConnectionError: "{lang('admin.serverConnectionError')}",
+			sequence: "{lang('admin.sequence')}",
+			change: "{lang('admin.change')}",
+			latestSequence: "{lang('admin.latestSequence')}",
+			idSequence: "{lang('admin.idSequence')}",
+			prevPage: "{lang('admin.prevPage')}",
+			nextPage: "{lang('admin.nextPage')}",
+			edit: "{lang('admin.edit')}",
+			delete: "{lang('admin.delete')}",
+			reply: "{lang('comment.reply')}",
+			reviewPass: "{lang('comment.reviewPass')}",
+			blackPerson: "{lang('blacklist.blackPerson')}",
+			blackWarning: "{lang('blacklist.blackWarning')}",
+			commentBlackWarning: "{lang('comment.commentBlackWarning')}",
+			blackedTip: "{lang('blacklist.blackedTip')}",
+			deleteWarning: "{lang('admin.deleteWarning')}",
+			noDeleteItemWarning: "{lang('admin.noDeleteItemWarning')}",
+			successTip: "{lang('admin.successTip')}",
+			failWarning: "{lang('admin.failWarning')}",
+			successCountTip: "{lang('admin.successCountTip', '<successCount>')}",
+			failCountWarning: "{lang('admin.failCountWarning', '<successCount>', '<failCount>')}",
+			commentHelp: "{lang('comment.commentHelp')}",
+			commentEditTip: "{lang('comment.editTip')}",
+			replySuccess: "{lang('comment.replySuccess')}",
+		};
+	</script>
+	<include data="foot.html">
+</body>
+</html>

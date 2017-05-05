@@ -1,0 +1,80 @@
+<if data="config('comment.enable') && post_commentable()">
+	<div class="comment-container">
+		<h2>{lang('comment.label')}</h2>
+		<if data="IS_LOGINED || config('comment.anonymous.enable')">
+			<form id="comment-form" action="{SITE_URL}mod.php?comment::add" method="post">
+				<input type="hidden" name="post_id" value="{post_id()}" />
+				<textarea name="comment_content" rows="3" required placeholder="{lang('comment.editTip')}..."></textarea>
+				<div class="btn-group">
+					<button class="btn" type="submit">{lang('admin.submit')}</button>
+					<button class="btn" type="reset">{lang('admin.cancel')}</button>
+				</div>
+				<if data="!IS_LOGINED">
+					<div id="comment-anonymous">
+						<div>
+							<label for="user_nickname">{lang('user.nickname')}</label>
+							<input type="text" name="user_nickname" id="user_nickname" placeholder="{lang('simplet.usernameTip')}" required>
+						</div>
+						<div>
+							<label for="user_email">{lang('user.email')}</label>
+							<input type="email" name="user_email" id="user_email" placeholder="{lang('simplet.emailTip')}" required>
+						</div>
+						!{$verify = config('comment.anonymous.verify')}
+						<if data="$verify">
+							<div>
+								<label for="vcode">{lang('admin.vcode')}</label>
+								<input type="text" name="vcode" id="vcode" placeholder="{lang('simplet.vcodeTip')}" required>
+								<if data="$verify == 'vcode'">
+									<img id="vcode-img" src="{ADMIN_URL}vcode.php" alt="{lang('admin.vcode')}">
+									<elseif data="$verify == 'email'">
+										<button class="btn" id="mail-vcode">{lang('admin.sendVcode')}</button>
+									</elseif>
+								</if>
+							</div>
+						</if>
+					</div>
+				</if>
+			</form>
+			<else>
+				<p>{lang('simplet.commentWarning')}</p>
+			</else>
+		</if>
+		<div class="comment-list">
+			<h3>{lang('simplet.commentHistory')}({post_comments()})</h3>
+			<while data="get_multi_comment(array('post_id'=>post_id(), 'limit'=>200))">
+				<div class="comment" id="comment-id-{comment_id()}" data-id="{comment_id()}">
+					<if data="comment_user('avatar')">
+						<div class="comment-left">
+							<img src="{get_user_avatar(64, comment_user('avatar'))}" alt="{lang('user.avatar')}">
+						</div>
+					</if>
+					<div class="comment-body">
+						<h4 class="comment-heading">
+							<span class="comment-author">{comment_user('nickname') ?: comment_user('name')}</span>
+							<small>
+								{date('Y-m-d H:i', comment_time())}
+								<if data="me_id() != comment_user('id')">
+									<a class="comment-reply" href="javascript:;">{lang('comment.reply')}</a>
+								</if>
+							</small>
+						</h4>
+						<p class="comment-content">
+							<if data="comment_parent()">
+								<a class="comment-at" href="{url()}#comment-id-{comment_parent('id')}">
+									@{comment_parent('user_nickname') ?: comment_parent('user_name')}
+								</a>
+							</if>
+							<span class="comment-content">{comment_content()}</span>
+						</p>
+						<if data="comment_parent()">
+							<blockquote>
+								{comment_parent('user_nickname') ?: comment_parent('user_name')}: 
+								{str_replace("\n", "<br>", comment_parent('comment_content'))}
+							</blockquote>
+						</if>
+					</div>
+				</div>
+			</while>
+		</div>
+	</div>
+</if>

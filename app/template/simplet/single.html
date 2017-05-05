@@ -1,0 +1,31 @@
+<include data="header.html">
+<div class="content" id="content" data-id="{post_category('id')}">
+	<h1 class="page-heading">{post_title()}</h1>
+	<div>
+		<p class="meta">
+			<span class="meta-author">{post_user('nickname') ?: post_user('name')}</span>
+			<span class="meta-date">{date('Y-m-d', post_time())}</span>
+			<span class="meta-category"><a href="{create_url(config('category.staticURI'), post_category())}">{post_category('alias') ?: post_category('name')}</a></span>
+		</p>
+	</div>
+	<article>
+		<!-- 文章内容 -->
+		{post_content()}
+	</article>
+	<nav class="navigation">
+		<!-- 上一篇 -->
+		<if data="prev_post(array('category_id'=>post_category('id'), 'post_type'=>0))">
+			<a class="prev" href="{prev_post('link') ?: create_url(config('post.staticURI'), prev_post())}" title="{lang('simplet.prevPost')}">&larr; {prev_post('title')}</a>
+		</if>
+		<!-- 下一篇 -->
+		<if data="next_post(array('category_id'=>post_category('id'), 'post_type'=>0))">
+			<a class="next" href="{next_post('link') ?: create_url(config('post.staticURI'), next_post())}" title="{lang('simplet.nextPost')}">{next_post('title')} &rarr;</a>
+		</if>
+	</nav>
+	<!-- 引入评论 -->
+	<include data="comment.html">
+</div>
+<script>
+	WebSocketMode = {cms_websocket_mode() ?: 0}; //是否开启了 WebSocket 模式
+</script>
+<include data="footer.html">

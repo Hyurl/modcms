@@ -1,0 +1,21 @@
+<div class="settings-option">
+	<h4>{lang('file.upload')}</h4>
+	<div>
+		<label for="file-upload-accept">{lang('file.acceptTypes')}</label>
+		<input type="text" class="form-control" id="file-upload-accept" name="file.upload.acceptTypes" value="{config('file.upload.acceptTypes')}" placeholder="{lang('file.acceptTypesTip')}">
+	</div>
+	<div>
+		<label for="file-upload-max">{lang('file.uploadLimit')}</label>
+		<input type="number" class="form-control" id="file-upload-max" name="file.upload.maxSize" value="{config('file.upload.maxSize')}" placeholder="{lang('file.uploadLimitTip', $uploadLimit)}">
+	</div>
+	<p class="settings-desc">
+		{lang('file.uploadSettingsDesc')}
+	</p>
+	<div>
+		<label for="file-upload-image-sizes">{lang('file.imageSize')}</label>
+		<input type="text" class="form-control" id="file-upload-image-sizes" name="file.upload.imageSizes" value="{config('file.upload.imageSizes')}" placeholder="{lang('file.imageSizeTip')}">
+	</div>
+	<p class="settings-desc">
+		{lang('file.imageSizeDesc')}
+	</p>
+</div>

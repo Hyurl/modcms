@@ -1,0 +1,39 @@
+#post-list-table td{
+	cursor: pointer;
+}
+#post-edit-form{
+	margin: 15px 10px 0 10px;
+	overflow: hidden;
+}
+#post-edit-form>button[type=submit], #post-edit-form textarea[name="post_content"]{
+	display: none;
+}
+.panel{
+	overflow: auto;
+}
+.note-editor.note-frame {
+	border: 1px solid #dedede !important;
+	overflow: auto;
+	margin-bottom: 0;
+}
+#change-category{
+	color: #333;
+	box-shadow: none;
+	-webkit-box-shadow: none;
+}
+select{width: auto !important;min-width: 125px;}
+input.form-control{max-width: 400px;}
+@media (min-width: 768px){
+	.form-horizontal .control-label {
+		text-align: left;
+		max-width: 100px;
+		padding-left: 20px;
+		padding-right: 0;
+	}
+	div.col-sm-10, div.col-sm-2{
+		max-width: 900px;
+	}
+}
+@media (max-width: 479px){
+	input.form-control{max-width: 100%;}
+}

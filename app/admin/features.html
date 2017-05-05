@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="{__LANG__}">
+<head>
+	<include data="head.html">
+	<title>{$title}</title>
+	<style>
+	#inner-container{padding: 10px 10px 0 10px;}
+	#select-template button[type=submit], #select-template button[type=reset]{display: none;}
+	a.action{margin-left: 5px;}
+	a.action.disabled{color: #777;}
+	.new-version, .update{display: none;}
+	.new-version>code{margin-right: 5px;line-height: 2;}
+	.new-version a{display: block;}
+	#upload-zip{margin-bottom: 20px;}	
+	</style>
+</head>
+<body data-menu="features">
+	<div class="container">
+		<ul class="nav nav-tabs" role="tablist">
+			<li role="presentation" data="default" class="active">
+				<a href="features.html">{lang('admin.selectTemplate')}</a>
+			</li>
+			<li role="presentation" data="upload">
+			<a href="features.html?tablist=upload">{lang('file.upload')}</a>
+			</li>
+		</ul>
+		<div id="inner-container">
+			<if data="empty($_GET['tablist'])">
+				<form id="select-template" action="{site_url('mod.php?mod::config')}" method="post">
+					<foreach data="$templates as $folder => $template">
+						<div class="block">
+							<div class="block-thumbnail">
+								<img src="{site_url()}app/template/{$folder}/{$template['thumbnail']}" alt="{lang('admin.thumbnail')}" class="thumbnail" />
+							</div>
+							<h4 class="block-heading">{$template['name']}</h4>
+							<div class="block-content">
+								<p>{$template['desc']}</p>
+							</div>
+							<table>
+								<tr>
+									<td>{lang('admin.version')}:</td>
+									<td>{$template['version']}</td>
+								</tr>
+								<tr>
+									<td>{lang('admin.author')}:</td>
+									<td>{$template['author']}</td>
+								</tr>
+								<tr>
+									<td>{lang('admin.link')}:</td>
+									<td>
+										<a target="_blank" title="{lang('admin.goto')}" href="{$template['url']}">{$template['url']}</a>
+									</td>
+								</tr>
+								<tr>
+									<td>{lang('admin.action')}:</td>
+									<td>
+										<label class="radio-inline">
+											<input type="radio" name="mod.template.savePath" value="template/{$folder}/"{$template['enable'] ? ' checked' : ''}/> {lang('admin.anable')}
+										</label>
+										<a class="action{$folder == 'simplet' ? ' disabled' : ''}"{$folder == 'simplet' ? 'title="'.lang('admin.insideTemplateTip').'"' : ''} href="advanced/file-editor.html?type=template&folder={$folder}">{lang('admin.edit')}</a>
+										<if data="!$template['enable']">
+											<a  class="action delete" href="javascript:;" data-folder="{$folder}" data-type="template">{lang('admin.delete')}</a>
+										</if>
+										<if data="$template['hasTemp']">
+											<a class="action remove-temp" href="javascript:;" data-folder="{$folder}" data-type="template" title="{lang('admin.cleanTemplateTempTip')}">{lang('admin.cleanTemp')}</a>
+										</if>
+									</td>
+								</tr>
+								<if data="$template['versionURL']">
+									<tr>
+										<td>{lang('admin.update')}:</td>
+										<td>
+											<button type="button" class="btn btn-sm btn-default check-new" data-loading-text="{lang('admin.checking')}" data-version="{$template['version']}" data-version-url="{$template['versionURL']}" data-type="template">{lang('admin.checkUpdate')}</button>
+											<span class="new-version">
+												{lang('admin.newVersion')}: <code>None</code><a href="#">{lang('admin.viewUpdateLog')}</a>
+											</span>
+											<button type="button" class="btn btn-sm btn-default update" data-loading-text="{lang('admin.updating')}" data-type="template">{lang('admin.update')}</button>
+										</td>
+									</tr>
+								</if>
+							</table>
+						</div>
+					</foreach>
+					<button type="submit">Submit</button>
+				</form>
+				<elseif data="$_GET['tablist'] == 'upload'">
+					<if data="stripos(config('file.upload.acceptTypes'), 'zip') !== false">
+						<p>{lang('admin.uploadComponentTip', $uploadLimit, lang('admin.template'))}</p>
+						<button class="btn btn-success" id="upload-zip">{lang('file.selectFile')}</button>
+						<form id="jquery-upload-form" action="{SITE_URL}mod.php?file::uploadZip" method="post" enctype="multipart/form-data" style="display:none">
+							<input type="hidden" name="type" value="template"/>
+							<input type="hidden" name="file_desc" value="{lang('admin.templateZip')}"/>
+							<input type="file" name="file" accept="application/x-zip-compressed"/>
+						</form>
+						<else>
+							<p>{lang('admin.uploadZipWarning')}</p>
+						</else>
+					</if>
+				</elseif>
+			</if>
+		</div>
+	</div>
+	<script>
+	Lang = {
+		changedTip: "{lang('admin.changedTip')}",
+		serverConnectionError: "{lang('admin.serverConnectionError')}",
+		changeSiteFuncWarning: "{lang('admin.changeSiteFuncWarning')}",
+		uploadedTip: "{lang('file.uploadedTip')}",
+		newVersion: "{lang('admin.newVersion')}",
+		clickToVisit: "{lang('admin.clickToVisit')}",
+		viewUpdateLog: "{lang('admin.viewUpdateLog')}",
+		noNewVersionTip: "{lang('admin.noNewVersionTip')}",
+		templateHelp: "{lang('admin.templateHelp')}"
+	};
+	</script>
+	<include data="foot.html">
+</body>
+</html>

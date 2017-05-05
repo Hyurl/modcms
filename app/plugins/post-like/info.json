@@ -1,0 +1,9 @@
+{
+	"name": "文章点赞",
+	"logo": "logo.png",
+	"author": "Ayon Lee",
+	"url": "http://modphp.hyurl.com/",
+	"version": "1.0.3",
+	"desc": "在文章的末尾添加一个简单的按钮，实现点赞功能，此插件依赖 Cookie 和 jQuery。",
+	"versionURL": "http://modphp.hyurl.com/modcms/post-like/version.json"
+}

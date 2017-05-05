@@ -1,0 +1,9 @@
+{
+	"name": "Simplet",
+	"thumbnail": "thumbnail.png",
+	"author": "Ayon Lee",
+	"url": "http://modphp.hyurl.com",
+	"version": "1.0.8",
+	"desc": "这是 ModCMS 默认搭载的模板，它是一个简要的样板，你可以使用它搭建简单的网站，也可以参考它制作功能更为丰富的模板。请<a href=\"{SITE_URL}setting.html\">点击此处</a>以设置相关的样式。",
+	"versionURL": "http://modphp.hyurl.com/modcms/simplet/version.json"
+}

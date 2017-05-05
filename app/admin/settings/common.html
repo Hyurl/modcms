@@ -1,0 +1,141 @@
+<div class="settings-option">
+	<h4>{lang('admin.site')}</h4>
+	<div>
+		<label for="site-name">{lang('admin.name')}</label>
+		<input type="text" class="form-control" id="site-name" name="site.name" value="{config('site.name')}" placeholder="{lang('admin.siteNameTip')}">
+	</div>
+	<div>
+		<label for="site-subname">{lang('admin.subname')}</label>
+		<input type="text" class="form-control" id="site-subname" name="site.subname" value="{config('site.subname')}" placeholder="{lang('admin.siteSubnameTip')}">
+	</div>
+	<div>
+		<label for="mod-lang">{lang('admin.language')}</label>
+		<select id="mod-lang" name="mod.language" class="form-control" data-origin="{$lang}">
+			<option value="auto">自动</option>
+			<foreach data="$Lang as $key => $value">
+				<option value="{$key}"{$lang == $key ? ' selected' : ''}>
+					{$value}
+				</option>
+			</foreach>
+		</select>
+	</div>
+	<div>
+		<label for="site-author">{lang('admin.dateFormat')}</label>
+		<input type="text" class="form-control" id="mod-date-format" name="mod.dateFormat" value="{config('mod.dateFormat')}" placeholder="{lang('admin.dateFormatTip')}">
+	</div>
+	<div>
+		<label for="site-author">{lang('admin.author')}</label>
+		<input type="text" class="form-control" id="site-author" name="site.author" value="{config('site.author')}" placeholder="{lang('admin.siteAuthorTip')}">
+	</div>
+	<div>
+		<label for="site-keywords">{lang('admin.keywords')}</label>
+		<input type="text" class="form-control" id="site-keywords" name="site.keywords" value="{config('site.keywords')}" placeholder="{lang('admin.siteKeywordsTip')}">
+	</div>
+	<div>
+		<label for="site-description" class="align-top">{lang('admin.desc')}</label>
+		<textarea type="text" class="form-control" rows="3" id="site-description" name="site.description" placeholder="{lang('admin.siteDescTip')}">{config('site.description')}</textarea>
+	</div>
+	<div>
+		<label for="site-url">{lang('admin.siteAddress')}</label>
+		<input type="text" class="form-control" id="site-URL" name="site.URL" value="{config('site.URL')}" placeholder="{site_url()}">
+	</div>
+	<div>
+		<label for="site-icp">{lang('admin.icp')}</label>
+		<input type="text" class="form-control" id="site-icp" name="site.ICP" value="{config('site.ICP')}" placeholder="{lang('admin.icpTip')}">
+	</div>
+	<div>
+		<input type="hidden" name="site.logo" value=""/>
+		<label for="upload-logo" class="align-top">{lang('admin.siteLogo')}</label>
+		<div>
+			<button type="button" class="btn btn-default" id="upload-logo">{lang('file.selectImage')}</button>
+			<div id="site-logo-preview" style="display:{config('site.logo') ? 'block' : 'none'}">
+				<img src="{config('site.logo')}" alt="网站 LOGO" data-origin="{config('site.logo')}">
+			</div>
+		</div>
+	</div>
+	<p class="settings-desc">
+		{lang('admin.siteSettingsDesc')}
+	</p>
+</div>
+<div class="settings-option">
+	<h4>{lang('admin.pseudoStatic')}</h4>
+	<div>
+		<label for="site-home-staticuri">{lang('admin.siteHome')}</label>
+		<input type="text" class="form-control" id="site-home-staticurl" name="site.home.staticURI" value="{config('site.home.staticURI')}" placeholder="{lang('admin.pseudoStaticTip')}">
+	</div>
+	<div>
+		<label for="category-static-url">{lang('admin.categoryPage')}</label>
+		<input type="text" class="form-control" id="category-static-url" name="category.staticURI" value="{config('category.staticURI')}" placeholder="{lang('admin.pseudoStaticTip')}">
+	</div>
+	<div>
+		<label for="post-static-url">{lang('admin.postPage')}</label>
+		<input type="text" class="form-control" id="post-static-url" name="post.staticURI" value="{config('post.staticURI')}" placeholder="{lang('admin.pseudoStaticTip')}">
+	</div>
+	<div>
+		<label for="user-static-url">{lang('admin.userPage')}</label>
+		<input type="text" class="form-control" id="user-static-url" name="user.staticURI" value="{config('user.staticURI')}" placeholder="{lang('admin.pseudoStaticTip')}">
+	</div>
+</div>
+<div class="settings-option" id="smtp">
+	<h4>{lang('admin.adminCenter')}</h4>
+	<div>
+		<label for="site-admin-list-count">{lang('admin.listDefaultCount')}</label>
+		!{$count = config('site.admin.listCount')}
+		<select id="site-admin-list-count" name="site.admin.listCount" class="form-control">
+			<option value="10"{$count == 10 ? ' selected' : ''}>10</option>
+			<option value="20"{$count == 20 ? ' selected' : ''}>20</option>
+			<option value="50"{$count == 50 ? ' selected' : ''}>50</option>
+			<option value="80"{$count == 80 ? ' selected' : ''}>80</option>
+			<option value="150"{$count == 150 ? ' selected' : ''}>150</option>
+		</select>
+	</div>
+	<div>
+		<label for="site-admin-list-count">{lang('admin.listDefaultSequence')}</label>
+		!{$sequence = config('site.admin.listSequence')}
+		<select id="site-admin-list-count" name="site.admin.listSequence" class="form-control">
+			<option value="asc"{$sequence == 'asc' ? ' selected' : ''}>{lang('admin.idSequence')}</option>
+			<option value="desc"{$sequence == 'desc' ? ' selected' : ''}>{lang('admin.latestSequence')}</option>
+		</select>
+	</div>
+	<div>
+		!{$key = 'site.admin.autoCheckUpdate'}
+		<label for="site-admin-auto-check-update">{lang('admin.autoCheckUpdate')}</label>
+		<span>
+			<label class="radio-inline">
+				<input type="radio" name="{$key}" value="true"{config($key) ? ' checked' : ''} id="site-admin-auto-check-update"/> {lang('admin.yes')}
+			</label>
+			<label class="radio-inline">
+				<input type="radio" name="{$key}" value="false"{!config($key) ? ' checked' : ''}> {lang('admin.no')}
+			</label>
+		</span>
+	</div>
+</div>
+<div class="settings-option" id="smtp">
+	<h4>{lang('admin.emailService')}</h4>
+	<div>
+		<label for="site-mail-host">{lang('admin.smtpServer')}</label>
+		<input type="text" class="form-control" id="site-mail-host" name="mod.mail.host" value="{config('mod.mail.host')}" placeholder="{lang('admin.smtpServerTip')}"/>
+	</div>
+	<div>
+		<label for="site-mail-port">{lang('admin.port')}</label>
+		<input type="text" class="form-control" id="site-mail-port" name="mod.mail.port" value="{config('mod.mail.port')}" placeholder="{lang('admin.smtpPortTip')}"/>
+	</div>
+	<div>
+		<label for="site-mail-from">{lang('admin.sender')}</label>
+		<input type="text" class="form-control" id="site-mail-from" name="mod.mail.from" value="{config('mod.mail.from')}" placeholder="{lang('admin.senderTip')}"/>
+	</div>
+	<div>
+		<label for="site-mail-username">{lang('user.name')}</label>
+		<input type="mail" class="form-control" id="site-mail-username" name="mod.mail.username" value="{config('mod.mail.username')}" placeholder="{lang('admin.emailUserTip')}"/>
+	</div>
+	<div>
+		<label for="site-mail-password">{lang('user.password')}</label>
+		<input type="password" class="form-control" id="site-mail-password" name="mod.mail.password" value="{config('mod.mail.password')}" placeholder="{lang('admin.emailPasswordTip')}"/>
+		<if data="!is_agent('Edge/14')">
+			<i class="glyphicon glyphicon-eye-open"></i>
+		</if>
+	</div>
+	<p class="settings-desc">
+		{lang('admin.emailServiceDesc')}
+	</p>
+</div>

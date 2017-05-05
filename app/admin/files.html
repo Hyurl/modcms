@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="{__LANG__}">
+<head>
+	<include data="head.html">
+	<title>{$title}</title>
+	<style>
+	h4{white-space: normal;}
+	#file-list-div{min-height: 20px;}
+	#file-modal-picture .modal-body{text-align: center;}
+	#file-modal-picture .modal-body img{max-width: 100%; max-height: 100%;}
+	</style>
+</head>
+<body data-menu="files">
+	<div class="container">
+		<ul class="nav nav-tabs" role="tablist" id="file-list-tabs">
+			<if data="IS_AUTH">
+				<li role="presentation">
+					<a href="files.html">{lang('admin.all')}({$fileCount['all']})</a>
+				</li>
+			</if>
+			<li role="presentation" data="person">
+				<a href="files.html?user_id={@$_GET['user_id'] ?: me_id()}&tablist=person">
+					{$tabPerson}({$fileCount['person']})
+				</a>
+			</li>
+			<if data="!empty($_GET['file_id'])">
+				<li role="presentation" class="active">
+					<a href="#">{lang('file.currentFile')}</a>
+				</li>
+			</if>
+		</ul>
+		<div id="file-list-div">
+			<while data="get_multi_file($_GET)">
+				<div class="media" data-id="{file_id()}">
+					<div class="media-left">
+						<div class="media-logo">
+							{admin_get_file_icon()}
+						</div>
+					</div>
+					<div class="media-body">
+						<h4 class="media-heading">
+							{file_name()}
+						</h4>
+						<p class="media-content">
+							{file_desc()}
+						</p>
+						<p class="media-meta">
+							<if data="empty($_GET['user_id'])">
+								<?php 
+									$isMe = file_user('id') == ME_ID;
+									$user = $isMe ? lang('user.me') : (file_user('nickname') ?: file_user('name'));
+									$lang = file_user('gender') == 'female' ? lang('file.viewHerFiles') : lang('file.viewHisFiles');
+									$lang = $isMe ? lang('file.viewMyFiles') : $lang;
+								?>
+								<if data="IS_AUTH">
+									<a title="{$lang}" href="files.html?user_id={file_user('id')}&tablist=person">
+										{$user} 
+									</a>
+									<else>
+										{$user} 
+									</else>
+								</if>
+							</if>
+							{lang('file.uploadOnWhatDate', date(config('mod.dateFormat'), file_time()))}
+						</p>
+					</div>
+				</div>
+			</while>
+		</div>
+	</div>
+	<div class="modal fade" id="file-modal">
+		<div class="modal-dialog">
+			<form action="{site_url()}mod.php?file::update" method="post">
+				<input type="hidden" name="file_id">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+						<h4 class="modal-title">{lang('file.editFile')}</h4>
+					</div>
+					<div class="modal-body">
+						<div class="form-group">
+							<label for="file_name">{lang('admin.name')}</label>
+							<input type="text" class="form-control" name="file_name" id="file_name" required>
+						</div>
+						<div class="form-group">
+							<label for="file_desc">{lang('file.fileDesc')}</label>
+							<textarea name="file_desc" id="file_desc" rows="2" class="form-control" placeholder="{lang('file.fileDescTip')}"></textarea>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="submit" class="btn btn-success">{lang('admin.submit')}</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+	<div class="modal fade" id="file-modal-picture">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+					<h4 class="modal-title">Filename</h4>
+				</div>
+				<div class="modal-body">
+					<img src="" alt="{lang('admin.loadIamgeFailed')}">
+				</div>
+			</div>
+		</div>
+	</div>
+	<script>
+		TOTAL = {_file('total') ?: 0};
+		PAGES = {_file('pages') ?: 0};
+		Lang = {
+			serverConnetionError: "{lang('admin.serverConnetionError')}",
+			sequence: "{lang('admin.sequence')}",
+			change: "{lang('admin.change')}",
+			latestSequence: "{lang('admin.latestSequence')}",
+			idSequence: "{lang('admin.idSequence')}",
+			prevPage: "{lang('admin.prevPage')}",
+			nextPage: "{lang('admin.nextPage')}",
+			edit: "{lang('admin.edit')}",
+			delete: "{lang('admin.delete')}",
+			deleteWarning: "{lang('admin.deleteWarning')}",
+			noDeleteItemWarning: "{lang('admin.noDeleteItemWarning')}",
+			successTip: "{lang('admin.successTip')}",
+			failWarning: "{lang('admin.failWarning')}",
+			successCountTip: "{lang('admin.successCountTip', '<successCount>')}",
+			failCountWarning: "{lang('admin.failCountWarning', '<successCount>', '<failCount>')}",
+			fileHelp: "{lang('file.fileHelp')}",
+		};
+	</script>
+	<include data="foot.html">
+</body>
+</html>

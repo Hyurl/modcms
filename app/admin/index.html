@@ -1,0 +1,155 @@
+<?php include(admin_dir('php/common.php')); ?>
+<!DOCTYPE html>
+<html lang="{__LANG__}">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="Cache-Control" content="no-transform" />
+	<meta http-equiv="Cache-Control" content="no-siteapp" />
+	<meta name="viewport" content="width=device-width,initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no,minimal-ui">
+	<title>{lang('admin.dashboard')} - {config('site.name')}</title>
+	<!-- 载入 CSS -->
+	<import data="css/bootstrap.min.css">
+	<import data="css/index.css">
+	<script>
+		/** 定义常量 */
+		const CMS_VERSION = '{CMS_VERSION}'; //CMS 版本
+		const MOD_VERSION = '{MOD_VERSION}'; //ModPHP 版本
+		const SITE_URL = '{site_url()}'; //网站根目录地址
+		const ADMIN_URL = '{ADMIN_URL}'; //后台根目录地址
+		const IS_LOGINED = {is_logined() ?: 0}; //是否已登录
+		const IS_ADMIN = {is_admin() ?: 0}; //是否管理员
+		const IS_EDITOR = {is_editor() ?: 0}; //是否编辑
+		const IS_AUTH = IS_ADMIN || IS_EDITOR; //是否为管理员或编辑
+		const ME_ID = {me_id() ?: 0}; //当前用户 ID
+		const PLUGIN_DIR_URL = '{plugin_dir_url()}'; //插件根目录地址
+		const VERSION_URLS = JSON.parse('{json_encode($VERSION_URLS)}'); //更新链接
+
+		WebSocketMode = {cms_websocket_mode() ?: 0}; //是否开启了 WebSocket 模式
+		WebSocketPort = {config('mod.SocketServer.port') ?: 0}; //WebSocket 端口
+
+		/** 定义变量 */
+		autoCheckUpdate = {config('site.admin.autoCheckUpdate') ?: 0}; //自动检测更新
+		versionURLs = JSON.parse('{json_encode($versionURLs)}'); //模板/插件更新链接
+		/** _window 父窗口 */
+		_window = window.parent;
+		/** _document 父窗口文档 */
+		_document = _window.document;
+	</script>
+</head>
+<body>
+	<header id="header-menu">
+		<nav class="navbar navbar-default">
+			<!-- 横向导航栏 -->
+			<ul class="nav navbar-nav">
+				<!-- 导航栏走测菜单按钮 -->
+				<li>
+					<button id="dashboard"><i class="glyphicon glyphicon-dashboard"></i>{lang('admin.dashboard')}</button>
+				</li>
+			</ul>
+			<ul class="nav navbar-nav navbar-right">
+				<!-- 导航栏右侧菜单按钮 -->
+				<li id="help">
+					<!-- 帮助 -->
+					<button id="btn-help" title="{lang('admin.help')}"><i class="glyphicon glyphicon-question-sign"></i><!-- 帮助按钮开关 --></button>
+					<div id="help-info">
+						<span class="prismatic"></span>
+						<section>
+							<p>这是一段帮助信息，它用来向你解释这个页面的用途，并且提供相关操作的介绍。</p>
+						</section>
+					</div>
+				</li>
+				<li id="search">
+					<!-- 搜索 -->
+					<div>
+						<form action="./search.html" method="get">
+							<!-- 搜索表单 -->
+							<input type="text" id="search-keyword" name="keyword" placeholder="{lang('admin.searchKeywordTip')}" required/>
+							<span class="prismatic"></span>
+							<input type="submit" value="{lang('admin.search')}">
+						</form>
+					</div>
+					<button id="btn-search" title="{lang('admin.search')}"><i class="glyphicon glyphicon-search"></i></button>
+				</li>
+				<li id="avatar">
+					<!-- 登录用户信息 -->
+					<button id="btn-avatar" title="{lang('user.userInfo')}"><i class="glyphicon glyphicon-user"></i></button>
+					<div id="userinfo" class="popdown">
+						<nav>
+							<if data="me_avatar()">
+								<div>
+									<img src="{get_user_avatar(64, me_avatar())}" alt="{lang('user.avatar')}">
+									<span>{me_nickname() ?: me_name()}</span>
+								</div>
+							</if>
+							<ul class="list-group">
+								<li id="user-center" class="list-group-item"><a href="users.html?profile=me">{lang('user.myUserCenter')}</a></li>
+								<li id="user-edit" class="list-group-item"><a href="users.html?profile=me&action=update">{lang('user.editMyInfo')}</a></li>
+								<li class="list-group-item"><a id="user-logout" href="javascript:;">{lang('user.logout')}</a></li>
+							</ul>
+						</nav>
+					</div>
+				</li>
+			</ul>
+		</nav>
+	</header>
+	<aside id="aside-menu">
+		<nav class="sidebar">
+			<ul class="list-group">
+				<!-- 侧边导航列表 -->
+				<li role="separator"></li>
+				!{$tab = 1}
+				<foreach data="admin_load_menu('sidebar') as $menu">
+					<if data="($menu['privilege'] == 'admin' && !IS_ADMIN) || ($menu['privilege'] == 'editor' && !IS_AUTH)">
+						<continue>
+					</if>
+					<li class="list-group-item">
+						<a id="{$menu['id']}" href="{$menu['href']}" title="{$menu['title']}">
+							<if data="!empty($menu['icon'])">
+								<i class="glyphicon glyphicon-{$menu['icon']}"></i>{$menu['text']}
+								<else>
+									{$menu['text']}
+								</else>
+							</if>
+						</a>
+					</li>
+					<if data="$menu['separator']">
+						<li role="separator"></li>
+					</if>
+				</foreach>
+			</ul>
+		</nav>
+		<footer id="copyright">
+			<p>
+			&copy;{date('Y')} {config('site.name')}<br>
+			Powered by ModCMS
+			</p>
+		</footer>
+	</aside>
+	<div id="container">
+		<iframe id="main-frame" name='main-frame' src=""></iframe>
+	</div>
+	<footer id="footer-menu">
+		<nav class="footbar">
+			<ul class="nav footbar-nav">
+				<!-- 底部菜单栏 -->
+			</ul>
+		</nav>
+	</footer>
+	<div id="backdrop">
+		<!-- 遮罩 -->
+	</div>
+	<script>
+	Lang = {
+		dashboard: "{lang('admin.dashboard')}",
+		notHTML5Warning: "{lang('admin.notHTML5Warning')}"
+	};
+	</script>
+	<!-- 载入 JS -->
+	<import data="js/string.proto.js">
+	<import data="js/storage.js">
+	<import data="js/jquery-1.11.3.min.js">
+	<import data="js/bootstrap.min.js">
+	<import data="js/javascript.js">
+	<import data="js/index.js">
+</body>
+</html>

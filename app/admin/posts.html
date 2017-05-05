@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="{__LANG__}">
+<head>
+	<include data="head.html">
+	<import data="css/summernote.css">
+	<title>{$title}</title>
+</head>
+<body data-menu="posts">
+	<div class="container">
+		<if data="empty($_GET['action']) || $_GET['action'] == 'search'">
+			<ul class="nav nav-tabs" role="tablist" id="post-list-tabs">
+				<if data="IS_AUTH">
+					<li role="presentation">
+						<a href="posts.html?page=1">{lang('admin.all')}({$postCount['all']})</a>
+					</li>
+				</if>
+				<li role="presentation" data="person">
+					<a href="posts.html?user_id={@$_GET['user_id'] ?: me_id()}&tablist=person">{$tabPerson}({$postCount['person']})</a>
+				</li>
+				<if data="!empty($_GET['post_id'])">
+					<li role="presentation" class="active">
+						<a href="#">{lang('post.currentPost')}</a>
+					</li>
+					<elseif data="!empty($_GET['keyword'])">
+						<li role="presentation" class="active">
+							<a href="#">{lang('admin.searchResult')}({$postCount['search']})</a>
+						</li>
+					</elseif>
+					<elseif data="get_category()">
+						<li role="presentation" data="category" class="active">
+							<a href="#">{lang('post.currentCategory')}({$postCount['category']})</a>
+						</li>
+					</elseif>
+				</if>
+				<li role="presentation" data="new">
+					<a href="posts.html?tablist=new&action=add{$categoryId}">{lang('admin.add')}</a>
+				</li>
+			</ul>
+			<div class="table-responsive">
+				<table class="table table-hover" id="post-list-table">
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>{lang('post.postTitle')}</th>
+							<if data="empty($_GET['user_id'])">
+								<th>{lang('admin.author')}</th>
+							</if>
+							<th>{lang('post.postDate')}</th>
+							<th>
+								<if data="empty($_GET['post_id'])">
+									<select class="form-control" id="change-category">
+										<option value="0">{lang('category.label')}</option>
+										<while data="get_multi_category(array('limit'=>100))">
+											<option value="{category_id()}"{category_id() == @$_GET['category_id'] ? ' selected' : ''}>
+												{category_alias() ?: category_name()}
+											</option>
+										</while>
+									</select>
+									<else>
+										{lang('category.label')}
+									</else>
+								</if>
+							</th>
+							<th>{lang('comment.label')}</th>
+						</tr>
+					</thead>
+					<tbody>
+						!{$id = 1}
+						<while data="admin_fetch_multi_post($_GET)">
+							<tr data-id="{post_id()}">
+								<td>{$id++}</td>
+								<td>
+									<a title="{lang('admin.viewDetails')}" target="_blank" href="{get_post_link()}">{post_title()}</a>
+								</td>
+								<if data="empty($_GET['user_id'])">
+									!{$person = post_user('gender') == 'female' ? lang('user.her') : lang('user.him')}
+									<?php 
+										$isMe = post_user('id') == ME_ID;
+										$user = $isMe ? lang('user.me') : (post_user('nickname') ?: post_user('name'));
+										$lang = post_user('gender') == 'female' ? lang('post.viewHerPosts') : lang('post.viewHisPosts');
+										$lang = $isMe ? lang('post.viewMyPosts') : $lang;
+									?>
+									<td>
+										<a title="{$lang}" href="posts.html?user_id={post_user('id')}&tablist=person">
+											{$user}
+										</a>
+									</td>
+								</if>
+								<td>{get_post_date()}</td>
+								<td data="category-name">{post_category('alias') ?: post_category('name')}</td>
+								<td>
+									<if data="post_comments()">
+										<a title="{lang('admin.viewDetails')}" href="comments.html?post_id={post_id()}">{post_comments()}</a>
+										<else>
+											{lang('admin.none')}
+										</else>
+									</if>
+								</td>
+							</tr>
+						</while>
+					</tbody>
+				</table>
+			</div>
+			<div class="modal fade" id="change-category-modal">
+				<div class="modal-dialog modal-sm">
+					<div class="modal-content">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+							<h4 class="modal-title">{lang('post.selectCategory')}</h4>
+						</div>
+						<div class="modal-body">
+							<select class="form-control" id="change-category">
+								<option value="0">{lang('category.label')}</option>
+								<while data="get_multi_category(array('limit'=>100))">
+									<option value="{category_id()}"{category_id() == @$_GET['category_id'] ? ' selected' : ''}>
+										{category_alias() ?: category_name()}
+									</option>
+								</while>
+							</select>
+						</div>
+						<div class="modal-footer">
+							<button type="submit" class="btn btn-success">{lang('admin.save')}</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<else>
+				!{get_post($_GET)}
+				<form class="form-horizontal" id="post-edit-form" role="form" method="post" action="{site_url()}mod.php?post::{get_post() ? 'update' : 'add'}">
+					<button type="submit">Submit</button>
+					<input type="hidden" name="post_thumbnail" value="{post_thumbnail()}">
+					<if data="get_post()">
+						<input type="hidden" name="post_id" value="{post_id()}">
+					</if>
+					<div class="form-group">
+						<label for="post_title" class="col-sm-2 control-label">{lang('post.postTitle')}</label>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" id="post_title" name="post_title" placeholder="{lang('post.postTitleTip')}" value="{post_title()}">
+						</div>
+					</div>
+					<div class="form-group">
+						<label for="post_link" class="col-sm-2 control-label">{lang('admin.link')}</label>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" id="post_link" name="post_link" placeholder="{lang('post.postLinkTip')}" value="{post_link()}">
+						</div>
+					</div>
+					<div class="form-group">
+						<label fo r="category_id" class="col-sm-2 control-label">{lang('category.label')}</label>
+						<div class="col-sm-2">
+							<select class="form-control" name="category_id" id="category_id">
+								<while data="get_multi_category(array('limit'=>100))">
+									<option value="{category_id()}"{(category_id() == post_category('id') || @$_GET['category_id'] == category_id()) ? ' selected' : ''}>
+										{category_alias() ?: category_name()}
+									</option>
+								</while>
+							</select>
+						</div>
+					</div>
+					<div class="form-group">
+						<label for="post_type" class="col-sm-2 control-label">{lang('post.postType')}</label>
+						<div class="col-sm-2">
+							<select class="form-control" name="post_type" id="post_type">
+								<foreach data="$postType as $k => $v">
+									<option value="{$k}"{post_type() == $k ? ' selected' : ''}>
+										{$v}
+									</option>
+								</foreach>
+							</select>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-2 control-label">{lang('post.isOriginal')}</label>
+						<div class="col-sm-2">
+							!{$original = (post_original() || $_GET['action'] == 'add')}
+							<label class="radio-inline">
+								<input type="radio" name="post_original" value="true"{$original ? ' checked' : ''}> {lang('admin.yes')}
+							</label>
+							<label class="radio-inline" title="{lang('post.notOriginalTip')}">
+								<input type="radio" name="post_original" value="false"{!$original ? ' checked' : ''}> {lang('admin.no')}
+							</label>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-2 control-label">{lang('post.enableComment')}</label>
+						<div class="col-sm-2">
+							!{$commentable = (post_commentable() || $_GET['action'] == 'add')}
+							<label class="radio-inline">
+								<input type="radio" name="post_commentable" value="true"{$commentable ? ' checked' : ''}> {lang('admin.yes')}
+							</label>
+							<label class="radio-inline">
+								<input type="radio" name="post_commentable" value="false"{!$commentable ? ' checked' : ''}> {lang('admin.no')}
+							</label>
+						</div>
+					</div>
+					<div class="form-group">
+						<label for="post_tags" class="col-sm-2 control-label">{lang('post.postTags')}</label>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" id="post_tags" name="post_tags" placeholder="{lang('post.postTagsTip')}" value="{post_tags()}">
+						</div>
+					</div>
+					<div class="form-group">
+						<label for="post_content" class="col-sm-2 control-label">{lang('post.postContent')}</label>
+						<div class="col-sm-10">
+							<textarea class="form-control" name="post_content" id="post_content" rows="10">
+								{post_content()}
+							</textarea>
+							<div id="post-content-div">
+								{post_content()}
+							</div>
+						</div>
+					</div>
+				</form>
+			</else>
+		</if>
+	</div>
+	<form id="jquery-upload-form" action="{SITE_URL}mod.php?file::upload" method="post" enctype="multipart/form-data" style="display:none">
+		<input type="hidden" name="file_desc" value="用于文章的图片"/>
+		<input type="file" name="file[]" accept="image/png,image/jpeg,image/gif,image/bmp" multiple/>
+	</form>
+	<script>
+		TOTAL = {_post('total') ?: 0};
+		PAGES = {_post('pages') ?: 0};
+		POST_STATIC_URL = "{config('post.staticURL')}";
+		Lang = {
+			serverConnectionError: "{lang('admin.serverConnectionError')}",
+			serverConnectionError1: "{lang('post.serverConnectionError1')}",
+			serverConnectionError2: "{lang('post.serverConnectionError2')}",
+			sequence: "{lang('admin.sequence')}",
+			change: "{lang('admin.change')}",
+			latestSequence: "{lang('admin.latestSequence')}",
+			idSequence: "{lang('admin.idSequence')}",
+			prevPage: "{lang('admin.prevPage')}",
+			nextPage: "{lang('admin.nextPage')}",
+			edit: "{lang('admin.edit')}",
+			delete: "{lang('admin.delete')}",
+			changeCategory: "{lang('post.changeCategory')}",
+			giveup: "{lang('admin.giveup')}",
+			submit: "{lang('admin.submit')}",
+			none: "{lang('admin.none')}",
+			me: "{lang('user.me')}",
+			viewMyPosts: "{lang('post.viewMyPosts')}",
+			viewHisPosts: "{lang('post.viewHisPosts')}",
+			viewHerPosts: "{lang('post.viewHerPosts')}",
+			viewDetails: "{lang('admin.viewDetails')}",
+			dateFormat: "{config('mod.dateFormat')}",
+			deleteWarning: "{lang('admin.deleteWarning')}",
+			noDeleteItemWarning: "{lang('admin.noDeleteItemWarning')}",
+			successTip: "{lang('admin.successTip')}",
+			failWarning: "{lang('admin.failWarning')}",
+			successCountTip: "{lang('admin.successCountTip', '<successCount>')}",
+			failCountWarning: "{lang('admin.failCountWarning', '<successCount>', '<failCount>')}",
+			postEditTip: "{lang('post.editTip')}",
+			selectImage: "{lang('file.selectImage')}",
+			addedTip: "{lang('admin.addedTip')}",
+			updatedTip: "{lang('admin.updatedTip')}",
+			uploadFailed: "{lang('file.uploadFailed1')}",
+		};
+	</script>
+	<include data="foot.html">
+	<import data="js/date.js">
+	<import data="js/summernote.min.js">
+	<if data="file_exists($file = admin_dir('js/summernote-'.__LANG__.'.min.js'))">
+		<import data="$file">
+	</if>
+</body>
+</html>

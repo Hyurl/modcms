@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="{__LANG__}">
+<head>
+	<include data="../head.html">
+	<title>{lang('blacklist.label')}</title>
+	<style>
+	span.delete, span.add{color: #337ab7;cursor: pointer;}
+	td>input{margin: -8px auto;}
+	p.desc{font-size: 13px;color: #666;margin: 10px 5px;}
+	#blacklist-list-div{border-bottom: 1px solid #ddd;}
+	</style>
+</head>
+<body data-menu="modules">
+	<div class="container">
+		<ul class="nav nav-tabs" role="tablist">
+			<li role="presentation" class="active">
+				<a href="javascript:;">{lang('admin.all')}({$blacklist['all']})</a>
+			</li>
+			<li role="presentation">
+				<a href="javascript:;" data-blacklist="uid">{lang('blacklist.blackUser')}({$blacklist['uid']})</a>
+			</li>
+			<li role="presentation">
+				<a href="javascript:;" data-blacklist="email">{lang('blacklist.blackEmail')}({$blacklist['email']})</a>
+			</li>
+			<li role="presentation">
+				<a href="javascript:;" data-blacklist="ip">{lang('blacklist.blackIp')}({$blacklist['ip']})</a>
+			</li>
+		</ul>
+		<div id="blacklist-list-div" class="table-responsive">
+			<table class="table table-striped table-hover"></table>
+		</div>
+	</div>
+	<script>
+	Lang = {
+		blacklistHelp: "{lang('blacklist.blacklistHelp')}",
+		serverConnectionError: "{lang('admin.serverConnectionError')}",
+		deleteWarning: "{lang('admin.deleteWarning')}",
+		illegalEmailWarnig: "{lang('admin.illegalEmailWarnig')}",
+		illegalIpWarnig: "{lang('admin.illegalIpWarnig')}",
+		user: "{lang('user.label')}",
+		emailAddress: "{lang('admin.emailAddress')}",
+		ipAddress: "{lang('admin.ipAddress')}",
+		emailAddressTip: "{lang('admin.emailAddressTip')}",
+		ipAddressTip: "{lang('admin.ipAddressTip')}",
+		username: "{lang('user.name')}",
+		nickname: "{lang('user.nickname')}",
+		action: "{lang('admin.action')}",
+		add: "{lang('admin.add2')}",
+		addedTip: "{lang('admin.addedTip')}",
+		addTip: "{lang('blacklist.addTip')}",
+		deleteTip: "{lang('blacklist.deleteTip')}",
+	}
+	</script>
+	<include data="../foot.html">
+</body>
+</html>

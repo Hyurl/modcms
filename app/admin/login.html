@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="{__LANG__}">
+<head>
+	<include data="head.html">
+	<title>{lang('admin.dashboard')}: {@$_GET['action'] == 'register' ? lang('user.register') : lang('user.login')}</title>
+	<style>
+	.panel-body{box-shadow: none;}
+	.panel-footer{padding: 0 15px 10px;background-color: transparent;border-top: none;border-radius: 0;}
+	.panel-login{padding: 0;width: 320px !important;padding: 0 !important;border: none;box-shadow: 0 1px 1px rgba(0,0,0,.05) !important;}
+	.panel-login .checkbox{display: inline-block;}
+	.panel-login button[type=submit]{float: right;}
+	#email-vcode, #vcode-img{margin-top: -49px;float: right;}
+	#vcode-img{cursor: pointer;}
+	#vcode{padding-right: 104px;float: left;margin-bottom: 15px;}
+	#user_password+i.glyphicon{float: right;margin-top: -24px;margin-right: 10px;}
+	</style>
+</head>
+<body>
+	<div class="panel-container">
+		<div class="panel panel-default panel-login" style="display: none;">
+			<if data="@$_GET['action'] == 'register'">
+				<if data="!config('user.register.enable')">
+					!{redirect(ADMIN_URL.'login.html', 302, 2, lang('user.regDisabled'))}
+					<else>
+						<div class="panel-heading">
+							<h4 class="panel-title">{lang('user.regUser')}
+								<a href="login.html"><small>{lang('admin.backToLogin')}</small></a>
+							</h4>
+						</div>
+						<div class="panel-body">
+							<form role="form" action="{site_url('mod.php?user::add')}" method="post">
+								<div class="form-group">
+									<label for="user_name">{lang('user.name')}</label>
+									<input type="text" class="form-control" id="user_name" name="user_name" placeholder="{lang('user.usernameTip')}" required>
+								</div>
+								<div class="form-group">
+									<label for="user_password">{lang('user.password')}</label>
+									<input type="password" class="form-control" id="user_password" name="user_password" placeholder="{lang('user.passwordTip')}" required>
+									<if data="!is_agent('Edge/14')">
+										<i class="glyphicon glyphicon-eye-open"></i>
+									</if>
+								</div>
+								<div class="form-group">
+									<label for="user_email">{lang('user.email')}</label>
+									<input type="email" class="form-control" id="user_email" name="user_email" placeholder="{lang('user.userEmailTip')}" required>
+								</div>
+								<if data="config('user.register.verify')">
+									<div class="form-group">
+										<label for="vcode">{lang('admin.vcode')}</label>
+										<input type="text" class="form-control" id="vcode" name="vcode" required>
+										<if data="config('user.register.verify') == 'email'">
+											<a role="button" id="email-vcode" class="btn btn-default{!$mailSvr ? ' disabled' : ''}" title="{!$mailSvr ? $mailWarning : ''}" data-action="{lang('user.register')}" data-loading-text="{lang('admin.sending')}">{lang('admin.sendEmail')}</a>
+											<elseif data="config('user.register.verify') == 'vcode'">
+												<img id="vcode-img" src="{ADMIN_URL}vcode.php" alt="{lang('admin.vcode')}" title="{lang('admin.clickToChange')}">
+											</elseif>
+										</if>
+									</div>
+								</if>
+								<button type="submit" class="btn btn-success" data-loading-text="{lang('admin.loading')}">{lang('user.register')}</button>
+							</form>
+						</div>
+					</else>
+				</if>
+				<elseif data="@$_GET['action'] == 'repass'">
+					<div class="panel-heading">
+						<h4 class="panel-title">{lang('user.recoverPassword')}
+							<a href="login.html"><small>{lang('admin.backToLogin')}</small></a>
+						</h4>
+					</div>
+					<div class="panel-body">
+						<if data="config('user.password.recoverEmail') == 'link'">
+							<if data="!$confirmRepass">
+								<if data="$invalidRecoverId">
+									<p>{lang('admin.linkTimeoutWarning')}</p>
+								</if>
+								<form role="form" action="{site_url('mod.php?user::mailRepass')}" method="post">
+									<div class="form-group">
+										<label for="user_email">{lang('user.email')}</label>
+										<input type="email" class="form-control" id="user_email" name="user_email" placeholder="{lang('user.yourEmail')}" required>
+									</div>
+									<button type="submit" class="btn btn-success{!$mailSvr ? ' disabled' : ''}" title="{!$mailSvr ? $mailWarning : ''}" data-loading-text="{lang('admin.loading')}">{lang('admin.sendEmail')}</button>
+								</form>
+								<else>
+									<form role="form" action="{site_url('mod.php?user::recoverPassword')}" method="post">
+										<input type="hidden" name="user_id" value="{user_id()}">
+										<input type="hidden" name="RecoverId" value="{$_GET['RecoverId']}">
+										<p>{lang('user.recoverPasswordTip', user_nickname() ?: user_name())}</p>
+										<div class="form-group">
+											<label for="user_password">{lang('user.newPassword')}</label>
+											<input type="password" class="form-control" id="user_password" name="user_password" placeholder="{lang('user.newPasswordTip')}" required>
+											<if data="!is_agent('Edge/14')">
+												<i class="glyphicon glyphicon-eye-open"></i>
+											</if>
+										</div>
+										<button type="submit" class="btn btn-success" data-loading-text="{lang('admin.loading')}">{lang('admin.submit')}</button>
+									</form>
+								</else>
+							</if>
+							<elseif data="config('user.password.recoverEmail') == 'vcode'">
+								<form role="form" action="{site_url('mod.php?user::recoverPassword')}" method="post">
+									<div class="form-group">
+										<label for="user_email">{lang('user.email')}</label>
+										<input type="email" class="form-control" id="user_email" name="user_email" placeholder="{lang('user.yourEmail')}" required>
+									</div>
+									<div class="form-group">
+										<label for="user_password">{lang('user.newPassword')}</label>
+										<input type="password" class="form-control" id="user_password" name="user_password" placeholder="{lang('user.newPasswordTip')}" required>
+										<if data="!is_agent('Edge/14')">
+											<i class="glyphicon glyphicon-eye-open"></i>
+										</if>
+									</div>
+									<if data="config('user.register.verify')">
+										<div class="form-group">
+											<label for="vcode">{lang('admin.vcode')}</label>
+											<input type="text" class="form-control" id="vcode" name="vcode" required>
+											<a role="button" id="email-vcode" class="btn btn-default{!$mailSvr ? ' disabled' : ''}" title="{!$mailSvr ? $mailWarning : ''}" data-action="{lang('user.recoverPassword')}" data-loading-text="{lang('admin.sending')}">{lang('admin.sendEmail')}</a>
+										</div>
+									</if>
+									<button type="submit" class="btn btn-success" data-loading-text="{lang('admin.loading')}">{lang('admin.submit')}</button>
+								</form>
+							</elseif>
+							<else>
+								!{redirect(ADMIN_URL.'login.html', 302, 2, lang('user.recoverPassDisabled'))}
+							</else>
+						</if>
+					</div>
+				</elseif>
+				<else>
+					<!-- 登录 -->
+					<div class="panel-heading">
+						<h4 class="panel-title">{lang('user.login')}
+							<if data="config('user.register.enable')">
+								<a href="?action=register"><small>{lang('user.register')}</small></a>
+							</if>
+						</h4>
+					</div>
+					<div class="panel-body">
+						<form role="form" action="{site_url('mod.php?user::login')}" method="post">
+							<div class="form-group">
+								<label for="user">{lang('user.account')}</label>
+								<input type="text" class="form-control" id="user" {$attr} required>
+							</div>
+							<div class="form-group">
+								<label for="user_password">{lang('user.password')}</label>
+								<input type="password" class="form-control" id="user_password" name="user_password" placeholder="{lang('user.yourPassword')}">
+								<if data="!is_agent('Edge/14')">
+									<i class="glyphicon glyphicon-eye-open"></i>
+								</if>
+							</div>
+							<div class="checkbox">
+								<label class="checkbox-inline">
+									<input type="checkbox" name="remember_me"> {lang('user.rememberMe')}
+								</label>
+							</div>
+							<button type="submit" id="login-button" class="btn btn-success" data-loading-text="{lang('admin.loading')}">{lang('user.login')}</button>
+						</form>
+					</div>
+				</else>
+			</if>
+			<div class="panel-footer">
+				<a href="{site_url()}">{lang('admin.siteHome')}</a>
+				<if data="empty($_GET['action']) && config('user.password.recoverEmail')">
+					<a style="float: right" href="login.html?action=repass">{lang('user.recoverPassword')}</a>
+				</if>
+			</div>
+		</div>
+	</div>
+	<script>
+	Lang = {
+		regSuccessTip: "{lang('user.regSuccessTip')}",
+		serverConnectionError: "{lang('admin.serverConnectionError')}",
+		illegalEmailWarnig: "{lang('admin.illegalEmailWarnig')}",
+		notHTML5Warning: "{lang('admin.notHTML5Warning')}"
+	}
+	</script>
+	<include data="foot.html">
+	<import data="js/jquery.centralize.js">
+</body>
+</html>

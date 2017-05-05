@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="{__LANG__}">
+<head>
+	<include data="head.html">
+	<title>{lang('admin.dashboard')}</title>
+	<style>
+	.container:first-child{margin-top: 20px;margin-bottom: 20px;}
+	.panel-container{box-shadow: none;}
+	.panel{box-shadow: none;-webkit-box-shadow:none;}
+	.panel-content .media{border-bottom: none;}
+	.panel-content .media-body{margin-top: -65px;}
+	.panel-content .media-left{height: 48px;}
+	.panel-content .media-left .media-icon{height: 40px;padding-top: 2px;padding-left: 7px;color: #333;}
+	#post-latest, #comment-latest{max-height: 343px;}
+	#post-latest .panel-body, #comment-latest .panel-body{padding-top: 10px;}
+	#file-latest, #server-info{max-height: 213px;}
+	#file-latest .panel-content:last-child{margin-bottom: -8px !important;}
+	#file-latest .panel-body{padding-top: 19px;padding-bottom: 18px;}
+	</style>
+</head>
+<body data-menu="home" style="overflow-x: hidden;">
+	<div class="container grid-container">
+		<div class="grid">
+			<a title="{lang('admin.viewDetails')}" href="users.html">
+				<div class="grid-content">
+					<div class="grid-icon"><i class="glyphicon glyphicon-user"></i></div>
+					<div class="grid-title">{lang('user.label')}</div>
+					<div class="grid-details">
+						<if data="get_multi_user(array('limit'=>5))">
+							!{get_multi_user(0)}
+							{_user('total')}
+							<else>
+								0
+							</else>
+						</if>
+					</div>
+				</div>
+			</a>
+		</div>
+		<div class="grid">
+			<a title="{lang('admin.viewDetails')}" href="categories.html">
+				<div class="grid-content">
+					<div class="grid-icon"><i class="glyphicon glyphicon-list-alt"></i></div>
+					<div class="grid-title">{lang('category.label')}</div>
+					<div class="grid-details">
+					 	<if data="get_multi_category(array('limit'=>5))">
+					 		!{get_multi_category(0)}
+					 		{_category('total')}
+					 		<else>
+					 			0
+					 		</else>
+					 	</if>
+					</div>
+				</div>
+			</a>
+		</div>
+		<div class="grid">
+			<a title="{lang('admin.viewDetails')}" href="posts.html">
+				<div class="grid-content">
+					<div class="grid-icon"><i class="glyphicon glyphicon-book"></i></div>
+					<div class="grid-title">{lang('post.label')}</div>
+					<div class="grid-details">
+						<if data="get_multi_post(array('orderby'=>'post_time', 'sequence'=>'desc', 'limit'=>5))">
+							!{get_multi_post(0)}
+							{_post('total')}
+							<else>
+								0
+							</else>
+						</if>
+					</div>
+				</div>
+			</a>
+		</div>
+		<div class="grid">
+			<a title="{lang('admin.viewDetails')}" href="comments.html">
+				<div class="grid-content">
+					<div class="grid-icon"><i class="glyphicon glyphicon-comment"></i></div>
+					<div class="grid-title">{lang('comment.label')}</div>
+					<div class="grid-details">
+						<if data="get_multi_comment(array('orderby'=>'comment_time', 'sequence'=>'desc', 'limit'=>5))">
+							!{get_multi_comment(0)}
+							{_comment('total')}
+							<else>
+								0
+							</else>
+						</if>
+					</div>
+				</div>
+			</a>
+		</div>
+	</div>
+	<div class="container panel-container">
+		<div class="panel-row">
+			<div class="panel" id="post-latest">
+				<div class="panel-heading">
+					<h4 class="panel-title">{lang('post.latestPosts')}<a title="{lang('admin.viewMore')}" href="posts.html?orderby=post_time&sequence=desc"><i class="glyphicon glyphicon-arrow-right"></i></a></h4>
+				</div>
+				<div class="panel-body">
+					<while data="get_multi_post()">
+						<div class="panel-content">
+							<h4>
+								<a title="{lang('admin.viewDetails')}" href="posts.html?post_id={post_id()}">
+									{post_title()}
+								</a>
+								<small>
+									{lang('post.postOnWhatDateToWhichCategory', get_post_date(), post_category('alias') ?: post_category('name'))}
+								</small>
+							</h4>
+							<p>
+								{get_post_desc()}
+							</p>
+						</div>
+					</while>
+				</div>
+			</div>
+			<div class="panel" id="comment-latest">
+				<div class="panel-heading">
+					<h4 class="panel-title">{lang('comment.latestComments')}<a title="{lang('admin.viewMore')}" href="comments.html?orderby=comment_time&sequence=desc"><i class="glyphicon glyphicon-arrow-right"></i></a></h4>
+				</div>
+				<div class="panel-body">
+					<while data="get_multi_comment()">
+						<div class="panel-content">
+							<div class="media">
+								<a title="{lang('admin.viewDetails')}" href="comments.html?comment_id={comment_id()}">
+									<div class="media-left">
+										<if data="comment_user('avatar')">
+											<img src="{get_user_avatar(64, comment_user('avatar'))}" alt="{lang('user.avatar')}">
+											<else>
+												<i class="glyphicon glyphicon-user media-icon"></i>
+											</else>
+										</if>
+									</div>
+									<div class="media-body">
+										<h4 class="media-heading">
+											{comment_user('nickname') ?: comment_user('name')} 
+											<small>
+												{lang('comment.postOnWhatDateToWhichPost', get_comment_date(), comment_post('title'))}
+											</small>
+										</h4>
+										<p>
+											<if data="comment_parent()">
+												@{comment_parent('user_nickname') ?: comment_parent('user_name')} 
+											</if>
+											{get_comment_desc()}
+										</p>
+									</div>
+								</a>
+							</div>
+						</div>
+					</while>
+				</div>
+			</div>
+		</div>
+		<div class="panel-row">
+			<div class="panel" id='file-latest'>
+				<div class="panel-heading">
+					<h4 class="panel-title">{lang('file.latestFiles')}<a title="{lang('admin.viewMore')}" href="files.html" ><i class="glyphicon glyphicon-arrow-right"></i></a></h4>
+				</div>
+				<div class="panel-body"> 
+					!{$i = 0}
+					<while data="get_multi_file(array('sequence'=>'desc'))">
+						<if data="!($i % 5)">
+							<div class="panel-content" style="margin: 0 -5px;">
+						</if>
+							<div class="img-container">
+								<a title="{lang('admin.viewDetails')}" href="files.html?file_id={file_id()}">
+									{admin_get_file_icon(128)}
+								</a>
+							</div>
+						<if data="($i % 5) == 4">
+							</div>
+						</if>
+						!{$i++}
+					</while>
+					<if data="$i != 0 && (($i > 5 && $i <= 9) || $i <= 4)">
+						</div>
+					</if>
+				</div>
+			</div>
+			<div class="panel" id="server-info">
+				<div class="panel-heading">
+					<h4 class="panel-title">{lang('admin.server')}</h4>
+				</div>
+				<div class="panel-body">
+					<div class="panel-content">
+						<p>{lang('admin.softVersion')}: <a title="{lang('admin.viewUpdateLog')}" target="_blank" href="{$VERSION_URLS['modcms']}">ModCMS {CMS_VERSION}</a>, based on <a title="{lang('admin.viewUpdateLog')}" target="_blank" href="{$VERSION_URLS['modphp']}">ModPHP {MOD_VERSION}</a></p>
+					</div>
+					<div class="panel-content">
+						<p>{lang('admin.hostInfo')}: {$_SERVER['SERVER_SOFTWARE']}</p>
+					</div>
+					<div class="panel-content">
+						<p>{lang('admin.diskInfo')}: {$freeSpace} / {$totalSpace}</p>
+					</div>
+					<div class="panel-content">
+						<p>{lang('file.uploadLimit')}: {$uploadLimit}</p>
+					</div>
+					<div class="panel-content">
+						<p>{lang('admin.databaseVersion')}: {$dbVersion}</p>
+					</div>
+					<div class="panel-content">
+						<p>{lang('admin.dbUsedSize')}: {$dbUsedSize}</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<include data="foot.html">
+</body>
+</html>

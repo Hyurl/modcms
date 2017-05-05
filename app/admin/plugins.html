@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="{__LANG__}">
+<head>
+	<include data="head.html">
+	<title>{$title}</title>
+	<style>
+	#plugins-list-div{min-height: 20px;}
+	#inner-container{padding: 10px 10px 0 10px;}
+	#upload-zip{margin-bottom: 20px;}
+	#select-plugin button[type=submit], #select-plugin button[type=reset]{display: none;}
+	a.action{margin-left: 5px;}
+	a.action.disabled{color: #777;}
+	.new-version, .update{display: none;}
+	.new-version>code{margin-right: 5px;line-height: 2;}
+	</style>
+</head>
+<body data-menu="plugins">
+	<div class="container">
+		<ul class="nav nav-tabs" role="tablist">
+			<li role="presentation" data="default" class="active">
+				<a href="plugins.html">{lang('admin.selectPlugins')}</a>
+			</li>
+			<li role="presentation" data="upload">
+				<a href="plugins.html?tablist=upload">{lang('file.upload')}</a>
+			</li>
+		</ul>
+		<if data="empty($_GET['tablist'])">
+			<div id="plugins-list-div">
+				<form id="select-plugin" action="{SITE_URL}mod.php?mod::config" method="post">
+					!{$i=0}
+					<foreach data="$plugins as $folder => $plugin">
+						<div class="media">
+							<div class="media-left">
+								<div class="media-logo">
+									{admin_get_plugin_icon($folder, $plugin['logo'])}
+								</div>
+							</div>
+							<div class="media-body">
+								<h4 class="media-heading">{$plugin['name']}</h4>
+								<p class="media-content">{$plugin['desc']}</p>
+								<p class="media-meta">
+									<span>{lang('admin.author')}: {$plugin['author']}</span>
+									<span>{lang('admin.version')}: {$plugin['version']}</span>
+									<span>{lang('admin.link')}: <a title="{lang('admin.goto')}" target="_blank" href="{$plugin['url']}">{$plugin['url']}</a></span>
+								</p>
+								<p class="media-footer">
+									<label class="checkbox-inline">
+										<input type="checkbox" data-plugin="{$folder}"{$plugin['enable'] ? ' checked' : ''}> {lang('admin.anable')}
+									</label>
+									<a class="action{$folder == 'post-like' ? ' disabled' : ''}"{$folder == 'post-like' ? 'title="'.lang('admin.insidePluginTip').'"' : ''} href="advanced/file-editor.html?type=plugin&folder={$folder}">{lang('admin.edit')}</a>
+									<if data="!$plugin['enable']">
+										<a  class="action delete" href="javascript:;" data-folder="{$folder}" data-type="plugin">{lang('admin.delete')}</a>
+									</if>
+									<if data="$plugin['hasTemp']">
+										<a class="action remove-temp" href="javascript:;" data-folder="{$folder}" data-type="plugin" title="{lang('admin.cleanPluginTempTip')}">{lang('admin.cleanTemp')}</a>
+									</if>
+								</p>
+								<if data="$plugin['versionURL']">
+									<p class="media-footer">
+										<button type="button" class="btn btn-sm btn-default check-new" data-loading-text="{lang('admin.checking')}" data-version="{$plugin['version']}" data-version-url="{$plugin['versionURL']}" data-type="plugin">{lang('admin.checkUpdate')}</button>
+										<span class="new-version">
+											{lang('admin.newVersion')}: <code>None</code><a href="#">{lang('admin.viewUpdateLog')}</a>
+										</span>
+										<button type="button" class="btn btn-sm btn-default update" data-loading-text="{lang('admin.updating')}" data-type="plugin">{lang('admin.update')}</button>
+									</p>
+								</if>
+							</div>
+						</div>
+						!{$i++}
+					</foreach>
+					<button type="submit">Submit</button>
+					<button type="reset">Reset</button>
+				</form>
+			<elseif data="$_GET['tablist'] == 'upload'">
+				<div id="inner-container">
+					<if data="stripos(config('file.upload.acceptTypes'), 'zip') !== false">
+						<p>{lang('admin.uploadComponentTip', $uploadLimit, lang('admin.plugin'))}</p>
+						<button class="btn btn-success" id="upload-zip">{lang('file.selectFile')}</button>
+						<form id="jquery-upload-form" action="{SITE_URL}mod.php?file::uploadZip" method="post" enctype="multipart/form-data" style="display:none">
+							<input type="hidden" name="type" value="plugin"/>
+							<input type="hidden" name="file_desc" value="{lang('admin.pluginZip')}"/>
+							<input type="file" name="file" accept="application/x-zip-compressed"/>
+						</form>
+						<else>
+							<p>{lang('admin.uploadZipWarning')}</p>
+						</else>
+					</if>
+				</div>
+			</elseif>
+		</if>
+	</div>
+	<script>
+	Lang = {
+		changedTip: "{lang('admin.changedTip')}",
+		serverConnectionError: "{lang('admin.serverConnectionError')}",
+		changeSiteFuncWarning: "{lang('admin.changeSiteFuncWarning')}",
+		uploadedTip: "{lang('file.uploadedTip')}",
+		newVersion: "{lang('admin.newVersion')}",
+		clickToVisit: "{lang('admin.clickToVisit')}",
+		viewUpdateLog: "{lang('admin.viewUpdateLog')}",
+		noNewVersionTip: "{lang('admin.noNewVersionTip')}",
+		templateHelp: "{lang('admin.templateHelp')}"
+	};
+	</script>
+	<include data="foot.html">
+	<import data="js/features.js">
+</body>
+</html>

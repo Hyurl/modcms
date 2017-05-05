@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="{__LANG__}">
+<head>
+	<include data="head.html">
+	<title>ModCMS {lang('admin.installGuide')}</title>
+	<style>
+	input{min-width: 300px !important;}
+	.container{display: none;max-width: 540px;padding: 8px 10px 20px !important;}
+	.page-header{border-bottom-color: #dedede;}
+	.page-header>h1{margin-top: 0;font-size: 24px;}
+	.install-container{display: none;}
+	.install-container:first-child{display: block;}
+	#install-license>div:first-child{margin-top: 0;padding: 10px;border-left: 1px solid #dedede;border-right: 1px solid #dedede;}
+	#install-license>div:first-child>div{max-height: 250px;}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="page-header">
+			<h1>ModCMS {lang('admin.installGuide')} <small>{CMS_VERSION}</small></h1>
+		</div>
+		<div>
+			<if data="config('mod.installed')">
+				<div class="install-container">
+					<div class="settings-option">
+						<p class="settings-desc">
+							{lang('admin.installedAlreadyTip')}
+						</p>
+						<a role="button" href="{SITE_URL}" class="btn btn-default">{lang('admin.siteHome')}</a>
+					<a role="button" href="{admin_url('login.html')}" class="btn btn-default">{lang('user.login')}</a>
+					</div>
+				</div>
+			</if>
+			<if data="$newVersion">
+				<div class="install-container">
+					<div class="settings-option">
+						<p class="settings-desc">{lang('admin.newVersionWarning')}</p>
+						<button type="button" class="btn btn-default" id="update-modcms" data-loading-text="{lang('admin.updating')}">{lang('admin.update')}</button>
+						<button type="submit" class="btn btn-default" data-target="install-license">{lang('admin.no')}</button>
+					</div>
+				</div>
+			</if>
+			<div id="install-license" class="install-container">
+				<div class="settings-option">
+					<div id="license-content">
+						{$license}
+					</div>
+				</div>
+				<div class="settings-option">
+					<p class="settings-desc">
+						{lang('admin.acceptLicenseTip')}
+					</p>
+					<button type="button" data-target="install-database" class="btn btn-default">{lang('admin.nextMove')}</button>
+				</div>
+			</div>
+			<div id="install-database"  class="install-container">
+				<form id="database-form" action="" method="post">
+					<div class="settings-option">
+						<if data="$env">
+							<p class="settings-desc">{lang('admin.evnCheckPassedTip')}</p>
+							<h4>{lang('admin.database')}</h4>
+							<div>
+								<label for="mod-database-type">{lang('admin.databaseType')}</label>
+								<select class="form-control" name="mod.database.type" id="mod-database-type">
+									<if data="in_array('mysql', $dbDrivers)">
+										<option value="mysql">MySQL</option>
+									</if>
+									<if data="in_array('sqlite', $dbDrivers)">
+										<option value="sqlite">SQLite</option>
+									</if>
+								</select>
+							</div>
+							<div>
+								<label for="mod-database-host">{lang('admin.host')}</label>
+								<input type="text" class="form-control" id="mod-database-host" name="mod.database.host" value="{config('mod.database.host')}" placeholder="{lang('admin.databaseDefaultTip')}" required/>
+							</div>
+							<div>
+								<label for="mod-database-name">{lang('admin.name')}</label>
+								<input type="text" class="form-control" id="mod-database-name" name="mod.database.name" value="{config('mod.database.name')}" placeholder="{lang('admin.dbNameDefaultTip')}" required/>
+							</div>
+							<div>
+								<label for="mod-database-port">{lang('admin.port')}</label>
+								<input type="number" class="form-control" id="mod-database-port" name="mod.database.port" value="{config('mod.database.port')}" placeholder="{lang('admin.dbPortDefaultTip')}" required/>
+							</div>
+							<div>
+								<label for="mod-database-username">{lang('user.name')}</label>
+								<input type="text" class="form-control" id="mod-database-username" name="mod.database.username" value="{config('mod.database.username')}" placeholder="{lang('admin.dbUsernameTip')}" required/>
+							</div>
+							<div>
+								<label for="mod-database-password">{lang('user.password')}</label>
+								<input type="password" class="form-control" id="mod-database-password" name="mod.database.password" value="{config('mod.database.password')}" placeholder="{lang('user.passwordTip')}"/>
+								<if data="!is_agent('Edge/14')">
+									<i class="glyphicon glyphicon-eye-open"></i>
+								</if>
+							</div>
+							<div>
+								<label for="mod-database-prefix">{lang('admin.tablePrefix')}</label>
+								<input type="text" class="form-control" id="mod-database-prefix" name="mod.database.prefix" value="{config('mod.database.prefix')}" placeholder="{lang('admin.dbPrefixTip')}"/>
+							</div>
+							<p class="settings-desc">
+								{lang('admin.inputDbInfoTip')}
+							</p>
+							<else>
+								<p class="settings-desc">
+									{lang('admin.envCkeckFailedWarning')}{$envWarning}
+								</p>
+								<p class="settings-desc">
+									{lang('admin.solutionTip')}{$envTip}
+								</p>
+							</else>
+						</if>
+					</div>
+					<div class="settings-option">
+						<p class="settings-desc">
+							{lang('admin.confirmDbInfoTip')}
+						</p>
+						<button type="button" class="btn btn-default" data-target="install-license">{lang('admin.prevMove')}</button>
+						<button type="submit" data-target="install-site" class="btn btn-default{!$env ? ' disabled' : ''}">{lang('admin.nextMove')}</button>
+					</div>
+				</form>
+			</div>
+			<div id="install-site" class="install-container">
+				<form id="site-form" action="{SITE_URL}mod.php?mod::install" method="post">
+					<div class="settings-option">
+						<h4>{lang('admin.site')}</h4>
+						<div>
+							<label for="site-name">{lang('admin.name')}</label>
+							<input type="text" class="form-control" id="site-name" name="site.name" value="{config('site.name')}" placeholder="{lang('admin.siteNameTip')}" required/>
+						</div>
+					</div>
+					<div class="settings-option">
+						<h4>{lang('user.admin')}</h4>
+						<div>
+							<label for="user-name">{lang('user.name')}</label>
+							<input type="text" class="form-control" id="user-name" name="user_name" value="" placeholder="{lang('admin.adminUserTip')}" required/>
+						</div>
+						<div>
+							<label for="user-password">{lang('user.password')}</label>
+							<input type="password" class="form-control" id="user-password" name="user_password" value="" placeholder="{lang('user.passwordTip')}"/>
+							<if data="!is_agent('Edge/14')">
+								<i class="glyphicon glyphicon-eye-open"></i>
+							</if>
+						</div>
+					</div>
+					<div class="settings-option">
+						<p class="settings-desc">
+							{lang('admin.confirmSiteInfoTip')}
+						</p>
+						<button type="button" class="btn btn-default" data-target="install-database">{lang('admin.prevMove')}</button>
+						<button type="submit" class="btn btn-default" data-loading-text="{lang('admin.installing')}">{lang('admin.install')}</button>
+					</div>
+				</form>
+			</div>
+			<div id="install-finish" class="install-container">
+				<div class="settings-option">
+					<h4>{lang('admin.installComplete')}</h4>
+					<div>
+						<label>{lang('user.name')}</label>
+						<span id="user-name-finish"></span>
+					</div>
+					<div>
+						<label>{lang('user.password')}</label>
+						<span><i>{lang('user.yourPassword')}</i></span>
+					</div>
+				</div>
+				<div class="settings-option">
+					<p class="settings-desc">
+						{lang('admin.installCompleteTip')}
+					</p>
+					<a role="button" href="{SITE_URL}" class="btn btn-default">{lang('admin.siteHome')}</a>
+					<a role="button" href="{admin_url('login.html')}" class="btn btn-default">{lang('user.login')}</a>
+				</div>
+			</div>
+			!{End:}
+		</div>
+		</div>
+	<script>
+	Lang = {
+		serverConnectionError: "{lang('admin.serverConnectionError')}",
+		notHTML5Warning: "{lang('admin.notHTML5Warning')}",
+		dbSqliteTip: "{lang('admin.dbSqliteTip')}",
+	};
+	Version = JSON.parse('{json_encode($version)}');
+	Timezone = "{config('mod.timezone')}";
+	Installed = {config('mod.installed') ?: 0};
+	</script>
+	<include data="foot.html">
+	<import data="js/jquery.centralize.js">
+	<import data="js/jstz.min.js">
+</body>
+</html>

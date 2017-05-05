@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="{__LANG__}">
+<head>
+	<include data="../head.html">
+	<title>{lang('link.friendlyLinks')}</title> 
+	<style>
+	h4{white-space: normal;}
+	#link-list-div{min-height: 20px;}
+	.link-logo{max-width: 48px; max-height: 48px;}
+	</style>
+</head>
+<body data-menu="modules">
+	<div class="container">
+		<ul class="nav nav-tabs" role="tablist">
+			<li role="presentation" class="active">
+				<a href="#">{lang('link.allLinks')}({admin_count_records('link')})</a>
+			</li>
+		</ul>
+		<div id="link-list-div">
+			<while data="get_multi_link(array('limit'=>0))">
+				<div class="media" data-id="{link_id()}">
+					<div class="media-left">
+						<div class="media-logo">
+							<if data="link_logo()">
+								<img src="{link_logo()}" alt="{lang('link.linkLogo')}"/>
+								<else>
+									<i class="glyphicon glyphicon-link media-icon"></i>
+								</else>
+							</if>
+						</div>
+					</div>
+					<div class="media-body">
+						<h4 class="media-heading">
+							{link_title()}
+						</h4>
+						<p class="media-content">
+							<a href="{link_url()}" title="{lang('admin.clickToVisit')}" target="_blank">{link_url()}</a>
+						</p>
+						<p class="media-meta">
+							{link_desc()}
+						</p>
+					</div>
+				</div>
+			</while>
+		</div>
+		<div class="modal fade" id="link-modal">
+			<div class="modal-dialog">
+				<form action="{site_url()}mod.php?link::add" method="post">
+					<div class="modal-content">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+							<h4 class="modal-title">{lang('link.addLink')}</h4>
+						</div>
+						<div class="modal-body">
+							<div class="form-group">
+								<label for="link_title">{lang('link.linkTitle')}</label>
+								<input type="text" class="form-control" name="link_title" id="link_title" required placeholder="{lang('link.linkTitleTip')}">
+							</div>
+							<div class="form-group">
+								<label for="link_url">{lang('link.linkURL')}</label>
+								<input type="text" class="form-control" name="link_url" id="link_url" required placeholder="{lang('link.linkURLTip')}">
+							</div>
+							<div class="form-group">
+								<label for="link_desc">{lang('link.linkDesc')}</label>
+								<textarea name="link_desc" id="link_desc" rows="2" class="form-control" placeholder="{lang('link.linkDescTip')}"></textarea>
+							</div>
+							<div class="form-group" id="set-logo">
+								<label for="select-logo">{lang('link.setLogo')}</label>
+								<div>
+									<img class="link-logo" id="link-logo" src="" data-origin="">
+									<input type="hidden" id="link_logo" name="link_logo" value="">
+									<button type="button" class="btn btn-success" id="select-logo">{lang('file.selectImage')}</button>
+								</div>
+							</div>
+						</div>
+						<div class="modal-footer">
+							<button type="submit" class="btn btn-success">{lang('admin.submit')}</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+	<form id="jquery-upload-form" action="{SITE_URL}mod.php?file::upload" method="post" enctype="multipart/form-data" style="display:none">
+		<input type="hidden" name="type" value="template"/>
+		<input type="hidden" name="file_desc" value="{lang('admin.templateZip')}"/>
+		<input type="file" name="file" accept="image/png,image/jpeg,image/gif,image/bmp"/>
+	</form>
+	<script>
+	Lang = {
+		add: "{lang('admin.add')}",
+		addedTip: "{lang('admin.addedTip')}",
+		edit: "{lang('admin.edit')}",
+		delete: "{lang('admin.delete')}",
+		linkLogo: "{lang('admin.linkLogo')}",
+		linkHelp: "{lang('link.linkHelp')}",
+		serverConnectionError: "{lang('admin.serverConnectionError')}",
+		deleteWarning: "{lang('admin.deleteWarning')}",
+		noDeleteItemWarning: "{lang('admin.noDeleteItemWarning')}",
+		successTip: "{lang('admin.successTip')}",
+		failWarning: "{lang('admin.failWarning')}",
+		successCountTip: "{lang('admin.successCountTip', '<successCount>')}",
+		failCountWarning: "{lang('admin.failCountWarning', '<successCount>', '<failCount>')}",
+	};
+	</script>
+	<include data="../foot.html">
+</body>
+</html>

@@ -1,0 +1,15 @@
+<!-- 载入 JS -->
+<import data="js/string.proto.js">
+<import data="js/jquery-1.11.3.min.js">
+<import data="js/jquery.ajaxsubmit.js">
+<import data="js/bootstrap.min.js">
+<import data="js/javascript.js">
+<script>
+	/** 设置 $_GET 参数 */
+	$_GET['page'] = $_GET['page'] ? parseInt($_GET['page']) : 1;
+	$_GET['limit'] = $_GET['limit'] || {config('site.admin.listCount')};
+	$_GET['sequence'] = $_GET['sequence'] || '{config("site.admin.listSequence")}';
+</script>
+<if data="file_exists(admin_dir('js/'.$DISPLAY_BASE.'.js'))">
+	<import data="js/$DISPLAY_BASE.js">
+</if>

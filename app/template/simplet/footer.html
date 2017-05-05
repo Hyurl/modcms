@@ -1,0 +1,34 @@
+</div>
+<footer class="footer">
+	<div class="container">
+		<div class="footer-left">
+			<div class="copyright">
+				&copy;{date('Y')} {config('site.name')}. Powered by <a href="http://modcms.hyurl.com" target="_blank">ModCMS</a> {CMS_VERSION}
+			</div>
+			<div class="icp">
+				<if data="config('site.ICP')">
+					<a href="http://www.miitbeian.gov.cn" target="_blank">{config('site.ICP')}</a>
+				</if>
+			</div>
+		</div>
+		<div class="footer-right">
+			<div class="friendly-links">
+				<while data="get_multi_link(array('limit'=>25))">
+					<a href="{link_url()}" title="{lang('admin.clickToVisit')}">{link_title()}</a>
+				</while>
+			</div>
+		</div>
+	</div>
+</footer>
+<script>
+	Lang = {
+		'commentSuccess': '{lang("simplet.commentSuccess")}',
+		'commentSuccess2': '{lang("simplet.commentSuccess2")}',
+		'editTip': '{lang("comment.editTip")}',
+	}
+</script>
+<!-- 载入 JS -->
+<import data="$adminDir/js/jquery.ajaxsubmit.js"/>
+<import data="js/javascript.js">
+</body>
+</html>

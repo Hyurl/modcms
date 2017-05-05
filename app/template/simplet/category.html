@@ -1,0 +1,30 @@
+<include data="header.html">
+<div class="content" id="content" data-id="{category_id()}">
+	<while data="get_multi_post(array_merge($_GET, array('post_type'=>0, 'sequence'=>'desc')))">
+		<div class="post-item">
+			<h1>{post_title()}</h1>
+			<div>
+				<p class="meta">
+					<span class="meta-author">{post_user('nickname') ?: post_user('name')}</span>
+					<span class="meta-date">{date(config('mod.dateFormat'), post_time())}</span>
+					<if data="is_home()">
+						!{$uri = config('category.staticURI')}
+						!{$cat = array_merge(post_category(), array('page'=>1))}
+						<span class="meta-category"><a href="{create_url($uri, $cat)}">{post_category('alias') ?: post_category('name')}</a></span>
+					</if>
+				</p>
+				<p class="desc">{get_post_desc(200)}</p>
+				<p class="meta">
+					<span class="meta-detail"><a href="{get_post_link()}">{lang('admin.viewDetails')}</a></span>
+				</p>
+			</div>
+		</div>
+	</while>
+</div>
+<if data="_post('pages')">
+	<nav id="pagination">
+		!{$key = is_home() ? 'site.home.staticURI' : 'category.staticURI'}
+		{pagination(array('pages'=>_post('pages'), 'first'=>'First', 'last'=>'Last'), config($key))}
+	</nav>
+</if>
+<include data="footer.html">

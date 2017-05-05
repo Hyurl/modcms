@@ -1,0 +1,37 @@
+<div class="settings-option">
+	<h4>{lang('admin.updateCMS')}</h4>
+	<div>
+		<label for="check-update">{lang('admin.newVersion')}</label>
+		<button class="btn btn-default" id="check-update" data-loading-text="{lang('admin.checking')}">{lang('admin.checkUpdate')}</button>
+		<span style="display: none;margin-right:10px;" id="new-version"></span>
+		<button style="display: none;" class="btn btn-default{!$zipSvr ? ' disabled' : ''}" title="{!$zipSvr ? $zipWarning : ''}" id="update-new-version" data-loading-text="{lang('admin.updating')}">{lang('admin.update')}</button>
+	</div>
+	<p class="settings-desc">
+		{lang('admin.updateCMSDesc')}
+	</p>
+	<div>
+		<label>{lang('admin.cleanTemp')}</label>
+		<span>
+			<a id="clear-temp" href="javascript:;" title="{lang('admin.cleanAdminTempTip')}">{lang('admin.clickToClean')}</a>
+		</span>
+	</div>
+	<div>
+		<label>{lang('admin.updateDatabase')}</label>
+		<span id="new-db" style="margin-right:10px;">{lang('admin.checking')}</span>
+		<button style="display: none;" class="btn btn-default" id="update-db" data-loading-text="{lang('admin.updating')}">{lang('admin.update')}</button>
+	</div>
+</div>
+<div class="settings-option">
+	<h4>{lang('admin.updateModPHP')}</h4>
+	<div>
+		<label for="check-modphp-update">{lang('admin.newVersion')}</label>
+		<button class="btn btn-default" id="check-modphp-update" data-loading-text="{lang('admin.checking')}">{lang('admin.checkUpdate')}</button>
+		<span style="display: none;margin-right:10px;" id="new-modphp-version"></span>
+		<button style="display: none;" class="btn btn-default{!$zipSvr ? ' disabled' : ''}" title="{!$zipSvr ? $zipWarning : ''}" id="update-new-modphp-version" data-loading-text="{lang('admin.updating')}">{lang('admin.update')}</button>
+	</div>
+</div>
+<div class="settings-option">
+	<p class="settings-desc">
+		{lang('admin.updateDesc')}
+	</p>
+</div>

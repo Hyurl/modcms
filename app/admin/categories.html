@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="{__LANG__}">
+<head>
+	<include data="head.html">
+	<title>{lang('category.label')}</title>
+</head>
+<body data-menu="categories">
+	<div class="container">
+		<aside id="category-list">
+			<h4>{lang('category.catList')}</h4>
+			!{admin_list_categories(category_tree())}
+		</aside>
+		<section id="category-details">
+			!{get_category($_GET)}
+			<if data="!empty($_GET['action'])">
+				<div class="page-header">
+					<h4>{get_category() ? lang('admin.edit') : lang('admin.add')}<i class="glyphicon glyphicon-remove"></i></h4>
+				</div>
+				<form role="form" action="{site_url()}mod.php?category::{get_category() ? 'update' : 'add'}" method="post" id="category-edit-form">
+					<button type="submit" style="display: none">{lang('admin.submit')}</button>
+					<if data="get_category()">
+						<input type="hidden" id="category_id" name="category_id" value="{category_id()}">
+					</if>
+					<div class="form-group">
+						<label for="category_name">{lang('admin.name')}</label>
+						<input type="text" class="form-control" id="category_name" name="category_name" value="{category_name()}" placeholder="{lang('category.catNameTip')}" required>
+					</div>
+					<div class="form-group">
+						<label for="category_alias">{lang('category.catAlias')}</label>
+						<input type="text" class="form-control" id="category_alias" name="category_alias" value="{category_alias()}" placeholder="{lang('admin.displayName')}">
+					</div>
+					<div class="form-group">
+						<label for="category_desc">{lang('admin.desc')}</label>
+						<textarea class="form-control" id="category_desc" name="category_desc" placeholder="{lang('category.catDescTip')}" rows="2">{category_desc()}</textarea>
+					</div>
+					<div class="form-group">
+						<label for="category_parent">{lang('category.catParent')}</label>
+						<select class="form-control" id="category_parent" name="category_parent">
+							<option value="0">{lang('admin.none')}</option>
+							<foreach data="$categories as $k => $v">
+								<option value="{$k}"{$k == category_parent('id') ? ' selected' : ''}>{$v}</option>
+							</foreach>
+						</select>
+					</div>
+				</form>
+				<else>
+					<div class="page-header">
+						<h4>{lang('admin.details')}<i class="glyphicon glyphicon-remove"></i></h4>
+					</div>
+					<div class="page-contents">
+						<div>
+							<h5>{lang('admin.name')}</h5>
+							<p id="category_name">{category_name()}</p>
+						</div>
+						<div>
+							<h5>{lang('category.catAlias')}</h5>
+							<p id="category_alias">{category_alias()}</p>
+						</div>
+						<div>
+							<h5>{lang('admin.desc')}</h5>
+							<p id="category_desc">{category_desc()}</p>
+						</div>
+						<div>
+							<h5>{lang('post.label')}</h5>
+							<p id="content-posts"></p>
+						</div>
+					</div>
+				</else>
+			</if>
+		</section>
+	</div>
+	<script>
+	Lang = {
+		add: "{lang('admin.add')}",
+		addedTip: "{lang('admin.addedTip')}",
+		updatedTip: "{lang('admin.updatedTip')}",
+		edit: "{lang('admin.edit')}",
+		delete: "{lang('admin.delete')}",
+		giveup: "{lang('admin.giveup')}",
+		submit: "{lang('admin.submit')}",
+		loading: "{lang('admin.loading')}",
+		viewMore: "{lang('admin.viewMore')}",
+		contentPostsTip: "{lang('category.contentPostsTip', '<post1>', '<post2>', '<post3>', '<count>')}",
+		serverConnectionError: "{lang('admin.serverConnectionError')}",
+		deleteWarning: "{lang('admin.deleteWarning')}",
+		noDeleteItemWarning: "{lang('admin.noDeleteItemWarning')}",
+	};
+	</script>
+	<include data="foot.html">
+</body>
+</html>

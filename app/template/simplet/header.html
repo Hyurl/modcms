@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh_cn">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="Cache-Control" content="no-transform" />
+	<meta http-equiv="Cache-Control" content="no-siteapp" />
+	<meta name="viewport" content="width=device-width,initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no,minimal-ui">
+	<!-- 输出网站元信息 -->
+	{site_meta('keywords')}
+	{site_meta('description')}
+	{site_meta('author')}
+	{site_meta('generator')}
+	{site_meta('base')}
+	{site_meta('title')}
+	<script>
+	//预定义变量
+	SITE_URL = '{site_url()}'; //网站根目录地址
+	fixedWidth = {config('site.template.simplet.fixedWidth') ? 'true' : 'false'};
+	fixedNavbar = {config('site.template.simplet.fixedNavbar') ? 'true' : 'false'};
+	</script>
+	<!-- 载入 CSS -->
+	<import data="css/style.css">
+	<!-- 载入 jQuery -->
+	<import data="$adminDir/js/jquery-1.11.3.min.js"/>
+</head>
+<body>
+	<header>
+		<div class="container">
+			<div class="site-logo">
+				<img src="{config('site.logo')}" alt="{lang('admin.siteLogo')}">
+			</div>
+			<div class="site-login">
+				<div>
+					<if data="!is_logined()">
+						<a href="{admin_url('login.html')}">{lang('user.login')}</a>
+						<if data="{config('user.register.enable')}">
+							<a href="{admin_url('login.html?action=register')}">{lang('user.register')}</a>
+						</if>
+						<else>
+							<a id="username" href="javascript:;" title="{me_nickname() ?: me_name()}">
+								<if data="me_avatar()">
+									<img src="{get_user_avatar(64, me_avatar())}" alt="{lang('user.avatar')}">
+								</if>
+								{me_nickname() ?: me_name()}
+							</a>
+							<div class="dropdown-menu">
+								<div class="prismatic-outer">
+									<span class="prismatic"></span>
+								</div>
+								<ul>
+									<li><a href="{admin_url('users.html?profile=me')}">{lang('user.myUserCenter')}</a></li>
+									<if data="IS_AUTH">
+										<li><a href="{ADMIN_URL}">{lang('admin.adminCenter')}</a></li>
+									</if>
+									<li><a id="logout" href="javascript:;">{lang('user.logout')}</a></li>
+								</ul>
+							</div>
+						</else>
+					</if>
+				</div>
+			</div>
+		</div>
+		<nav class="navbar">
+			<button class="navbar-toggle">
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+			</button>
+			<div class="container">
+				<ul>
+					<li><a href="{site_url()}">{lang('admin.home')}</a></li>
+					{list_category()}
+				</ul>
+			</div>
+		</nav>
+	</header>
+	<div class="container">

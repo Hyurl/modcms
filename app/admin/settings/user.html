@@ -1,0 +1,77 @@
+<div class="settings-option">
+	<h4>{lang('user.loginAndReg')}</h4>
+	<div>
+		<label for="user-keys-login">{lang('user.loginWay')}</label>
+		<select id="user-keys-login" name="user.keys.login" class="form-control">
+			<foreach data="$login as $key => $value">
+				<option value="{$key}"{config('user.keys.login') == $key ? ' selected' : ''}>
+					{$value}
+				</option>
+			</foreach>
+		</select>
+	</div>
+	<div>
+		!{$key = 'user.register.enable'}
+		<label for="user-register-enable">{lang('user.enableReg')}</label>
+		<span>
+			<label class="radio-inline">
+				<input type="radio" id="user-register-enable" name="{$key}" value="true"{config($key) ? ' checked' : ''}> {lang('admin.yes')}
+			</label>
+			<label class="radio-inline">
+				<input type="radio" name="{$key}" value="false"{!config($key) ? ' checked' : ''}> {lang('admin.no')}
+			</label>
+		</span>
+	</div>
+	<div>
+		!{$key = 'user.register.verify'}
+		<label>{lang('user.regVcode')}</label>
+		<span>
+			<label class="radio-inline{!$gdSvr ? ' disabled' : ''}" title="{!$gdSvr ? $gdWarning : ''}">
+				<input type="radio" name="{$key}" value="vcode"{config($key) == 'vcode' ? ' checked' : ''}> {lang('admin.imageVcode')}
+			</label>
+			<label class="radio-inline{!$mailSvr ? ' disabled' : ''}" title="{!$mailSvr ? $mailWarning : ''}">
+				<input type="radio" name="{$key}" value="email"{config($key) == 'email' ? ' checked' : ''}> {lang('admin.emailVcode')}
+			</label>
+			<label class="radio-inline">
+				<input type="radio" name="{$key}" value="false"{!config($key) ? ' checked' : ''}> {lang('admin.none')}
+			</label>
+		</span>
+	</div>
+	<div>
+		!{$key = 'user.password.recoverEmail'}
+		<label>{lang('user.recoverPassword')}</label>
+		<span>
+			<label class="radio-inline{!$mailSvr ? ' disabled' : ''}" title="{!$mailSvr ? $mailWarning : ''}">
+				<input type="radio" name="{$key}" value="vcode"{config($key) == 'vcode' ? ' checked' : ''}> {lang('admin.sendVcode')}
+			</label>
+			<label class="radio-inline{!$mailSvr ? ' disabled' : ''}" title="{!$mailSvr ? $mailWarning : ''}">
+				<input type="radio" name="{$key}" value="link"{config($key) == 'link' ? ' checked' : ''}> {lang('admin.sendRecoverLink')}
+			</label>
+			<label class="radio-inline">
+				<input type="radio" name="{$key}" value="false"{!config($key) ? ' checked' : ''}> {lang('admin.disableFunction')}
+			</label>
+		</span>
+	</div>
+	<p class="settings-desc">
+		{lang('user.emailSettingsDesc')}
+	</p>
+</div>
+<div class="settings-option">
+	<h4>{lang('user.nameAndPass')}</h4>
+	<div>
+		<label for="user-name-min">{lang('user.usernameMinLength')}</label>
+		<input type="number" class="form-control" id="user-name-min" name="user.name.minLength" value="{config('user.name.minLength')}">
+	</div>
+	<div>
+		<label for="user-name-max">{lang('user.usernameMaxLength')}</label>
+		<input type="number" class="form-control" id="user-name-max" name="user.name.maxLength" value="{config('user.name.maxLength')}">
+	</div>
+	<div>
+		<label for="user-password-min">{lang('user.passwordMinLength')}</label>
+		<input type="number" class="form-control" id="user-password-min" name="user.password.minLength" value="{config('user.password.minLength')}">
+	</div>
+	<div>
+		<label for="user-password-max">{lang('user.passwordMaxLength')}</label>
+		<input type="number" class="form-control" id="user-password-max" name="user.password.maxLength" value="{config('user.password.maxLength')}">
+	</div>
+</div>
