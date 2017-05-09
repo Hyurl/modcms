@@ -17,8 +17,7 @@ final class user extends mod{
 	 * @return array  当前登录的用户或错误
 	 */
 	static function getMe(){
-		if(session_status() == PHP_SESSION_ACTIVE && !empty($_SESSION['ME_ID']) && $result = database::open(0)->select('user', '*', "`user_id` = ".$_SESSION['ME_ID'])){
-			$me = $result->fetch();
+		if(session_status() == PHP_SESSION_ACTIVE && !empty($_SESSION['ME_ID']) && ($result = database::open(0)->select('user', '*', "`user_id` = ".$_SESSION['ME_ID'])) && $me = $result->fetch()){
 			_user('me_id', (int)$me['user_id']); //将登录用户 ID 和等级保存到内存中
 			_user('me_level', (int)$me['user_level']);
 			self::handler($me, 'get'); //预处理获取事件

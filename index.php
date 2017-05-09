@@ -1,5 +1,5 @@
 <?php
-/** PHP 内置服务器 */
+/** PHP 内置服务器，使用 php -S 0.0.0.0:80 index.php 的方式开启服务器 */
 if(php_sapi_name() == "cli-server"){
 	$dir = $_SERVER["DOCUMENT_ROOT"].DIRECTORY_SEPARATOR;
 	$file = explode("?", $_SERVER["REQUEST_URI"]);
@@ -17,7 +17,8 @@ require_once("mod/common/init.php");
  * 但只有当访问的路径不是一个真实的文件或目录时，ModPHP 才会这么做。
  * 例如 http://localhost/something, ModPHP 的访问顺序是这样的：
  *   1. 尝试仿问站点根目录下的 something 文件或文件夹;
- *   2. 尝试访问模板目录下的 something 文件夹，如果存在这个文件夹，则尝试访问目录下的 index.php, index.html, index.htm 文件，不存在这些文件则报告 403 错误;
+ *   2. 尝试访问模板目录下的 something 文件夹，如果存在这个文件夹，则尝试访问目录下的
+ *      index.php, index.html, index.htm 文件，不存在这些文件则报告 403 错误;
  *   3. 尝试访问模板目录下的 something 文件;
  *   4. 尝试访问模板目录下的 something.php 文件;
  *   5. 尝试匹配模块记录的自定义链接;

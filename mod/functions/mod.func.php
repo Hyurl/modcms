@@ -69,11 +69,11 @@ function hooks($api = '', $value = ''){
 	}else{
 		eval('$hooks'.$_api.' = null; $_hook = &$hooks'.$_api.';'); //通过引用的方式来修改原变量
 		$_hook = $value; //给 $_hook 赋值就相当于给 $hook 赋值
-		$table = strstr($api, '.', true);
-		$func = '_'.$table;
+		$module = strstr($api, '.', true);
+		$func = '_'.$module;
 		if(function_exists($func)){
 			$__hook = $func('hooks') ?: array();
-			$__hook = array_merge($__hook, $hooks[$table]);
+			$__hook = array_merge($__hook, $hooks[$module]);
 			$func('hooks', $__hook); //更新模块的挂钩信息
 		}
 		return $_hook;
@@ -147,12 +147,12 @@ function_alias('do_hooks', 'do_actions');
 
 /**
  * config() 读取和设置配置
- * 			ModPHP 拥有三层配置模式，即默认配置、用户配置、运行时配置，优先级从右到左
- * 			默认配置文件: mod/config/config.php
- * 		 	用户配置文件：user/config/config.php
+ *          ModPHP 拥有三层配置模式，即默认配置、用户配置、运行时配置，优先级从右到左
+ *          默认配置文件: mod/config/config.php
+ *          用户配置文件：user/config/config.php
  * @param  string $key   配置名
  * @param  string $value 配置值
- * @return string 	     如果未设置 $key 参数，则返回所有配置组成的关联数组
+ * @return string        如果未设置 $key 参数，则返回所有配置组成的关联数组
  *                       如果仅设置 $key 参数，如果存在该配置，则返回配置值，否则返回 null
  *                       如果设置了 $value 参数，则始终返回 $value
  *                       如果配置文件中不存在 $key 配置而为 $key 配置设置值，则将 $key 配置加载到内存中
@@ -193,8 +193,8 @@ function database($key = '', $withAttr = false){
  * @param  string|array $file   模板文件名
  * @param  string       $format 伪静态 URI 格式
  * @return mixed                如果未提供参数，则返回所有伪静态地址格式
- *         						如果仅提供 $file 参数，则返回对应的伪静态地址
- *         						如果同时提供两个参数，则始终返回 $format
+ *                              如果仅提供 $file 参数，则返回对应的伪静态地址
+ *                              如果同时提供两个参数，则始终返回 $format
  */
 function staticuri($file = '', $format = ''){
 	static $uri = array();
@@ -222,7 +222,8 @@ function lang($key = ''){
 	static $lang = array();
 	$args = array_slice(func_get_args(), 1);
 	if(!$lang){
-		$path = 'lang/'.str_replace('_', '-', strtolower(config('mod.language'))).'.php'; //对应示例： zh_CN => zh-cn.php
+		$path = 'lang/'.strtolower(config('mod.language')).'.php'; //对应示例： zh-CN => zh-cn.php
+		$path = str_replace('_', '-', $path); //support zh_CN as zh-CN
 		if(file_exists($file = __ROOT__.'mod/'.$path)){ //从内核目录加载语言包
 			$lang = include(__ROOT__.'mod/'.$path);
 		}
@@ -285,7 +286,8 @@ function error($data = '', array $extra = array()){
  */
 function is_display($file){
 	if(!display_file()) return false;
-	if($file[strlen($file)-1] == '/') return strapos(display_file(), $file) === 0; //判断目录
+	if($file[strlen($file)-1] == '/')
+		return strapos(display_file(), $file) === 0; //判断目录
 	return $file == display_file(); //判断文件
 }
 
@@ -311,7 +313,7 @@ function is_home(){
  */
 function is_client_call($obj = '', $act = ''){
 	if((__SCRIPT__ != 'mod.php' && !is_socket())) return false;
-	elseif($obj && $act)
+	elseif($obj && $act) //compare both onj and act
 		return !strcasecmp($obj, @$_GET['obj']) && !strcasecmp($act, @$_GET['act']);
 	elseif($obj) return !strcasecmp($obj, @$_GET['obj']);
 	elseif($act) return !strcasecmp($act, @$_GET['act']);
@@ -430,8 +432,10 @@ function analyze_url($format, $url = ''){
 			$ext1 = '.'.pathinfo($format[$i], PATHINFO_EXTENSION);
 			$ext2 = '.'.pathinfo($uri[$i], PATHINFO_EXTENSION);
 			if($ext1 != $ext2) return false; //判断后缀名是否相同(如果有)
-			$format[$i] = strstr($format[$i], '.', true) ?: $format[$i];
-			$uri[$i] = strstr($uri[$i], '.', true) ?: $uri[$i];
+			elseif($ext1 != '.'){
+				$format[$i] = strstr($format[$i], '.', true);
+				$uri[$i] = strstr($uri[$i], '.', true);
+			}
 		}
 		if($format[$i][0] == '{' && $format[$i][strlen($format[$i])-1] == '}'){
 			$args[trim($format[$i], '{}')] = $uri[$i]; //替换关键字
@@ -565,8 +569,8 @@ function get_template_file($url = '', $tpldir = '', $rootURL = '', $uri = ''){
 		if(!is_dir($uri)){
 			return $uri;
 		}else{
-			if(!empty($_uri) && $_uri[strlen($_uri)-1] != '/'){   //如果访问的是一个目录而 URL 地址不以 / 结尾，
-				redirect($rootURL.$_uri.'/'.$query, 301); //则自动跳转更正 URL 地址
+			if(!empty($_uri) && $_uri[strlen($_uri)-1] != '/'){ //如果访问的是一个目录而 URL 不以 / 结尾，
+				redirect($rootURL.$_uri.'/'.$query, 301); //s自动跳转更正 URL 地址
 			}
 			foreach($exts as $ext){
 				if(file_exists($uri.'/index.'.$ext)) //如果存在索引文件
@@ -576,7 +580,8 @@ function get_template_file($url = '', $tpldir = '', $rootURL = '', $uri = ''){
 		}
 	}
 	foreach($exts as $ext){
-		if(file_exists($uri.'.'.$ext)) return $uri.'.'.$ext; //判断是否使用了不带后缀的链接
+		if(file_exists($uri.'.'.$ext))
+			return $uri.'.'.$ext; //判断是否使用了不带后缀的链接
 	}
 	if($len = strrpos($uri, '/')){
 		$uri = substr($uri, 0, $len);
@@ -632,7 +637,7 @@ function display_file($url = '', $set = false){
 			$mime = @$cts[$ext] ?: 'text/plain';
 		}
 		if($isIndex) set_content_type($mime); //设置响应头中的 Mime 类型
-		if(staticuri($file) && $args = analyze_url(staticuri($file), $uri)){ //尝试解析 URL
+		if(staticuri($tpl) && $args = analyze_url(staticuri($tpl), $uri)){ //尝试解析 URL
 			if($isIndex) $_GET = array_merge($_GET, $args);
 		}
 		return $file = $tpl;
@@ -689,8 +694,8 @@ function display_file($url = '', $set = false){
 
 /**
  * get_table_by_primkey() 通过主键获取表名
- * @param  string $table 主键
- * @return string        表名
+ * @param  string $primkey 主键
+ * @return string          表名(模块名)
  */
 function get_table_by_primkey($primkey){
 	foreach (database() as $key => $value) {
@@ -703,7 +708,7 @@ function get_table_by_primkey($primkey){
 
 /**
  * get_primkey_by_table() 通过表名获取主键
- * @param  string $table 表名
+ * @param  string $table 表名(模块名)
  * @return string        主键
  */
 function get_primkey_by_table($table){
@@ -728,30 +733,30 @@ function get_primkey_by_table($table){
  * {module}_parent():     获取父记录的函数
  * {module}_{ex-table}(): 获取从表记录的函数
  */
-function register_module_functions($table = ''){
-	if(!$table){
-		foreach(array_keys(database()) as $table){
-			register_module_functions($table); //自动注册函数
+function register_module_functions($module = ''){
+	if(!$module){
+		foreach(array_keys(database()) as $module){
+			register_module_functions($module); //自动注册函数
 		}
 		return null;
 	}
-	$keys = database($table);
-	$primkey = get_primkey_by_table($table);
-	$parent = in_array($table.'_parent', $keys);
+	$keys = database($module);
+	$primkey = get_primkey_by_table($module);
+	$parent = in_array($module.'_parent', $keys);
 	$code = '
-	if(!function_exists("_'.$table.'")){
-		function _'.$table.'($key = "", $value = null){
-			static $table = array();
-			if(!$key) return $table;
+	if(!function_exists("_'.$module.'")){
+		function _'.$module.'($key = "", $value = null){
+			static $module = array();
+			if(!$key) return $module;
 			if($value === null){
-				return isset($table[$key]) ? $table[$key] : null;
+				return isset($module[$key]) ? $module[$key] : null;
 			}else{
-				return $table[$key] = $value;
+				return $module[$key] = $value;
 			}
 		}
 	}
-	if(!function_exists("get_multi_'.$table.'")){
-		function get_multi_'.$table.'($arg = array(), $act = "getMulti"){
+	if(!function_exists("get_multi_'.$module.'")){
+		function get_multi_'.$module.'($arg = array(), $act = "getMulti"){
 			static $result = array();
 			static $_arg = array();
 			static $_act = "getMulti";
@@ -760,68 +765,68 @@ function register_module_functions($table = ''){
 			if(is_numeric($arg)){
 				if(isset($result["data"][$arg])){
 					$i = $arg;
-					return the_'.$table.'($result["data"][$i]);
+					return the_'.$module.'($result["data"][$i]);
 				}else return null;
 			}
 			if(!$result || (is_assoc($arg) && $_arg != $arg) || $_act != $act || $sid != session_id()) {
 				$i = 0;
-				the_'.$table.'(null);
+				the_'.$module.'(null);
 				$_arg = $arg;
 				$_act = $act;
 				$sid = session_id();
-				$result = '.$table.'::$act($_arg);
+				$result = '.$module.'::$act($_arg);
 				error(null);
 			}
 			if(!$result || !$result["success"]) {
-				if(_'.$table.'("pages")) _'.$table.'("pages", 0);
-				if(_'.$table.'("total")) _'.$table.'("total", 0);
+				if(_'.$module.'("pages")) _'.$module.'("pages", 0);
+				if(_'.$module.'("total")) _'.$module.'("total", 0);
 				return null;
 			}else if(isset($result["data"][$i])){
 				if($i == 0){
-					_'.$table.'("limit", $result["limit"]);
-					_'.$table.'("total", $result["total"]);
-					_'.$table.'("page", $result["page"]);
-					_'.$table.'("pages", $result["pages"]);
-					_'.$table.'("orderby", $result["orderby"]);
-					_'.$table.'("sequence", $result["sequence"]);
-					if($act == "search") _'.$table.'("keyword", $result["keyword"]);
+					_'.$module.'("limit", $result["limit"]);
+					_'.$module.'("total", $result["total"]);
+					_'.$module.'("page", $result["page"]);
+					_'.$module.'("pages", $result["pages"]);
+					_'.$module.'("orderby", $result["orderby"]);
+					_'.$module.'("sequence", $result["sequence"]);
+					if($act == "search") _'.$module.'("keyword", $result["keyword"]);
 				}
 				$data = $result["data"][$i];
 				$i++;
-				if(!$data) return get_multi_'.$table.'();
-				return the_'.$table.'($data);
+				if(!$data) return get_multi_'.$module.'();
+				return the_'.$module.'($data);
 			}else{
 				$i = 0;
 				return null;
 			}
 		}
 	}
-	if(!function_exists("get_search_'.$table.'")){
-		function get_search_'.$table.'($arg = array()){
-			return get_multi_'.$table.'($arg, "search");
+	if(!function_exists("get_search_'.$module.'")){
+		function get_search_'.$module.'($arg = array()){
+			return get_multi_'.$module.'($arg, "search");
 		}
 	}
-	if(!function_exists("get_'.$table.'")){
-		function get_'.$table.'($arg = array()){
+	if(!function_exists("get_'.$module.'")){
+		function get_'.$module.'($arg = array()){
 			static $result = array();
 			static $_arg = array();
 			static $sid = "";
 			if(is_numeric($arg)) $arg = array("'.$primkey.'"=>$arg);
 			if(!$result || (is_assoc($arg) && $_arg != $arg) || $sid != session_id()){
 				$_arg = $arg;
-				the_'.$table.'(null);
+				the_'.$module.'(null);
 				$result = array();
 				$sid = session_id();
-				$_result = '.$table.'::get($_arg);
+				$_result = '.$module.'::get($_arg);
 				error(null);
 				if(!$_result["success"]) return null;
 				else $result = $_result["data"];
 			}
-			return the_'.$table.'($result);
+			return the_'.$module.'($result);
 		}
 	}
-	if(!function_exists("the_'.$table.'")){
-		function the_'.$table.'($key = "", $value = null){
+	if(!function_exists("the_'.$module.'")){
+		function the_'.$module.'($key = "", $value = null){
 			static $result = array();
 			if(is_assoc($key)){
 				return $result = array_merge($result, $key);
@@ -832,82 +837,82 @@ function register_module_functions($table = ''){
 			}
 			if(!$key) return $result;
 			else if(isset($result[$key])) return $result[$key];
-			else if(strpos($key, "'.$table.'_") !== 0){
-				$key = "'.$table.'_".$key;
+			else if(strpos($key, "'.$module.'_") !== 0){
+				$key = "'.$module.'_".$key;
 				return isset($result[$key]) ? $result[$key] : null;
 			}else return null;
 		}
 	}
-	if(!function_exists("prev_'.$table.'")){
-		function prev_'.$table.'($key = "", $act = "getPrev"){
+	if(!function_exists("prev_'.$module.'")){
+		function prev_'.$module.'($key = "", $act = "getPrev"){
 			static $result = array();
 			static $primkey = 0;
 			static $_act = "getPrev";
 			static $sid = "";
-			if(!$result || $_act != $act || $primkey != the_'.$table.'("'.$primkey.'") || $sid != session_id()){
+			if(!$result || $_act != $act || $primkey != the_'.$module.'("'.$primkey.'") || $sid != session_id()){
 				$result = array();
 				$_act = $act;
 				$sid = session_id();
-				$primkey = the_'.$table.'("'.$primkey.'");
+				$primkey = the_'.$module.'("'.$primkey.'");
 				$arg = array("'.$primkey.'"=>$primkey);
 				if(is_array($key)) $arg = array_merge($arg, $key);
-				$_result = '.$table.'::$act($arg);
+				$_result = '.$module.'::$act($arg);
 				error(null);
 				if(!$_result["success"]) return null;
 				else $result = $_result["data"];
 			}
 			if(!$key || is_array($key)) return $result;
 			else if(isset($result[$key])) return $result[$key];
-			else if(strpos($key, "'.$table.'_") !== 0){
-				$key = "'.$table.'_".$key;
+			else if(strpos($key, "'.$module.'_") !== 0){
+				$key = "'.$module.'_".$key;
 				return isset($result[$key]) ? $result[$key] : null;
 			}else return null;
 		}
 	}
-	if(!function_exists("next_'.$table.'")){
-		function next_'.$table.'($key = ""){
-			return prev_'.$table.'($key, "getNext");
+	if(!function_exists("next_'.$module.'")){
+		function next_'.$module.'($key = ""){
+			return prev_'.$module.'($key, "getNext");
 		}
 	}';
 	eval($code); //运行代码
 	for ($i=0; $i < count($keys); $i++) { 
-		if(strpos($keys[$i], $table) === 0){
+		if(strpos($keys[$i], $module) === 0){
 			$func = $keys[$i];
 			if(stripos($keys[$i], '_parent') === false){
 				$code = '
 				if(!function_exists("'.$func.'")){
 					function '.$func.'($key = ""){
-						$result = the_'.$table.'("'.$keys[$i].'");
+						$result = the_'.$module.'("'.$keys[$i].'");
 						if(!$key) return $result;
 						else if(isset($result[$key])) return $result[$key];
-						else if(strpos($key, "'.$table.'_") !== 0){
-							$key = "'.$table.'_".$key;
+						else if(strpos($key, "'.$module.'_") !== 0){
+							$key = "'.$module.'_".$key;
 							return isset($result[$key]) ? $result[$key] : null;
 						}else return null;
 					}
 				}';
 			}else{
 				$code = '
-				if(!function_exists("'.$table.'_parent")){
-					function '.$table.'_parent($key = ""){
+				if(!function_exists("'.$module.'_parent")){
+					function '.$module.'_parent($key = ""){
 						static $result = array();
 						static $primkey = 0;
 						static $sid = "";
-						if(!$result || $primkey != the_'.$table.'("'.$primkey.'") || $sid != session_id()){
+						if(!$result || $primkey != the_'.$module.'("'.$primkey.'") || $sid != session_id()){
 							$result = array();
 							$sid = session_id();
-							$primkey = the_'.$table.'("'.$primkey.'");
-							$parent = the_'.$table.'("'.$table.'_parent");
+							$primkey = the_'.$module.'("'.$primkey.'");
+							$parent = the_'.$module.'("'.$module.'_parent");
 							if(!$parent) return null;
-							$_result = '.$table.'::get(array("'.$primkey.'"=>$parent));
+							$_result = '.$module.'::get(array("'.$primkey.'"=>$parent));
 							error(null);
 							if(!$_result["success"]) return null;
 							else $result = $_result["data"];
 						}
 						if(!$key) return $result;
 						else if(isset($result[$key])) return $result[$key];
-						else if(strpos($key, "'.$table.'_") !== 0){
-							$key = "'.$table.'_".$key;
+						else if(strpos($key, "'.$module.'_") !== 0){
+							$key = "'.$module.'_".$key;
 							return isset($result[$key]) ? $result[$key] : null;
 						}else return null;
 					}
@@ -916,16 +921,16 @@ function register_module_functions($table = ''){
 		}else{
 			if($_table = get_table_by_primkey($keys[$i])){
 				$code = '
-				if(!function_exists("'.$table.'_'.$_table.'")){
-					function '.$table.'_'.$_table.'($key = ""){
+				if(!function_exists("'.$module.'_'.$_table.'")){
+					function '.$module.'_'.$_table.'($key = ""){
 						static $result = array();
 						static $primkey = 0;
 						static $sid = "";
-						if(!$result || $primkey != the_'.$table.'("'.$primkey.'") || $sid != session_id()){
+						if(!$result || $primkey != the_'.$module.'("'.$primkey.'") || $sid != session_id()){
 							$result = array();
 							$sid = session_id();
-							$primkey = the_'.$table.'("'.$primkey.'");
-							$_result = the_'.$table.'();
+							$primkey = the_'.$module.'("'.$primkey.'");
+							$_result = the_'.$module.'();
 							foreach (database("'.$_table.'") as $k) {
 								if(isset($_result[$k])) $result[$k] = $_result[$k];
 							}
@@ -1024,4 +1029,10 @@ function socket_retrive_session($sid, $event){
 /** strapos() 查找字符串中第一次出现的位置，根据操作系统自动决定是否使用大小写敏感 */
 function strapos($str, $find, $start = 0){
 	return PHP_OS == 'WINNT' ? stripos($str, $find, $start) : strpos($str, $find, $start);
+}
+
+/** is_console() 判断是否运行在交互式控制台中 */
+function is_console(){
+	$files = get_included_files();
+	return PHP_SAPI == 'cli' && ((__SCRIPT__ == 'mod.php' && !isset($_SERVER['argv'][1])) || (is_socket() && in_array(realpath(__ROOT__.'mod.php'), $files)));
 }

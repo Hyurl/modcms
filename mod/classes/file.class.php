@@ -152,7 +152,7 @@ final class file extends mod{
 		return error($data);
 	}
 
-	/** add() upload 方法的别名 */
+	/** add() file::upload() 方法的别名 */
 	static function add(array $arg = array()){
 		return self::upload($arg);
 	}

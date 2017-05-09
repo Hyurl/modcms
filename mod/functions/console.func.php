@@ -7,7 +7,12 @@ function update($ver = null){
 		$version['upgrade'] = true;
 	}elseif(!empty($version['upgrade'])){
 		$result = mod::update($version); //执行升级操作
-		echo $result['data'];
+		if($result['success']){
+			echo "Update succeeded, restart ModPHP to get everything done.\n\n";
+			update_log('update-log.txt', true); //输出更新日志
+		}else{
+			echo $result['data'];
+		}
 	}
 }
 
@@ -36,12 +41,16 @@ function install($user, $pass){
 }
 
 /** update_log() 查看更新日志 */
-function update_log($file = 'update-log.txt'){
+function update_log($file = 'update-log.txt', $first = false){
 	if(php_sapi_name() != 'cli') return;
-	if(PHP_OS == 'WINNT')
+	if(PHP_OS == 'WINNT' && !$first)
 		return exec("start notepad $file"); //使用记事本打开更新日志
 	$logs = str_replace("\r\n", "\n", file_get_contents($file));
 	$logs = explode("\n\n", $logs);
+	if($first){
+		echo $logs[0];
+		return;
+	}
 	if($file == 'update-log.txt')
 		$logs = array_reverse($logs); //将更新日志按段落反转
 	foreach($logs as $log){
@@ -60,7 +69,7 @@ function readme(){
 }
 
 add_action('console.open', function(){
-	$tip = 'Type "update_log", "license" or "readme" for more information.';
+	$tip = 'Type "doc", "update_log", "license" or "readme" for more information.';
 	fwrite(STDOUT, $tip.PHP_EOL);
 });
 
@@ -69,11 +78,11 @@ add_action('console.open', function(){
 	$host = 'modphp.hyurl.com';
 	$url = 'http://'.$host.'/version';
 	$arg = array('url'=>$url, 'parseJSON'=>true);
-	if(gethostbyname($host) != $host){
+	if(ping('hyurl.com')){
 		$ver = @json_decode(file_get_contents($url), true) ?: @curl($arg); //访问远程链接并获取响应
 		$gt = $ver && !curl_info('error') ? version_compare($ver['version'], MOD_VERSION) : -1;
+		if($gt >= 0) update($ver); //保存新版本信息
 		if($gt > 0){
-			update($ver); //保存新版本信息
 			$tip = "ModPHP {$ver['version']} is now availible, use \"update\" to get the new version.";
 			fwrite(STDOUT, $tip.PHP_EOL); //输出更新提示
 		}

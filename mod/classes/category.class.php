@@ -7,7 +7,7 @@ final class category extends mod{
 	/**
 	 * getTree() 获取分类目录树形结构数据
 	 * @param  array  $arg  请求参数
-	 * @return array  	    分类目录结构
+	 * @return array        分类目录结构
 	 */
 	static function getTree($arg = array()){
 		$default = array(

@@ -24,29 +24,29 @@ function is_single($key = 0){
 }
 
 /** 自动设置文章评论数量 */
-add_hook('post.get.set_comment_counts', function($input){
+add_hook('post.get.set_comment_counts', function($data){
 	$count = database::open(0)
-		   ->select('comment', 'COUNT(*) AS count', "`post_id` = {$input['post_id']}")
+		   ->select('comment', 'COUNT(*) AS count', "`post_id` = {$data['post_id']}")
 		   ->fetchObject()
 		   ->count; //获取实际评论数
-	if($count != $input['post_comments']){
-		$input['post_comments'] = $count;
-		database::update('post', array('post_comments'=>$count), "`post_id` = {$input['post_id']}"); //更新记录
+	if($count != $data['post_comments']){
+		$data['post_comments'] = $count;
+		database::update('post', array('post_comments'=>$count), "`post_id` = {$data['post_id']}"); //更新记录
 	}
-	return $input;
+	return $data;
 }, false);
 
 /** 分割搜索字符串 */
-add_hook('post.get.before.split_keyword', function($input){
-	if(!empty($input['keyword'])){
-		if(strpos($input['keyword'], '，')){
+add_hook('post.get.before.split_keyword', function($arg){
+	if(!empty($arg['keyword'])){
+		if(strpos($arg['keyword'], '，')){
 			$sep = '，'; //以中文逗号分割
-		}elseif(strpos($input['keyword'], ',')){
+		}elseif(strpos($arg['keyword'], ',')){
 			$sep = ','; //以英文逗号分割
 		}else{
 			$sep = ' '; //以空格分割
 		}
-		$input['keyword'] = explode($sep, $input['keyword']);
-		return $input;
+		$arg['keyword'] = explode($sep, $arg['keyword']);
+		return $arg;
 	}
 }, false);

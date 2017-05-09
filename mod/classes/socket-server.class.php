@@ -301,12 +301,12 @@ class SocketServer{
 
 	/**
 	 * decode() 解码接收的消息
-	 * @param  binary $data    接收的数据
-	 * @return array           可能包含下面的内容：
-	 *         				   [dataType]=>数据类型
-	 *         				   [data]=>数据内容
-	 *         				   [code]=>关闭连接的代码
-	 *         				   [reason]=>关闭连接的原因
+	 * @param  binary $data 接收的数据
+	 * @return array        可能包含下面的内容：
+	 *                      [dataType]=>数据类型
+	 *                      [data]=>数据内容
+	 *                      [code]=>关闭连接的代码
+	 *                      [reason]=>关闭连接的原因
 	 */
 	private static function decode($data){
 		$_1bin = sprintf('%08b', ord($data[0]));

@@ -1,18 +1,20 @@
 <?php
 /** 检查评论功能是否开启 */
-add_hook('comment.add', function($input){
-	if(!config('comment.enable')) return error(lang('comment.commentDisabled'));
-	if(!empty($input['post_id'])){
-		if(get_post(array('post_id'=>$input['post_id']))){
-			if(!post_commentable()) return error(lang('post.uncommentable'));
+add_hook('comment.add', function($arg){
+	if(!config('comment.enable')) //判断是否开启评论
+		return error(lang('comment.commentDisabled'));
+	if(!empty($arg['post_id'])){
+		if(get_post(array('post_id'=>$arg['post_id']))){ //查询文章是否存在
+			if(!post_commentable()) //判断当前文章是否允许评论
+				return error(lang('post.uncommentable'));
 		}else{
 			return error(lang('mod.notExists', lang('post.label')));
 		}
 	}
 });
 
-/** 匿名评论 */
-add_action('comment.add', function($input){
+/** 匿名评论，原理是评论前创建并登录一个新用户 */
+add_action('comment.add', function($arg){
 	$anonymous = config('comment.anonymous');
 	if($anonymous['enable'] && !is_logined()){
 		if(session_status() != PHP_SESSION_ACTIVE) session_start();
@@ -20,44 +22,47 @@ add_action('comment.add', function($input){
 		$require = explode('|', $anonymous['require']);
 		$where = '';
 		foreach ($require as $key) {
-			if(empty($input[$key])){
+			if(empty($arg[$key])){
 				return error(lang('mod.missingArguments'));
 			}elseif(in_array($key, $login)){
-				$where = "`{$key}` = '{$input[$key]}'";
+				$where = "`{$key}` = '{$arg[$key]}'"; //拼合 where 查询语句
 				break;
 			}
 		}
 		if(!$where) return error(lang('mod.missingArguments'));
-		if($anonymous['verify']){
-			if(empty($input['vcode']) || strtolower($input['vcode']) != strtolower($_SESSION['vcode'])){
+		if($anonymous['verify']){ //判断是否使用验证码
+			if(empty($arg['vcode']) || strtolower($arg['vcode']) != strtolower($_SESSION['vcode'])){ //判断验证码是否正确
 				return error(lang('admin.wrongVcode'));
-			}elseif((time() - $_SESSION['time']) > 60*30){
+			}elseif((time() - $_SESSION['time']) > 60*30){ //判断验证码是否过期
 				return error(lang('admin.vcodeTimeout'));
 			}
 		}
-		$result = database::open(0)->select('user', '*', ltrim($where, ' OR '));
-		if($result && $user = $result->fetch(PDO::FETCH_ASSOC)){
-			if(!hash_verify($user['user_password'], '')){
+		$result = database::open(0)->select('user', '*', $where); //尝试获取用户
+		if($result && $user = $result->fetch()){ //用户存在
+			if(!password_verify('', $user['user_password'])){ //校验密码是否为空
 				return error(lang('user.infoProtected'));
 			}
 			$user['user_password'] = '';
-			if(!user::login($user)){
+			user::login($user); //登录这个用户
+			if(error()){
 				return error(lang('mod.addFailed', lang('comment.label')));
 			}
-		}else{
+		}else{ //用户不存在，则创建一个新用户
 			$userSerialize = explode('|', config('user.keys.serialize'));
 			$userKeys = database('user');
 			$userInfo = array();
-			foreach($input as $key => $value){
+			foreach($arg as $key => $value){
 				if(in_array($key, $userKeys) && $key != 'user_id' && $key != 'user_password'){
-					if(in_array($key, $userSerialize)) $value = serialize($value);
+					if(in_array($key, $userSerialize)) //对数据进行序列化存储
+						$value = config('mod.jsonSerialize') ? json_encode($value) : serialize($value);
 					$userInfo[$key] = escape_tags($value, config('mod.escapeTags'));
 				}
 			}
-			$userInfo['user_password'] = md5_crypt('');
-			if(database::insert('user', $userInfo)){
+			$userInfo['user_password'] = md5_crypt(''); //加密用户密码
+			if(database::insert('user', $userInfo)){ //讲用户信息写入数据库
 				$userInfo['user_password'] = '';
-				if(!user::login($userInfo)){
+				user::login($userInfo); //登录新创建的用户
+				if(error()){
 					return error(lang('mod.addFailed', lang('comment.label')));
 				}
 			}else{
@@ -114,26 +119,26 @@ add_action('comment.add.complete', function($comment){
 });
 
 /** 评论加入审核状态 */
-add_action('comment.add', function($input){
+add_action('comment.add', function($arg){
 	if(config('comment.review') && !is_admin() && !is_editor()){
-		$input['comment_status'] = 0;
+		$arg['comment_status'] = 0;
 	}else{
-		$input['comment_status'] = 1;
+		$arg['comment_status'] = 1;
 	}
-	return $input;
+	return $arg;
 });
 
 /** 仅允许编辑以上劝降审核评论 */
-add_action('comment.update', function($input){
-	if(!empty($input['comment_status']) && !is_admin() && !is_editor()){
-		unset($input['comment_status']);
+add_action('comment.update', function($arg){
+	if(!empty($arg['comment_status']) && !is_admin() && !is_editor()){
+		unset($arg['comment_status']);
 	}
-	return $input;
+	return $arg;
 });
 
 /** 对评论者本人或者编辑以上权限用户以外的用户过滤未审核评论 */
-add_action('comment.get', function($input){
-	if(config('comment.review') && $input['comment_status'] == 0 && !is_admin() && !is_editor() && $input['user_id'] != me_id()){
+add_action('comment.get', function($arg){
+	if(config('comment.review') && $arg['comment_status'] == 0 && !is_admin() && !is_editor() && $arg['user_id'] != me_id()){
 		return false;
 	}
 });
@@ -147,10 +152,10 @@ add_action('comment.get.before', function($arg){
 });
 
 /** 获取未审核评论数 */
-add_action('comment.getUnreviewedCount', function($input){
+add_action('comment.getUnreviewedCount', function($arg){
 	if(!is_editor() && !is_admin()) return error(lang('mod.permissionDenied'));
-	$input['comment_status'] = 0;
-	$result = comment::getMulti($input);
+	$arg['comment_status'] = 0;
+	$result = comment::getMulti($arg);
 	if($result['success']){
 		return success($result['total']);
 	}else{

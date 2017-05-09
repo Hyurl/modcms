@@ -6,7 +6,8 @@ require_once('mod/common/init.php');
  * 客户端通过发送 JSON 数据向服务器提交请求，服务器也回应以 JSON 数据。
  * 除非是重现会话，否则 JSON 中必须包含 {obj} 和 {act} 属性，其他属性将作为请求参数。
  * 登录用户的示例(JavaScript)：
- * WebSocket.send(JSON.stringify({obj:'user', act:'login', user_name: 'someone', user_password: ''}));
+ * obj = {obj:'user', act:'login', user_name: 'someone', user_password: ''}
+ * WebSocket.send(JSON.stringify(obj));
  * 重现会话的示例(JavaScript)：
  * WebSocket.send(JSON.stringify({MODID: 'fh33v6neol7qt1r0optbspgnv6'}));
  */
@@ -96,8 +97,9 @@ SocketServer::on('open', function($event){ //绑定连接事件
 		sendResult:
 		if(!error()) do_hooks('mod.client.call', $data);
 		$result = error() ?: $obj::$act($data);
+		$result = array_merge($result, array('obj'=>$_GET['obj'], 'act'=>$_GET['act']));
 		//调用类方法并将结果发送给客户端
-		SocketServer::send(json_encode(array_merge($result, array('obj'=>$_GET['obj'], 'act'=>$_GET['act'])))); //发送 JSON 结果
+		SocketServer::send(json_encode($result)); //发送 JSON 结果
 		if($obj == 'user' && $result['success']){
 			if(!strcasecmp('login', $act)){ //登录操作
 				$uid = $result['data']['user_id'];
@@ -137,13 +139,13 @@ if(!file_exists($file = __ROOT__.'.socket-server')) file_put_contents($file, 'on
 if(!SocketServer::server()){
 	$file = fopen($file, 'r');
 	if(!flock($file, LOCK_EX | LOCK_NB)){ //通过检测 .socket-server 文件是否被加锁来判断 Socket 服务器是否在运行
-		is_agent() ? report_500(${'STDOUT'.__TIME__}) : exit(${'STDOUT'.__TIME__}."\n");
+		is_agent() ? report_500($STDOUT) : exit($STDOUT."\n");
 	}
 	//启动监听
 	SocketServer::listen(@$_SERVER['argv'][1] ?: config('mod.SocketServer.port'), function($socket){
-		${'STDOUT'.__TIME__} = lang('mod.socketOnTip');
+		$STDOUT = lang('mod.socketOnTip');
 		if($encoding = get_cmd_encoding())
-			${'STDOUT'.__TIME__} = iconv('UTF-8', $encoding, ${'STDOUT'.__TIME__}) ?: ${'STDOUT'.__TIME__};
-		if(!is_agent()) fwrite(STDOUT, ${'STDOUT'.__TIME__}."\n");
+			$STDOUT = iconv('UTF-8', $encoding, $STDOUT) ?: $STDOUT;
+		if(!is_agent()) fwrite(STDOUT, $STDOUT."\n");
 	});
 }

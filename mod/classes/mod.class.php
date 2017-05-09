@@ -74,18 +74,20 @@ class mod{
 
 	/**
 	 * userFilter() 过滤用户信息
-	 * @param  array  &$arg 用户信息
+	 * @param  array  &$data 包含用户信息的数据
 	 * @return null
 	 */
-	final protected static function userFilter(&$arg = array()){
-		unset($arg['user_password']); //过滤密码
-		if(!empty($arg['user_protect'])){
+	final protected static function userFilter(&$data = array()){
+		unset($data['user_password']); //过滤密码
+		if(!empty($data['user_protect'])){
 			if(!_user('me_id')){ //如果没有保存用户 Id 到内存，则将其获取并保存，此处会引发一次递归执行
 				_user('me_id', me_id());
 				_user('me_level', me_level());
 			}
-			foreach($arg['user_protect'] as $key){ //过滤自定义保护字段，管理员除外
-				if(_user('me_id') != $arg['user_id'] && _user('me_level') != config('user.level.admin')) unset($arg[$key]);
+			$admin = config('user.level.admin'); //管理员级别
+			foreach($data['user_protect'] as $key){ //过滤自定义保护字段，管理员除外
+				if(_user('me_id') != $data['user_id'] && _user('me_level') != $admin)
+					unset($data[$key]);
 			}
 		}
 	}
@@ -93,6 +95,7 @@ class mod{
 	/**
 	 * permissionChecker() 检查操作权限（不含获取）和主键
 	 * @param  array  &$arg 请求参数
+	 * @param  string $act  操作名
 	 * @return array        如果发生错误，则返回错误(数组)，否则无返回值
 	 */
 	final protected static function permissionChecker(&$arg = array(), $act = 'add'){
@@ -118,7 +121,7 @@ class mod{
 	/**
 	 * dataSerializer() 序列化数据
 	 * @param  array &$arg 请求参数
-	 * @param  bool  $get  操作过程
+	 * @param  bool  $act  操作名
 	 * @return null
 	 */
 	final protected static function dataSerializer(&$arg = array(), $act = ''){
@@ -144,7 +147,7 @@ class mod{
 	/**
 	 * linkHandler() 处理自定义永久链接
 	 * @param  array  &$arg  请求参数
-	 * @param  bool   $inGet 是否为数据获取过程
+	 * @param  bool   $act   操作名
 	 * @return mixed
 	 */
 	final protected static function linkHandler(&$arg = array(), $act = ''){
@@ -155,15 +158,15 @@ class mod{
 			if($act != 'get'){
 				if($hasRoot) $arg[$link] = substr($arg[$link], strlen(site_url())); //获取相对链接
 				if(file_exists($arg[$link])) return error(lang('mod.linkUnavailable')); //链接不能与文件名冲突
-				$tables = array();
+				$modules = array();
 				foreach(database() as $k => $v){
-					if(array_key_exists($k.'_link', $v)) $tables[] = $k; //获取使用链接功能的模块
+					if(array_key_exists($k.'_link', $v)) $modules[] = $k; //获取使用链接功能的模块
 				}
-				foreach($tables as $table){
-					$get_table = 'get_'.$table;
-					$the_table = 'the_'.$table;
-					if($get_table(array($table.'_link'=>$arg[$link]))){ //判断链接是否已被其他记录使用
-						if(static::TABLE != $table || (!empty($arg[$primkey]) && $arg[$primkey] != $the_table($primkey))) return error(lang('mod.linkUnavailable'));
+				foreach($modules as $module){
+					$get_module = 'get_'.$module;
+					$the_module = 'the_'.$module;
+					if($get_module(array($module.'_link'=>$arg[$link]))){ //判断链接是否已被其他记录使用
+						if(static::TABLE != $module || (!empty($arg[$primkey]) && $arg[$primkey] != $the_module($primkey))) return error(lang('mod.linkUnavailable'));
 					}
 				}
 			}else if(!$hasRoot){
@@ -208,7 +211,8 @@ class mod{
 			}
 			if($act != 'delete'){
 				foreach($arg as $k => $v){
-					if(!in_array($k, database($tb))) unset($arg[$k]); //过滤无效字段
+					if(!in_array($k, database($tb)))
+						unset($arg[$k]); //过滤无效字段
 					elseif(is_string($v) && ($tags = config('mod.escapeTags')))
 						$arg[$k] = escape_tags($v, $tags); //转义 HTML 脚本标签
 				}
@@ -409,11 +413,11 @@ class mod{
 		$id = !empty($arg[$primkey]) ? $arg[$primkey] : 0;
 		static::handler($arg, 'delete');
 		if(error()) return error();
+		database::open(0);
 		$tables = explode(',', static::tableRelated($tb)); //获取从表
 		for($i=0; $i<count($tables); $i++){ //依次删除从表中的记录
-			if(!database::open(0)->delete(trim($tables[$i]), $primkey.' = '.$id) && $i == 0){
+			if(!database::delete($tables[$i], $primkey.' = '.$id) && $i == 0)
 				return error(lang('mod.deleteFailed', lang($tb.'.label')));
-			}
 		}
 		do_hooks($tb.'.delete.complete', $arg); //执行模块删除记录完成后挂钩函数
 		if(error()) return error();
@@ -457,8 +461,12 @@ class mod{
 			);
 		$arg = array_merge($default, $arg);
 		do_hooks($tb.'.get.before', $arg); //执行记录获取前挂钩函数
-		if(strtolower($arg['sequence']) == 'rand') $orderby = 'rand()';
-		else $orderby = $arg['orderby'].' '.$arg['sequence'];
+		if(error()) return error();
+		$sqlite = database::open(0)->set('type') == 'sqlite';
+		if(strtolower($arg['sequence']) == 'rand')
+			$orderby = $sqlite ? 'random()' : 'rand()';
+		else
+			$orderby = $arg['orderby'].' '.$arg['sequence'];
 		foreach($arg as $k => $v){
 			if(in_array($k, database($tb)) && $v !== null){
 				$where[$tb.'.'.$k] = $extra[$k] = $v; //组合 where 查询条件
@@ -495,17 +503,20 @@ class mod{
 			$extra['keyword'] = $arg['keyword'];
 			do_hooks($tb.'.get.before', $arg); //执行记录获取前挂钩函数
 			if(error()) return error();
-			if(strtolower($arg['sequence']) == 'rand') $orderby = 'rand()';
-			else $orderby = $arg['orderby'].' ' . $arg['sequence'];
+			$sqlite = database::open(0)->set('type') == 'sqlite';
+			if(strtolower($arg['sequence']) == 'rand')
+				$orderby = $sqlite ? 'random()' : 'rand()';
+			else
+				$orderby = $arg['orderby'].' ' . $arg['sequence'];
 			$keyword = $arg['keyword'];
 			if(is_string($keyword)) $keyword = array($keyword);
 			foreach($keyword as $k => $v){
 				$keyword[$k] = str_replace('%', '[%]', $v); //转义 % 字符
 			}
-			$keys = explode('|', config($tb.'.keys.search'));
+			$keys = explode('|', str_replace(' ', '',config($tb.'.keys.search')));
 			foreach($keyword as $v){
 				for($i=0; $i < count($keys); $i++){ 
-					$a[$i][] = '`'.trim($keys[$i])."` LIKE '%".$v."%'"; //组合 like 条件
+					$a[$i][] = '`'.$keys[$i]."` LIKE '%".$v."%'"; //组合 like 条件
 				}
 			}
 			for($i=0; $i < count($a); $i++){ 
@@ -531,21 +542,22 @@ class mod{
 	/** fetchMulti() 获取多记录 */
 	final protected static function fetchMulti($tables, $where, $limit, $orderby, $extra, $tb, $arg, $_where, $_limit){
 		$result = database::open(0)->select($tables, '*', $where, $limit, $orderby); //获取符合条件的记录
-		$multiple = array();
+		$data = array();
 		while($result && $single = $result->fetch()){
 			static::handler($single, 'get');
 			do_hooks($tb.'.get', $single); //执行记录获取时挂钩函数
 			if(error()) return error(); //发生错误，不再执行
-			$multiple[] = $single;
+			$data[] = $single;
 		}
-		if(empty($multiple)) return error(lang('mod.noData', lang($tb.'.label')));
+		if(empty($data)) return error(lang('mod.noData', lang($tb.'.label')));
 		$extra['orderby'] = $arg['orderby'];
 		$extra['sequence'] = $arg['sequence'];
 		$extra['limit'] = $arg['limit'];
 		$extra['page'] = $arg['page'];
-		$extra['total'] = database::select($tb, 'COUNT(*) AS total', $_where)->fetchObject()->total; //符合条件的记录总数
+		$extra['total'] = database::select($tb, 'COUNT(*) AS total', $_where)
+								  ->fetchObject()->total; //符合条件的记录总数
 		$extra['pages'] = $_limit ? ceil($extra['total'] / $_limit) : 1; //符合条件的总页码数
-		return success($multiple, $extra);
+		return success($data, $extra);
 	}
 
 	/**
@@ -596,7 +608,8 @@ class mod{
 	 */
 	final protected static function trash($action = 'get'){
 		$tb = static::TABLE;
-		if(!$tb) return error(lang('mod.methodDenied', $action == 'get' ? 'getTrash' : 'cleanTrash'));
+		$deny = lang('mod.methodDenied', $action == 'get' ? 'getTrash' : 'cleanTrash');
+		if(!$tb) return error($deny);
 		$result = database::open(0)->select($tb, '*', 1, 0); //获取模块的所有记录
 		$count = 0;
 		$data = array();
@@ -604,14 +617,17 @@ class mod{
 		$tables = explode(',', static::relateTables($tb));
 		while($result && $single = $result->fetch()){
 			for($i=1; $i<count($tables); $i++){
+				$table = database($tables[$i]); //从表结构
+				$primkey = get_primkey_by_table($tables[$i]); //从表主键
 				$where = array();
 				foreach($single as $key => $value){
-					$primkey = get_primkey_by_table($tables[$i]); //获取从表主键
-					if(in_array($key, database($tables[$i])) && $key == $primkey && $value)
+					if(in_array($key, $table) && $key == $primkey && $value)
 						$where[$tables[$i].'.'.$key] = $value; //组合每一个从表的 where 条件
 				}
-				$valid = database::select($tables[$i], 'count(*)', $where)->fetchColumn(); //判断记录的外键值是否有效
-				if(!$valid && !in_array($single[static::PRIMKEY], $invalidId)){ //外键值无效，则该记录无效
+				$valid = database::select($tables[$i], 'count(*)', $where)
+								 ->fetchColumn(); //判断记录的外键值是否有效
+				if(!$valid && !in_array($single[static::PRIMKEY], $invalidId)){
+					//外键值无效，则该记录无效
 					$invalidId[] = $single[static::PRIMKEY];
 					static::handler($single, 'get');
 					do_hooks($tb.'.get', $single); //执行获取记录时挂钩函数

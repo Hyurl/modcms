@@ -67,35 +67,35 @@ add_hook('category.update.check_name', function($arg){
 }, false);
 
 /** 自动设置子目录数量 */
-add_hook('category.get.set_children_counts', function($arg){
+add_hook('category.get.set_children_counts', function($data){
 	$count = database::open(0)
-		   ->select('category', 'COUNT(*) AS count', "`category_parent` = {$arg['category_id']}")
+		   ->select('category', 'COUNT(*) AS count', "`category_parent` = {$data['category_id']}")
 		   ->fetchObject()
 		   ->count; //获取子目录实际数量
-	if(is_array($arg['category_children']))
-		$_count = count($arg['category_children']);
+	if(is_array($data['category_children']))
+		$_count = count($data['category_children']);
 	else
-		$_count = $arg['category_children'];
+		$_count = $data['category_children'];
 	if($count != $_count){
-		if(!is_array($arg['category_children'])) $arg['category_children'] = $count;
+		if(!is_array($data['category_children'])) $data['category_children'] = $count;
 		//更新数据库记录
-		database::update('category', "`category_children` = $count", "`category_id` = {$arg['category_id']}");
+		database::update('category', "`category_children` = $count", "`category_id` = {$data['category_id']}");
 	}
-	return $arg;
+	return $data;
 }, false);
 
 /** 自动设置分类目录所属文章数量 */
-add_hook('category.get.set_post_counts', function($arg){
+add_hook('category.get.set_post_counts', function($data){
 	$count = database::open(0)
-		   ->select('post', 'COUNT(*) AS count', "`category_id` = {$arg['category_id']}")
+		   ->select('post', 'COUNT(*) AS count', "`category_id` = {$data['category_id']}")
 		   ->fetchObject()
 		   ->count; //获取文章实际数量
-	if($count != $arg['category_posts']){
-		$arg['category_posts'] = $count;
+	if($count != $data['category_posts']){
+		$data['category_posts'] = $count;
 		//更新数据库记录
-		database::update('category', "`category_posts` = $count", "`category_id` = {$arg['category_id']}");
+		database::update('category', "`category_posts` = $count", "`category_id` = {$data['category_id']}");
 	}
-	return $arg;
+	return $data;
 }, false);
 
 /** 删除分类目录后将子分类目录设置为顶级分类目录 */

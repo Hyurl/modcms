@@ -52,7 +52,7 @@ function bin2str($str){
 }
 
 /**
- * md5_crypt() 生成一个随机的 MD5 哈希密文
+ * md5_crypt() 生成一个随机的 MD5 哈希秘钥
  * @param  string $str 字符串
  * @return string      哈希值
  */
@@ -61,28 +61,42 @@ function md5_crypt($str){
 }
 
 /** 
- * hash_verify() 验证一个哈希密文是否与字符串相等
+ * hash_verify() 验证一个哈希秘钥是否与字符串相等
  * @param  string $hash 哈希值
  * @param  string $str  字符串
  * @return bool
  */
 function hash_verify($hash, $str){
+	trigger_error("This function is deprecated, it may be removed in the future.", E_USER_WARNING);
 	return $hash == crypt($str, $hash);
 }
 
+if(!function_exists('password_verify')):
 /**
- * get_uploaded_files() 获取上传文件的数组，与 $_FILES 不同，当同一个键名包含多个文件时，这个键的值是一个索引数组，数组下面是一个包含文件信息的关联数组
+ * password_verify() 验证一个密码是否与哈希密钥相等
+ * @param  string $password 原始密码
+ * @param  string $hash     哈希密钥
+ * @return boolean          相等返回 true，否则返回 false
+ */
+function password_verify($password, $hash){
+	return $hash == crypt($password, $hash);
+}
+endif;
+
+/**
+ * get_uploaded_files() 获取上传文件的数组，与 $_FILES 不同，当同一个键名包含多个文件时，
+ *                      这个键的值是一个索引数组，数组下面是一个包含文件信息的关联数组
  * @param  string $key  设置只获取指定键(一维键名)的文件信息，如不设置，则返回所有上传文件的信息
  * @return array        包含所有上传文件的数组, 如果没有上传的文件，或者设置获取的键没有文件，则返回空数组
  */
-function get_uploaded_files($key = '') {
+function get_uploaded_files($key = ''){
 	$files = $_FILES;
-	foreach ($files as &$file) {
+	foreach ($files as &$file){
 		if(is_array($file)){
 			$_files = array();
-			foreach ($file as $prop => $val) {
+			foreach ($file as $prop => $val){
 				if(is_array($val)){
-					array_walk_recursive($val, function(&$item) use ($prop) {
+					array_walk_recursive($val, function(&$item) use ($prop){
 						$item = array($prop => $item); //$item 是遍历 $val 时产生的值
 					}, $file);
 					$_files = array_replace_recursive($_files, $val);
@@ -215,7 +229,7 @@ function xchmod($path, $mode){
 function array2path(array $array, $dir = ""){
 	$paths = array();
 	if($dir && $dir[strlen($dir)-1] != '/') $dir .= '/';
-	foreach ($array as $k => $v) {
+	foreach ($array as $k => $v){
 		if(is_array($v)){
 			$paths = array_merge($paths, array2path($v, $dir.$k));
 		}else{
@@ -287,11 +301,17 @@ function rand_str($len = 4, $chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEF
  */
 function escape_tags($str, $tags){
 	$tags = explode('><', str_replace(' ', '', $tags));
-	foreach ($tags as $tag) {
+	foreach ($tags as $tag){
 		$tag = trim($tag, '< >');
-		$re1 = array('/<'.$tag.'([\s\S]*)>([\s\S]*)<\/'.$tag.'[\s\S]*>/Ui', '/<'.$tag.'([\s\S]*)>/Ui');
-		$re2 = array('&lt;'.$tag.'$1&gt;$2&lt;/'.$tag.'&gt;', '&lt;'.$tag.'$1&gt;');
-		$str = preg_replace($re1, $re2, $str); //将 < 和 > 分别转换为 &lt; 和 &gt;
+		$re1 = array( //The original tags (start and end)
+			'/<'.$tag.'([\s\S]*)>([\s\S]*)<\/'.$tag.'[\s\S]*>/Ui', //start tag
+			'/<'.$tag.'([\s\S]*)>/Ui' //end tag
+			);
+		$re2 = array( //Replacements, replace < and > to &lt; and &gt;
+			'&lt;'.$tag.'$1&gt;$2&lt;/'.$tag.'&gt;',
+			'&lt;'.$tag.'$1&gt;'
+			);
+		$str = preg_replace($re1, $re2, $str);
 	}
 	return $str;
 }
@@ -308,7 +328,11 @@ function export($var, $path = ''){
 		return file_put_contents($path, "<?php\nreturn ".$str.';'); //将代码输出到文件
 	}elseif(is_browser() && !is_ajax()){
 		$str = trim(highlight_string("<?php\n".$str, true)); //高亮代码
-		$_str = ($var === null || is_int($var) || is_bool($var) || is_object($var) || is_resource($var)) ? '&lt;?php<br />' : '<span style="color: #0000BB">&lt;?php<br /></span>';
+		if($var === null || is_int($var) || is_bool($var) || is_object($var) || is_resource($var)){
+			$_str = '&lt;?php<br />'; //for special variables
+		}else{
+			$_str = '<span style="color: #0000BB">&lt;?php<br /></span>'; //for normal variables
+		}
 		echo strstr($str, $_str, true).substr($str, strpos($str, $_str)+strlen($_str))."<br/>";
 	}else{
 		echo $str."\n";
@@ -323,7 +347,8 @@ function export($var, $path = ''){
  */
 function function_alias($original, $alias){
 	if(!function_exists($original) || function_exists($alias)) return false;
-	eval('function '.$alias.'(){return call_user_func_array("'.$original.'", func_get_args());}');
+	$code = 'function '.$alias.'(){return call_user_func_array("'.$original.'", func_get_args());}';
+	eval($code); //evaluate the code and define alias function 
 	return true;
 }
 
@@ -353,7 +378,7 @@ function unicode_decode($str){
  * @param  array   $input 待判断的变量
  * @return boolean
  */
-function is_assoc($input) {
+function is_assoc($input){
 	if(!is_array($input) || !$input) return false;
 	return array_keys($input) !== range(0, count($input) - 1);
 }
@@ -365,10 +390,10 @@ function is_assoc($input) {
  * @param  string $charset 编码
  * @return array           分割成的数组
  */
-function mb_str_split($str, $len = 1, $charset = 'UTF-8') {
+function mb_str_split($str, $len = 1, $charset = 'UTF-8'){
 	$start = 0;
 	$strlen = mb_strlen($str);
-	while ($strlen) {
+	while ($strlen){
 		$array[] = mb_substr($str, $start, $len, $charset);
 		$str = mb_substr($str, $len, $strlen, $charset);
 		$strlen = mb_strlen($str);
@@ -385,7 +410,7 @@ function mb_str_split($str, $len = 1, $charset = 'UTF-8') {
  */
 function implode_assoc($assoc, $sep, $sep2){
 	$arr = array();
-	foreach ($assoc as $key => $value) {
+	foreach ($assoc as $key => $value){
 		$arr[] = $key.$sep.$value;
 	}
 	return implode($sep2, $arr);
@@ -402,7 +427,7 @@ function explode_assoc($str, $sep, $sep2){
 	if(!$str) return array();
 	$arr = explode($sep, $str);
 	$assoc = array();
-	foreach ($arr as $value) {
+	foreach ($arr as $value){
 		$i = strpos($value, $sep2);
 		$k = substr($value, 0, $i);
 		$v = substr($value, $i+1) ?: '';
@@ -427,8 +452,10 @@ function is_empty_dir($dir){
  * @return boolean
  */
 function is_img($src, $strict = false){
-	if(!$strict || !function_exists('finfo_open'))
-		return in_array(pathinfo($src, PATHINFO_EXTENSION), array('jpg','jpeg','png','gif','bmp'));
+	if(!$strict || !function_exists('finfo_open')){
+		$ext = pathinfo($src, PATHINFO_EXTENSION);
+		return in_array($ext, array('jpg','jpeg','png','gif','bmp')); //compare extension name
+	}
 	$finfo = finfo_open(FILEINFO_MIME_TYPE);
 	return strpos(finfo_file($finfo, $src), 'image/') === 0; //比较 MimeType
 }
@@ -440,9 +467,10 @@ function_alias('is_img', 'is_image');
  * @return boolean
  */
 function is_agent($agent = ''){
-	if(!isset($_SERVER['HTTP_HOST'])) return false;
-	if($agent === true || $agent === 1) return !empty($_SERVER['HTTP_USER_AGENT']);
-	return $agent ? stripos(@$_SERVER['HTTP_USER_AGENT'], $agent) !== false : true;
+	if(PHP_SAPI == 'cli') return false;
+	$hasAgent = !empty($_SERVER['HTTP_USER_AGENT']);
+	if($agent === true || $agent === 1) return $hasAgent;
+	return $agent ? $hasAgent && stripos($_SERVER['HTTP_USER_AGENT'], $agent) !== false : true;
 }
 
 /**
@@ -451,7 +479,7 @@ function is_agent($agent = ''){
  * @return boolean
  */
 function is_browser($agent = ''){
-	return isset($_SERVER['HTTP_USER_AGENT']) && is_agent($agent) && !is_curl() && !empty($_SERVER['HTTP_ACCEPT']) && !empty($_SERVER['HTTP_CONNECTION']) && !strcasecmp($_SERVER['HTTP_CONNECTION'], 'keep-alive');
+	return is_agent($agent) && !is_curl() && !empty($_SERVER['HTTP_ACCEPT']) && !empty($_SERVER['HTTP_CONNECTION']) && !strcasecmp($_SERVER['HTTP_CONNECTION'], 'keep-alive');
 }
 
 /**
@@ -470,13 +498,8 @@ function is_mobile($agent = ''){
  * @return boolean
  */
 function is_ajax(){
-	if(is_agent(true) && !is_curl() && !empty($_SERVER['HTTP_CONNECTION'])){
-		if(!strcasecmp(@$_SERVER["HTTP_X_REQUESTED_WITH"], 'XMLHttpRequest')) return true; //jQuery
-		if(empty($_SERVER['CONTENT_TYPE'])){
-			return @$_SERVER['HTTP_ACCEPT'] == '*/*' || !empty($_SERVER['HTTP_ORIGIN']);
-		}else{
-			return @$_SERVER['HTTP_ACCEPT'] == '*/*';
-		}
+	if(is_browser()){
+		return $_SERVER['HTTP_ACCEPT'] == '*/*' || !strcasecmp(@$_SERVER["HTTP_X_REQUESTED_WITH"], 'XMLHttpRequest');
 	}
 	return false;
 }
@@ -509,7 +532,7 @@ function is_get(){
  * is_ssl() 判断当前请求是否使用 SSL 协议
  * @return boolean
  */
-function is_ssl() {
+function is_ssl(){
 	return isset($_SERVER['HTTPS']) && !strcasecmp($_SERVER['HTTPS'], 'on');
 }
 
@@ -543,7 +566,7 @@ function redirect($url, $code = 302, $time = 0, $msg = ''){
  */
 function set_query_string($key, $value = ''){
 	if(!is_array($key)) $key = array($key => $value);
-	foreach ($key as $k => $v) {
+	foreach ($key as $k => $v){
 		if($v === null){
 			unset($_GET[$k]); //删除参数
 		}else{
@@ -574,7 +597,8 @@ function set_content_type($type, $encoding = 'UTF-8'){
  */
 function url(){
 	if(!is_agent()) return false;
-	$protocol = strstr(strtolower($_SERVER['SERVER_PROTOCOL']), '/', true).(is_ssl() ? 's' : '');
+	$protocol = strstr(strtolower($_SERVER['SERVER_PROTOCOL']), '/', true); //often be http
+	$protocol .= is_ssl() ? 's' : ''; //if is ssl, use https instead
 	return $protocol.'://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
 }
 
@@ -587,13 +611,13 @@ function get_client_ip($strict = false){
 	$ip = false;
 	if(isset($_SERVER['HTTP_X_FORWARDED_FOR'])){ //从代理地址中获取 IP
 		$ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
-		$ip = $ips[0];
+		$ip = trim($ips[0]);
 	}else if(isset($_SERVER['HTTP_CLIENT_IP'])){
 		$ip = $_SERVER['HTTP_CLIENT_IP'];
 	}else if(isset($_SERVER['REMOTE_ADDR'])){
 		$ip = $_SERVER['REMOTE_ADDR'];
 	}
-	if($ip && $strict){
+	if($ip && $strict){ //filter invalid ip
 		$ip = filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
 	}
 	return $ip;
@@ -605,6 +629,7 @@ function_alias('get_client_ip', 'get_agent_ip');
  * @return string IP 地址
  */
 function rand_ip(){
+	trigger_error("This function is deprecated, it may be removed in the future.", E_USER_WARNING);
 	$ip = rand(1, 255).'.'.rand(0, 255).'.'.rand(0, 255).'.'.rand(0, 255);
 	return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) ?: rand_ip();
 }
@@ -614,6 +639,7 @@ function rand_ip(){
  * @return string IP 地址
  */
 function cn_rand_ip(){
+	trigger_error("This function is deprecated, it may be removed in the future.", E_USER_WARNING);
 	$long = array(
 		array(607649792, 608174079),
 		array(1038614528, 1039007743),
@@ -633,25 +659,41 @@ function cn_rand_ip(){
 /**
  * array2xml() 将数组转换为 XML 结构数据
  * @param  array   $array    数组
- * @param  string  $root     根标签
- * @param  string  $encoding 文档编码
+ * @param  boolean $cdata    使用 CDATA 包裹值，当值中包含标签名时，必须设置为 true。
  * @return string            XML 文档
  */
-function array2xml(array $array, $root = '<xml>', $encoding = 'UTF-8'){
-	$head = '<?xml version="1.0" encoding="'.$encoding.'"?><'.trim($root, '<>').'/>';
-	$xml = simplexml_load_string($head); //创建 XML 对象
-	$createXML = function($xml, $arr) use (&$createXML){ //use 匿名函数自身的引用，就可以在内部进行递归运算
-		foreach($arr as $k => $v) {
-			if(is_array($v)) {
-				$xml = $xml->addChild($k);
-				$createXML($xml, $v); //递归
+function array2xml(array $array, $cdata = false){
+	$xml = simplexml_load_string('<xml/>'); //创建 XML 对象
+	$createXML = function($xml, $arr) use (&$createXML, $cdata){ //use 匿名函数自身的引用，就可以在内部进行递归运算
+		foreach($arr as $key => $value){
+			if(is_assoc($value)){ //处理关联数组
+				$xml = $xml->addChild($key);
+				$createXML($xml, $value); //递归
+			}elseif(is_array($value)){ //处理索引数组
+				foreach ($value as $item) {
+					$createXML($xml, array($key=>$item)); //索引数组使用相同的键名
+				}
+			}elseif($cdata){
+				$dom = dom_import_simplexml($xml->addChild($key));
+				$doc = $dom->ownerDocument;
+				$dom->appendChild($doc->createCDATASection($value)); //添加包含 CDATA 的节点
 			}else{
-				$xml->addChild($k, $v); //添加子节点
+				$xml->addChild($key, $value); //添加子节点
 			}
 		}
 	};
 	$createXML($xml, $array);
-	return html_entity_decode($xml->saveXML(), null, $encoding);
+	return html_entity_decode($xml->saveXML());
+}
+
+/**
+ * xml2array() 将 XML 数据转换为关联数组
+ * @param  string $xml    XML 数据
+ * @return array          转换后的数组
+ */
+function xml2array($xml){
+	$obj = simplexml_load_string($xml, 'SimpleXMLElement', LIBXML_NOCDATA);
+	return object2array($obj);
 }
 
 /**
@@ -674,7 +716,7 @@ function curl($options = array()){
 		'autoReferer'=>true, //跳转时自动设置来路页面
 		'sslVerify'=>false, //SSL 安全验证
 		'proxy'=>'', //代理服务器(格式: 8.8.8.8:80)
-		'clientIp'=>'', //客户端 IP
+		'clientIp'=>'', //原始客户端 IP，当 curl 用来充当代理服务器时使用
 		'timeout'=>10, //设置超时;
 		'onlyIpv4'=>true, //只解析 IPv4
 		'username'=>'', //HTTP 访问认证用户名;
@@ -702,16 +744,16 @@ function curl($options = array()){
 	if($cookie && is_array($cookie)){ //组合 Cookie
 		$cookie = is_assoc($cookie) ? implode_assoc($cookie, '=', '; ') : implode('; ', $cookie);
 	}
-	if(is_assoc($requestHeaders)) { //组合请求头
-		foreach ($requestHeaders as $key => $value) {
-			$requestHeaders[] = "$key: $value";
+	if($clientIp){
+		$requestHeaders['Client-IP'] = $clientIp; //设置客户端 IP
+		if(empty($requestHeaders['X-Forwarded-For']))
+			$requestHeaders['X-Forwarded-For'] = $clientIp; //设置代理
+	}
+	if(is_assoc($requestHeaders)){
+		foreach ($requestHeaders as $key => $value){
+			$requestHeaders[] = "$key: $value"; //组合请求头
 			unset($requestHeaders[$key]);
 		}
-	}
-	if($clientIp){
-		$requestHeaders[] = 'Cleint-IP: '.$clientIp; //设置客户端 IP
-		if($proxy) //标记使用代理
-			$requestHeaders[] = 'X-Forwarded-For: '.$clientIp.', '.strstr($proxy, ':', true);
 	}
 	//设置请求参数
 	curl_setopt($ch, CURLOPT_URL, $url);
@@ -750,9 +792,9 @@ function curl($options = array()){
 			$charset = $match[1];
 		}else{
 			$_data = str_replace(array('\'', '"', '/'), '', $data);
-			if(preg_match('/<meta.*charset=(.+)>/iU', $_data, $match)){
-				$charset = strstr($match[1], ' ', true) ?: $match[1];
-			}else if(preg_match('/<\?xml.*encoding=(.+)?>/iU', $_data, $match)){
+			$htmlRegex = '/<meta.*charset=(.+)>/iU';
+			$xmlRegex = '/<\?xml.*encoding=(.+)\?>/iU';
+			if(preg_match($htmlRegex, $_data, $match) || preg_match($xmlRegex, $_data, $match)){
 				$charset = strstr($match[1], ' ', true) ?: $match[1];
 			}else{
 				$charset = 'UTF-8';
@@ -795,7 +837,7 @@ function curl($options = array()){
  */
 function curl_info($key = '', $value = null){
 	static $info = array();
-	if(is_assoc($key)) {
+	if(is_assoc($key)){
 		return $info = array_merge($info, $key);
 	}elseif($value !== null){
 		return $info[$key] = $value;
@@ -813,8 +855,9 @@ function curl_cookie_str($withSentCookie = false){
 	$reqHr = curl_info('request_headers'); //请求头
 	$resHr = curl_info('response_headers'); //响应头
 	if(!empty($resHr['Set-Cookie'])){
-		if(is_string($resHr['Set-Cookie'])) $resHr['Set-Cookie'] = array($resHr['Set-Cookie']);
-		foreach ($resHr['Set-Cookie'] as $value) {
+		if(is_string($resHr['Set-Cookie']))
+			$resHr['Set-Cookie'] = array($resHr['Set-Cookie']);
+		foreach ($resHr['Set-Cookie'] as $value){
 			$cookie .= strstr($value, ';', true).'; ';
 		}
 	}
@@ -835,13 +878,16 @@ function parse_header($str){
 	$__headers = array();
 	foreach($headers as $header){
 		if($i = strpos($header, ':')){
-			$header = array(strstr($header, ':', true), trim(substr($header, $i+1)));
-			if(array_key_exists($header[0], $_headers)){ //如果一个参数多次使用，如 Set-Cookie
-				if(!is_array($_headers[$header[0]]))     //则将其保存为索引数组
-					$_headers[$header[0]] = array($_headers[$header[0]]);
-				$_headers[$header[0]][] = $header[1];
+			$key = substr($header, 0, $i);
+			$value = trim(substr($header, $i+1));
+			if(strpos($key, ' ')){
+				$__headers[] = $header;
+			}elseif(array_key_exists($key, $_headers)){ //如果一个参数多次使用，如 Set-Cookie
+				if(!is_array($_headers[$key]))     //则将其保存为索引数组
+					$_headers[$key] = array($_headers[$key]);
+				$_headers[$key][] = $value;
 			}else{
-				$_headers[$header[0]] = $header[1];
+				$_headers[$key] = $value;
 			}
 		}else{
 			$__headers[] = $header;
@@ -899,7 +945,7 @@ function hex2bin($hex){
 endif;
 
 /** 
- * parse_cli_param() 解析 PHP 运行于 CLI 模式时传入的参数，支持的格式包括 --key value，-k value 以及 valve
+ * parse_cli_param() 解析 PHP 运行于 CLI 模式时传入的参数，支持的格式包括 --key value，-k value 以及 value
  * @param  array  $argv 通常为 $_SERVER['agrv']
  * @return array        包含键值对 file=>当前运行文件, param=>(array)参数列表
  */
@@ -915,25 +961,27 @@ function parse_cli_param($argv = array(), $i = 0, $isArg = false, $args = array(
 	}
 	if(!$argv) return $args;
 	if($argv[0][0] == '-'){
-		if(isset($argv[0][1]) && $argv[0][1] != '-' && !isset($argv[0][2])){ //--key 长参数
-			$key = ltrim($argv[0], '-');
-		}elseif(isset($argv[0][1]) && $argv[0][1] == '-' && isset($argv[0][2]) && $argv[0][2] != '-'){ //-k 短参数
+		if(isset($argv[0][1]) && $argv[0][1] != '-' && !isset($argv[0][2])){ //-k 短键名参数
+			$key = $argv[0][1];
+		}elseif(isset($argv[0][1]) && $argv[0][1] == '-' && isset($argv[0][2]) && $argv[0][2] != '-'){ //--key 长键名参数
 			$key = ltrim($argv[0], '-');
 		}else{ //无键名参数
 			$value = $argv[0];
 		}
-	}elseif($argv[0] != ';'){
+	}elseif($argv[0] != ';'){ //无键名参数
 		$value = $argv[0];
 	}
 	if(isset($key)){
 		if(isset($argv[1]) && $argv[1][0] != '-' && $key[strlen($key)-1] != ';'){
-			$value = $argv[1]; //命令参数值
+			$value = $argv[1]; //参数值
 			$_i = 2;
-		}else $value = '';
+		}else{
+			$value = '';
+		}
 	}
 	if(!$isArg){
 		$args['param'][$i] = array(
-			'cmd'=>$value, //命令
+			'cmd'=>rtrim($value, ';'), //命令
 			'args'=>array() //参数
 			);
 	}else{
@@ -984,6 +1032,17 @@ function get_cmd_encoding(){
 }
 
 /**
+ * ping() 测试一个主机能否被连接
+ * @param  string  $addr    主机地址
+ * @param  boolean &$output 将输出保存到该变量中
+ * @return boolean
+ */
+function ping($addr, &$output = null){
+	exec('ping '.(PHP_OS == 'WINNT' ? '-n': '-c')." 1 $addr", $output, $errno);
+	return !$errno;
+}
+
+/**
  * object2array() 将对象转换为数组
  * @param  object $obj 对象
  * @return array       数组
@@ -999,4 +1058,108 @@ function object2array($obj){
  */
 function array2object(array $arr){
 	return json_decode(json_encode($arr));
+}
+
+/**
+ * get_local_ip() 获取本地 IP 地址
+ * @return string 本机 IP 地址
+ */
+function get_local_ip(){
+	$sock = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
+	socket_connect($sock, "8.8.8.8", 53);
+	socket_getsockname($sock, $name);
+	socket_close($sock);
+	return $name;
+}
+
+/**
+ * doc() 获取一个函数或者类方法的程序文档，支持命名空间和继承
+ * @param  string  $func   函数名或者方法名，示例: 
+ *                         doc('ping'), doc('user::getMe'), doc('foo\bar')
+ * @param  boolean $return 将文档返回
+ * @return string|null     文档内容或者 Null
+ */
+function doc($func = '', $return = false){
+	$func = $func ?: __function__;
+	if($isMd = strpos($func, '::')){ //判断是否为方法
+		$class = substr($func, 0, $isMd);
+		$mdName = substr($func, $isMd+2);
+		if(!method_exists($class, $mdName) && !$return){ //判断方法是否存在
+			echo "This method is not yet defined.";
+			return;
+		}
+	}else{
+		if(!function_exists($func) && !$return){ //判断函数是否存在
+			echo "This function is not yet defined.";
+			return;
+		}
+	}
+	$hasNs = strrpos($func, '\\'); //是否有命名空间
+	if($hasNs){
+		$ns = str_replace('\\', '\\\\', substr($func, 0, $hasNs));
+		$nsReg = '/namespace[\s]+'.ltrim($ns, '\\').'/i'; //命名空间定义格式
+		$func = substr($func, $hasNs+1);
+	}
+	if($isMd){
+		$i = strpos($func, '::');
+		$class = substr($func, 0, $i);
+		$func = $mdName;
+		$classReg = '/class[\s]+'.ltrim($class, '\\').'/i'; //类定义格式
+		$classReg2 = '/[\s]+extends[\s]+([\\\_a-zA-Z0-9]*)/i'; //继承
+	}
+	$doc = '';
+	$includes = get_included_files(); //引入的所有文件
+	$funcReg = "/(\/\*\*[\s\S]*\/)[\r\n\sa-zA-Z]+function[\s]+".ltrim($func, '\\').'\([\s\S]*\)/iU'; //函数定义格式
+	$getDoc = function($code) use ($funcReg, $isMd, $hasNs, &$getDoc){
+		if(preg_match($funcReg, $code, $match)){
+			$declare = $match[0]; //定义函数的代码（包括 PHPDoc）
+			$end = strrpos($declare, '*/');
+			$declare = trim(substr($declare, $end+2), "\r\n"); //函数定义
+			if(!$isMd){
+				if((!$hasNs && stripos($declare, 'function') !== 0)
+					|| ($hasNs && stripos(trim($declare), 'function') !== 0)){
+					$code = substr($code, strpos($code, $declare)+strlen($declare));
+					return $getDoc($code);
+				}
+			}
+			$match = $match[1];
+			$start = strrpos($match, '/**'); //定位到函数文档开始位置
+			$doc = substr($match, $start);
+			$docs = explode("\n", $doc);
+			foreach ($docs as &$line) {
+				$line = trim($line); //去除文档每一行两端的空格
+				if($line[0] == '*') $line = ' '.$line; //恢复对齐
+			}
+			return join("\n", $docs);
+		}
+	};
+	foreach ($includes as $file) {
+		$code = file_get_contents($file); //文件内容
+		if($hasNs){ //处理命名空间
+			if(!preg_match($nsReg, $code, $match))
+				continue;
+			else
+				$code = strstr($code, $match[0]); //定位到命名空间位置
+		}
+		if($isMd){ //处理类方法
+			if(!preg_match($classReg, $code, $match))
+				continue;
+			else{
+				$code = strstr($code, $match[0]); //定位到类位置
+				if(preg_match($classReg2, strstr($code, "\n", true), $match)){
+					$parent = $match[1]; //父类
+				}
+			}
+		}
+		$doc = $getDoc($code);
+		if($doc) break;
+	}
+	if(!$doc && isset($parent)){
+		$doc = doc($parent.'::'.$mdName, true);
+	}
+	if($return){
+		return $doc;
+	}else{
+		echo $doc ?: "This ".($isMd ? 'method' : 'function')." doesn't have a document.";
+	}
 }

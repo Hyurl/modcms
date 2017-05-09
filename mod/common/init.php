@@ -8,15 +8,15 @@ if(version_compare(PHP_VERSION, '5.3.0') < 0) //ModPHP 需要运行在 PHP 5.3+ 
 $file = str_replace('\\', '/', realpath($_SERVER['SCRIPT_FILENAME']));
 
 /** 定义常量 MOD_VERSION, __TIME__, __ROOT_, __SCRIPT__ */
-define('MOD_VERSION', '2.0.2'); //ModPHP 版本
+define('MOD_VERSION', '2.0.9'); //ModPHP 版本
 define('__TIME__', time(), true); //开始运行时间
 define('__ROOT__', str_replace('\\', '/', dirname(dirname(__DIR__))).'/', true); //网站根目录
 define('__SCRIPT__', substr($file, strlen(__ROOT__)) ?: $file, true); //执行脚本
 
 /** 补全系统常量 */
-if(!defined('STDIN')) define('STDIN',fopen('php://stdin','r'));
-if(!defined('STDOUT')) define('STDOUT',fopen('php://stdout','w'));
-if(!defined('STDERR')) define('STDERR',fopen('php://stderr','w'));
+if(!defined('STDIN')) define('STDIN', fopen('php://stdin','r'));
+if(!defined('STDOUT')) define('STDOUT', fopen('php://stdout','w'));
+if(!defined('STDERR')) define('STDERR', fopen('php://stderr','w'));
 if(__SCRIPT__ == 'mod/common/init.php') return false;
 
 /** 加载核心文件 */
@@ -31,6 +31,8 @@ foreach (glob(__ROOT__.'mod/classes/*.php') as $file) {
 
 /** 加载默认函数文件 */
 foreach (glob(__ROOT__.'mod/functions/*.php') as $file) {
+	if($file == __ROOT__.'mod/functions/console.func.php' && !is_console())
+		continue; //console.func.php 仅在交互式控制台中引入
 	include_once $file;
 }
 

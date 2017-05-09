@@ -1,19 +1,19 @@
 <?php
 /** 在获取上传文件时将路径转换为绝对路径 */
 add_action(array('file.get', 'user.get', 'post.get', 'comment.get', 'link.get'), function($data){
-	if(!empty($data['file_src']) && strpos($data['file_src'], '://') === false){
+	if(!empty($data['file_src']) && strpos($data['file_src'], '://') === false){ //文件源地址
 		$data['file_src'] = site_url().$data['file_src'];
 	}
-	if(!empty($data['post_thumbnail']) && strpos($data['post_thumbnail'], '://') === false){
+	if(!empty($data['post_thumbnail']) && strpos($data['post_thumbnail'], '://') === false){ //文章缩略图
 		$data['post_thumbnail'] = site_url().$data['post_thumbnail'];
 	}
-	if(!empty($data['user_avatar']) && strpos($data['user_avatar'], '://') === false){
+	if(!empty($data['user_avatar']) && strpos($data['user_avatar'], '://') === false){ //用户头像
 		$data['user_avatar'] = site_url().$data['user_avatar'];
 	}
-	if(!empty($data['link_logo']) && strpos($data['link_logo'], '://') === false){
+	if(!empty($data['link_logo']) && strpos($data['link_logo'], '://') === false){ //友情链接 LOGO
 		$data['link_logo'] = site_url().$data['link_logo'];
 	}
-	if(!empty($data['post_content'])){
+	if(!empty($data['post_content'])){ //替换文章中的图片链接
 		$data['post_content'] = preg_replace('/<img(.*)src="upload\//', '<img$1src="'.site_url().'upload/', $data['post_content']);
 	}
 	return $data;
