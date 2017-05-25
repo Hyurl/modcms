@@ -11,16 +11,27 @@ if(extension_loaded('gd')){
 if(session_status() != PHP_SESSION_ACTIVE) session_start();
 $_SESSION['vcode'] = rand_str(5);
 $_SESSION['time'] = time();
+$generateColor = function(){
+	$red = rand(0, 255);
+	$green = rand(0, 255);
+	$blue = rand(0, 255);
+	return 'rgb('.$red.','.$green.','.$blue.')';
+};
 image::set('width', 100)
 	 ->set('height', 34)
-	 ->set('bgcolor', '#fff')
-	 ->set('color', 'rgba(117,175,202,0.8)')
+	 ->set('bgcolor', 'rgba(0,0,0,0)')
+	 ->set('color', $generateColor())
 	 ->set('font', admin_dir('fonts/arial.ttf'))
 	 ->set('fontsize', 18)
 	 ->set('x', 10)
 	 ->set('y', 5)
 	 ->open('vcode.png')
-	 ->text($_SESSION['vcode']);
+	 ->text($_SESSION['vcode'])
+	 ->set('thickness', 4);
+/** 随机画点 */
+for($i=0; $i<20; $i++){
+	image::set('color', $generateColor())->dot(rand(5, 95), rand(5, 30));
+}
 if(is_browser() && !is_ajax()){
 	set_content_type('image/png');
 	image::output();

@@ -7,7 +7,7 @@
 #user-avatar{max-width: 128px;max-height: 128px;background-color: rgba(0,0,0,0.3);display: block;}
 #select-avatar{margin: 10px 0 20px;}
 #user_password, #old_password{padding-right: 30px;}
-input+i.glyphicon{display: none;float: right;margin: -25px 10px 0 -25px;}
+input+.glyphicon{display: none;float: right;margin: -25px 10px 0 -25px;}
 #user-center{padding: 10px;margin-top: -20px;}
 .user-thumbnail{margin: -10px -10px 0 -10px;height: 200px;border-radius: 0 !important;background: transparent url(../../img/thumbnail.jpg) no-repeat fixed center; background-size: cover;}
 .user-avatar{height: 64px;width: 64px;margin-right: 10px;overflow: hidden;border: 2px solid #eee;margin-top: 165px;float: right;background-color: #eee;}

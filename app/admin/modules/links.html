@@ -9,7 +9,7 @@
 	.link-logo{max-width: 48px; max-height: 48px;}
 	</style>
 </head>
-<body data-menu="modules">
+<body data-menu="links">
 	<div class="container">
 		<ul class="nav nav-tabs" role="tablist">
 			<li role="presentation" class="active">
@@ -24,7 +24,7 @@
 							<if data="link_logo()">
 								<img src="{link_logo()}" alt="{lang('link.linkLogo')}"/>
 								<else>
-									<i class="glyphicon glyphicon-link media-icon"></i>
+									<span class="glyphicon glyphicon-link media-icon"></span>
 								</else>
 							</if>
 						</div>
@@ -82,8 +82,7 @@
 		</div>
 	</div>
 	<form id="jquery-upload-form" action="{SITE_URL}mod.php?file::upload" method="post" enctype="multipart/form-data" style="display:none">
-		<input type="hidden" name="type" value="template"/>
-		<input type="hidden" name="file_desc" value="{lang('admin.templateZip')}"/>
+		<input type="hidden" name="file_desc" value="{lang('file.linkLogo')}"/>
 		<input type="file" name="file" accept="image/png,image/jpeg,image/gif,image/bmp"/>
 	</form>
 	<script>

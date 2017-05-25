@@ -159,7 +159,7 @@ $(function(){
 					$this.siblings('.new-version').html(Lang.noNewVersionTip).show();
 				}
 			},
-			query = 'obj=mod&act=checkUpdate&type='+$this.data('type')+'&version='+$this.data('version')+'&versionURL='+$this.data('version-url');
+			query = 'obj=mod&act=checkUpdate&type='+$this.data('type')+'&version='+$this.data('version')+'&versionURL='+encodeURIComponent($this.data('version-url'));
 		$this.button('loading');
 		if(WS.source){
 			WS.bind('mod.checkUpdate', submitSuccess);

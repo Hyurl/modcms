@@ -1,6 +1,6 @@
 <?php
 /** 更新链接 */
-$VERSION_URLS = array(
+$VERSION_URLS = config('mod.versionURL') ?: array(
 	'modcms' => 'http://modphp.hyurl.com/modcms/version',
 	'modphp' => 'http://modphp.hyurl.com/version'
 	);
@@ -21,7 +21,7 @@ function admin_get_file_icon($width = 64){
 	if(is_img(file_src())){
 		echo '<img src="'.get_user_avatar($width, file_src()).'" title="'.file_name().'" />';
 	}else{
-		echo '<i class="glyphicon glyphicon-file media-icon" title="'.file_name().'"></i>';
+		echo '<span class="glyphicon glyphicon-file media-icon" title="'.file_name().'"></span>';
 	}
 }
 
@@ -38,6 +38,31 @@ function admin_load_menu($menu = ''){
 		copy(ADMIN_DIR.'config/menus.php', $file);
 	}
 	return !$menu ? $menus : (isset($menus[$menu]) ? $menus[$menu] : false);
+}
+
+function admin_output_menu($menus, $submenu = false){
+	if(is_string($menus)) $menus = admin_load_menu($menus);
+	foreach($menus as $menu){
+		if(($menu['privilege'] == 'admin' && !IS_ADMIN) || ($menu['privilege'] == 'editor' && !IS_AUTH))
+			continue;
+		echo '<li class="list-group-item'.(!empty($menu['submenu']) ? ' has-submenu' : '').'">
+				<a id="'.$menu['id'].'" href="'.@$menu['href'].'" title="'.$menu['title'].'">';
+		if(!empty($menu['icon']))
+			echo '<span class="glyphicon glyphicon-'.$menu['icon'].'"></span>'.$menu['text'];
+		else
+			echo $menu['text'];
+		echo '</a>';
+		if(!empty($menu['submenu']))
+			echo '<span class="glyphicon glyphicon-chevron-right"></span>';
+		echo '</li>';
+		if(!empty($menu['submenu'])){
+			echo '<ul class="list-group submenu">';	
+			admin_output_menu($menu['submenu'], true);
+			echo '</ul>';
+		}
+		if(!empty($menu['separator']))
+			echo '<li role="separator"></li>';
+	}
 }
 
 /** 

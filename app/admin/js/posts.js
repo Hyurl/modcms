@@ -8,7 +8,9 @@ $(function(){
 		$.showSearch(null);
 	}
 
-	var postListTbody = $('#post-list-table>tbody'),
+	var uploadForm = $('#jquery-upload-form'),
+		postContent = $('#post-content-div'),
+		postListTbody = $('#post-list-table>tbody'),
 		EditorMenu = {}, //编辑页面菜单
 		ListMenu = {};
 	EditorMenu[Lang.giveup] = function(){
@@ -177,7 +179,34 @@ $(function(){
 		});
 	}
 
-	$('#post-content-div').summernote({
+	var insertFile = function (context) {
+		var ui = $.summernote.ui;
+		var button = ui.button({
+			contents: '<i class="glyphicon glyphicon-file" style="line-height: 1.5"></i>',
+			tooltip: Lang.file,
+			click: function () {
+				uploadForm.find('[name="file_desc"]').val(Lang.postFile);
+				uploadForm.find(':file').attr('accept', '*').click();
+			}
+		});
+		return button.render();   // return button as jquery object 
+	}
+
+	/** 编辑器工具条 */
+	toolbar = [
+		// [groupName, [list of button]]
+		['paragraph', ['style']],
+		['font', ['fontname', 'fontsize']],
+		['fontstyle', ['bold', 'italic', 'underline', 'strikethrough', 'superscript', 'subscript', 'clear']],
+		['color', ['color']],
+		['table', ['table']],
+		['para', ['ul', 'ol', 'paragraph']],
+		['height', ['height']],
+		['insert', ['link', 'picture', 'video', 'file', 'hr']],
+		['misc', ['fullscreen', 'codeview', 'undo', 'redo', 'help']],
+	];
+
+	postContent.summernote({
 		height: 400,
 		lang: 'zh-CN',
 		dialogsFade: true,
@@ -186,14 +215,18 @@ $(function(){
 			onInit: function(){
 				$('#post-edit-form').data('sendAvailable', true);
 				var input = $('.note-image-input');
-				input.after('<button type="button" class="btn btn-default" id="select-file" style="display:block">'+Lang.selectImage+'</button>');
+				input.after('<button type="button" class="btn btn-default" id="select-image" style="display:block">'+Lang.selectImage+'</button>');
 				input.remove();
 			},
 			onImageUpload: function(image){},
 			onChange: function(content) {
 				$('#post_content').val(content);
 				if(typeof localStorage != 'undefined') localStorage.setItem(storeBaseName+'post_content', content);
- 			}
+			}
+		},
+		toolbar: toolbar,
+		buttons: {
+			file: insertFile
 		}
 	});
 
@@ -249,17 +282,18 @@ $(function(){
 	});
 
 	/** 打开文件对话框 */
-	$(document).on('click', '#select-file', function(){
-		$('#jquery-upload-form').find(':file').click();
+	$(document).on('click', '#select-image', function(){
+		uploadForm.find('[name="file_desc"]').val(Lang.postImage);
+		uploadForm.find(':file').attr('accept', 'image/png,image/jpeg,image/gif,image/bmp').click();
 	});
 
 	/** 上传文件 */
-	$('#jquery-upload-form').ajaxSubmit({
+	uploadForm.ajaxSubmit({
 		beforeSend: function(){
 			if(!$(document.activeElement).is('.note-editable')){
-				$('#select-file').closest('.modal').modal('hide');
+				$('#select-image').closest('.modal').modal('hide');
 				$('.note-editable').one('focus', function(){
-					$('#jquery-upload-form').submit();
+					uploadForm.submit();
 				}).focus();
 				return false;
 			}
@@ -270,10 +304,18 @@ $(function(){
 					if(n.error){
 						alert(n.name+' '+Lang.uploadFailed+': '+n.error);
 					}else{
-						var image = $('<img>').attr('src', n.file_src);
-						$('#post-content-div').summernote('insertNode', image[0]);
-						if(i == 0 && !$('#post_thumbnail').val()){
-							$('#post_thumbnail').val(n.file_src);
+						var ext = n.file_src.substring(n.file_src.lastIndexOf('.')+1);
+						if($.inArray(ext, ['png', 'jpg', 'jpeg', 'gif', 'bmp']) >= 0){ //处理图片
+							var image = $('<img>').attr('src', n.file_src);
+							postContent.summernote('insertNode', image[0]);
+							if(i == 0 && !$('#post_thumbnail').val()){
+								$('#post_thumbnail').val(n.file_src);
+							}
+						}else{ //处理普通文件
+							var link = document.createElement('a');
+							link.setAttribute('href', n.file_src);
+							link.innerText = n.file_name;
+							postContent.summernote('insertNode', link);
 						}
 					}
 				});
@@ -323,10 +365,10 @@ $(function(){
 			if(i.indexOf('post_new_') === 0 && $_GET['action'] == 'add'){
 				var name = i.substr(9);
 				if($.inArray(name, ['post_title', 'post_tags', 'post_link']) >=0){
-				 	$('#'+name).val(localStorage[i]);
+					$('#'+name).val(localStorage[i]);
 				}else if(name == 'post_content'){
-				 	$('#post_content').val(localStorage[i]);
-				 	$('.note-editable').html(localStorage[i]);
+					$('#post_content').val(localStorage[i]);
+					$('.note-editable').html(localStorage[i]);
 				}else if(name == 'category_id' || name == 'post_type'){
 					$('#'+name).children('option[value="'+localStorage[i]+'"]').attr('selected', true).siblings().attr('selected', false);
 				}
@@ -335,10 +377,10 @@ $(function(){
 					name = i.substr(8+id.toString().length+1);
 				if(id == postId.val()){
 					if($.inArray(name, ['post_title', 'post_tags', 'post_link']) >= 0){
-					 	$('#'+name).val(localStorage[i]);
+						$('#'+name).val(localStorage[i]);
 					}else if(name == 'post_content'){
-					 	$('#post_content').val(localStorage[i]);
-					 	$('.note-editable').html(localStorage[i]);
+						$('#post_content').val(localStorage[i]);
+						$('.note-editable').html(localStorage[i]);
 					}else if(name == 'category_id' || name == 'post_type'){
 						$('#'+name).children('option[value="'+localStorage[i]+'"]').attr('selected', true).siblings().attr('selected', false);
 					}
@@ -355,6 +397,6 @@ $(function(){
 		});
 		localStorage.setItem(storeBaseName+'category_id', $('#category_id').val());
 		localStorage.setItem(storeBaseName+'post_type', $('#post_type').val());
-		localStorage.setItem(storeBaseName+'post_content', $('#post-content-div').html());
+		localStorage.setItem(storeBaseName+'post_content', postContent.html());
 	}
 });

@@ -30,6 +30,7 @@ li.active a{color: #efefef;}
 .site-logo, .site-login{display: inline-block;overflow: hidden;}
 .site-logo{width: 240px;height: 80px;float: left;}
 .site-logo img{max-width: 100%;max-height: 100%;}
+.site-logo span{height: 100%; display: block; width: 100%; font-size: 28px; line-height: 80px; color: #6584ea;font-weight: bold;}
 .site-login{float: right;text-align: right;height: 80px;}
 .site-login a{margin-right: 10px;}
 .site-login a:last-child{margin-right: 0;}
@@ -105,6 +106,7 @@ li.active a{color: #efefef;}
 	.footer-right{float: left;text-align: left;}
 	.site-logo, .site-login{height: 40px;}
 	.site-logo{width: 120px;}
+	.site-logo span{font-size: 16px;line-height: 40px;}
 	.site-login>div{line-height: 40px;}
 	.navbar .container{display: none;}
 	.navbar li{display: block;width: 100%;border-bottom: 1px solid rgba(0,0,0,0.3);}

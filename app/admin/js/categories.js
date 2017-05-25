@@ -57,7 +57,8 @@ $(function(){
 		showListMenu();
 	}
 
-	$('li.list-children').prev('li').children('i').click(function(){
+	$('li.list-children').prev('li').children('.glyphicon').click(function(event){
+		event.stopPropagation();
 		var $this = $(this);
 		if($this.is('.glyphicon-chevron-down')){
 			$this.removeClass('glyphicon-chevron-down').addClass('glyphicon-chevron-right');
@@ -140,7 +141,7 @@ $(function(){
 	});
 
 	/** 关闭详情页面 */
-	$('#category-details>.page-header h4>i').click(function(){
+	$('#category-details>.page-header h4>.glyphicon').click(function(){
 		if(!$_GET['action']){
 			catDetails.hide();
 			catList.slideDown('fast');

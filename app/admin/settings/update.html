@@ -17,7 +17,8 @@
 	</div>
 	<div>
 		<label>{lang('admin.updateDatabase')}</label>
-		<span id="new-db" style="margin-right:10px;">{lang('admin.checking')}</span>
+		<button class="btn btn-default" id="check-db-update" data-loading-text="{lang('admin.checking')}">{lang('admin.checkUpdate')}</button>
+		<span id="new-db" style="display:none;margin-right:10px;">{lang('admin.checking')}</span>
 		<button style="display: none;" class="btn btn-default" id="update-db" data-loading-text="{lang('admin.updating')}">{lang('admin.update')}</button>
 	</div>
 </div>

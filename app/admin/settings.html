@@ -62,7 +62,7 @@
 				</if>
 				<if data="$_GET['content'] == 'common'">
 					<form id="jquery-upload-form" action="{SITE_URL}mod.php?file::upload" method="post" enctype="multipart/form-data" style="display:none">
-						<input type="hidden" name="file_desc" value="用于网站 LOGO 的图片。"/>
+						<input type="hidden" name="file_desc" value="{lang('file.logoImage')}"/>
 						<input type="file" name="file" accept="image/png,image/jpeg,image/gif,image/bmp"/>
 					</form>
 				</if>
@@ -70,6 +70,7 @@
 		</else>
 	</if>
 	<script>
+	autoCheckUpdate = {config('site.admin.autoCheckUpdate') ?: 0}; //自动检测更新
 	Lang = {
 		reset: "{lang('admin.reset')}",
 		submitChange: "{lang('admin.submitChange')}",

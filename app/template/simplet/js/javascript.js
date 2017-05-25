@@ -50,8 +50,10 @@ $(function(){
 		if($(window).width() < minWidth) return false;
 		if($(window).scrollTop() > navbarToTop && fixedNavbar){
 			$('.navbar').addClass('fixed');
+			$('body').css('margin-top', $('.navbar').height());
 		}else{
 			$('.navbar').removeClass('fixed');
+			$('body').css('margin-top', 0);
 		}
 	});
 

@@ -107,7 +107,7 @@ $(function(){
 			versionURL = isCms ? VERSION_URLS['modcms'] : VERSION_URLS['modphp'],
 			newVersion = isCms ? $('#new-version') : $('#new-modphp-version'),
 			updateVersion = isCms ? $('#update-new-version') : $('#update-new-modphp-version'),
-			query = 'obj=mod&act=checkUpdate&type='+type+'&version='+version+'&versionURL='+versionURL,
+			query = 'obj=mod&act=checkUpdate&type='+type+'&version='+version+'&versionURL='+encodeURIComponent(versionURL),
 			submitSuccess = function(result){
 				$this.hide().button('reset');
 				if(version_compare(result.data.version, result.version) > 0){
@@ -203,22 +203,28 @@ $(function(){
 
 	/** 检测数据库更新 */
 	var checkDbUpdateSubmitSuccess = function(result){
-		$('#new-db').text(result.data);
+		$('#check-db-update').hide();
+		$('#new-db').text(result.data).show();
 		if(result.success){
 			$('#update-db').show();
 		}
 	};
-	if(WS.source){
-		WS.bind('mod.checkDbUpdate', checkDbUpdateSubmitSuccess);
-		WS.send({obj: 'mod', act: 'checkDbUpdate'});
-	}else{
-		$.ajax({
-			url: SITE_URL+'mod.php?mod::checkDbUpdate', 
-			success: checkDbUpdateSubmitSuccess,
-			error: function(){
-				$('#new-db').text(Lang.serverConnectionError);
-			}
-		});
+	$('#check-db-update').click(function(){
+		if(WS.source){
+			WS.bind('mod.checkDbUpdate', checkDbUpdateSubmitSuccess);
+			WS.send({obj: 'mod', act: 'checkDbUpdate'});
+		}else{
+			$.ajax({
+				url: SITE_URL+'mod.php?mod::checkDbUpdate', 
+				success: checkDbUpdateSubmitSuccess,
+				error: function(){
+					$('#new-db').text(Lang.serverConnectionError);
+				}
+			});
+		}
+	});
+	if(autoCheckUpdate){
+		$('#check-db-update').click();
 	}
 	
 	/** 检测CMS/ModPHP 更新 */

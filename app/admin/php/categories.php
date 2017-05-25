@@ -15,7 +15,7 @@ function admin_list_categories($tree, $hasBorder = false){
 				$posts = '<span class="badge" title="'.lang('category.contentPostsCount', $subtree['category_posts']).'">'.$subtree['category_posts'].'</span>';
 			if(is_array($subtree['category_children'])){
 				echo $subtree['category_alias'] ?: $subtree['category_name'];
-				echo '<i class="glyphicon glyphicon-chevron-down"></i>'.$posts.'</li>';
+				echo '<span class="glyphicon glyphicon-chevron-down"></span>'.$posts.'</li>';
 				echo '<li class="list-group-item list-children">';
 				admin_list_categories($subtree['category_children'], true);
 				echo '</li>';

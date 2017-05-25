@@ -301,7 +301,7 @@ $(function(){
 	});
 
 	/** 眼睛按钮事件 */
-	$(document).on('click', 'input[type=text]+i.glyphicon, input[type=password]+i.glyphicon', function(){
+	$(document).on('click', 'input[type=text]+.glyphicon, input[type=password]+.glyphicon', function(){
 		if(!navigator.userAgent.match('Edge')){
 			if($(this).is('.glyphicon-eye-open')){
 				$(this).removeClass('glyphicon-eye-open').addClass('glyphicon-eye-close').prev('input').attr('type', 'text').focus();
@@ -319,4 +319,24 @@ $(function(){
 			}
 		}
 	});
+
+	/** 展开/收起二级菜单 */
+	$(document).on('click', '.has-submenu>.glyphicon', function(event){
+		var $this = $(this);
+		$this.parent('li').next('ul').slideToggle('fast');
+		if($this.is('.glyphicon-chevron-down')){
+			$this.removeClass('glyphicon-chevron-down').addClass('glyphicon-chevron-right');
+		}else{
+			$this.removeClass('glyphicon-chevron-right').addClass('glyphicon-chevron-down');
+		}
+	});
+	$(document).on('click', '.has-submenu>a', function(event){
+		if(!$(this).attr('href')){
+			$(this).siblings('.glyphicon').click();
+		}
+	});
+	if($(window).width() > 640){
+		$('.has-submenu>.glyphicon').click();
+	}
+
 });

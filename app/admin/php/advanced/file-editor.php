@@ -20,7 +20,7 @@ function admin_get_template_files($tree, $isRoot = true, $paddingLeft = 0, $file
 		if($value == '.' || $value == '..') continue;
 		if(is_array($value)){
 			$filename .= $key.'/';
-			echo '<li data-filename="'.$filename.'" class="list-group-item has-children" style="padding-left: '.$paddingLeft.'px;"><i class="glyphicon glyphicon-chevron-down"></i> '.$key.'</li>';
+			echo '<li data-filename="'.$filename.'" class="list-group-item has-children" style="padding-left: '.$paddingLeft.'px;"><span class="glyphicon glyphicon-chevron-down"></span> '.$key.'</li>';
 			echo '<li class="list-group-item"><ul class="list-group">';
 			admin_get_template_files($value, false, $paddingLeft, $filename);
 			echo '</ul></li>';

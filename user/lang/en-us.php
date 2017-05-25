@@ -169,6 +169,11 @@ return array (
     'extractionError'=>'File upload succeed, but failed to extract.',
     'editSuccess'=>'File update succeed.',
     'editFail'=>'File update failed.',
+    'avatarImage'=>'A picture used as avatar.',
+    'logoImage'=>'A picture used as site logo.',
+    'postImage'=>'A picture used in posts.',
+    'postFile'=>'An attachment used in posts.',
+    'linkLogo'=>'A picture used as friendly-link logo.',
   ),
   'category' => 
   array (

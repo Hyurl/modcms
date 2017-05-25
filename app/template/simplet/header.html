@@ -27,7 +27,12 @@
 	<header>
 		<div class="container">
 			<div class="site-logo">
-				<img src="{config('site.logo')}" alt="{lang('admin.siteLogo')}">
+				<if data="config('site.logo')">
+					<img src="{config('site.logo')}" alt="{lang('admin.siteLogo')}">
+					<else>
+						<span>{config('site.name')}</span>
+					</else>
+				</if>
 			</div>
 			<div class="site-login">
 				<div>

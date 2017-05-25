@@ -12,7 +12,7 @@
 	#email-vcode, #vcode-img{margin-top: -49px;float: right;}
 	#vcode-img{cursor: pointer;}
 	#vcode{padding-right: 104px;float: left;margin-bottom: 15px;}
-	#user_password+i.glyphicon{float: right;margin-top: -24px;margin-right: 10px;}
+	#user_password+.glyphicon{float: right;margin-top: -24px;margin-right: 10px;}
 	</style>
 </head>
 <body>
@@ -37,7 +37,7 @@
 									<label for="user_password">{lang('user.password')}</label>
 									<input type="password" class="form-control" id="user_password" name="user_password" placeholder="{lang('user.passwordTip')}" required>
 									<if data="!is_agent('Edge/14')">
-										<i class="glyphicon glyphicon-eye-open"></i>
+										<span class="glyphicon glyphicon-eye-open"></span>
 									</if>
 								</div>
 								<div class="form-group">
@@ -89,7 +89,7 @@
 											<label for="user_password">{lang('user.newPassword')}</label>
 											<input type="password" class="form-control" id="user_password" name="user_password" placeholder="{lang('user.newPasswordTip')}" required>
 											<if data="!is_agent('Edge/14')">
-												<i class="glyphicon glyphicon-eye-open"></i>
+												<span class="glyphicon glyphicon-eye-open"></span>
 											</if>
 										</div>
 										<button type="submit" class="btn btn-success" data-loading-text="{lang('admin.loading')}">{lang('admin.submit')}</button>
@@ -106,7 +106,7 @@
 										<label for="user_password">{lang('user.newPassword')}</label>
 										<input type="password" class="form-control" id="user_password" name="user_password" placeholder="{lang('user.newPasswordTip')}" required>
 										<if data="!is_agent('Edge/14')">
-											<i class="glyphicon glyphicon-eye-open"></i>
+											<span class="glyphicon glyphicon-eye-open"></span>
 										</if>
 									</div>
 									<if data="config('user.register.verify')">
@@ -144,7 +144,7 @@
 								<label for="user_password">{lang('user.password')}</label>
 								<input type="password" class="form-control" id="user_password" name="user_password" placeholder="{lang('user.yourPassword')}">
 								<if data="!is_agent('Edge/14')">
-									<i class="glyphicon glyphicon-eye-open"></i>
+									<span class="glyphicon glyphicon-eye-open"></span>
 								</if>
 							</div>
 							<div class="checkbox">

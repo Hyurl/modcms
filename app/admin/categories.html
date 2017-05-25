@@ -14,7 +14,7 @@
 			!{get_category($_GET)}
 			<if data="!empty($_GET['action'])">
 				<div class="page-header">
-					<h4>{get_category() ? lang('admin.edit') : lang('admin.add')}<i class="glyphicon glyphicon-remove"></i></h4>
+					<h4>{get_category() ? lang('admin.edit') : lang('admin.add')}<span class="glyphicon glyphicon-remove"></span></h4>
 				</div>
 				<form role="form" action="{site_url()}mod.php?category::{get_category() ? 'update' : 'add'}" method="post" id="category-edit-form">
 					<button type="submit" style="display: none">{lang('admin.submit')}</button>
@@ -45,7 +45,7 @@
 				</form>
 				<else>
 					<div class="page-header">
-						<h4>{lang('admin.details')}<i class="glyphicon glyphicon-remove"></i></h4>
+						<h4>{lang('admin.details')}<span class="glyphicon glyphicon-remove"></span></h4>
 					</div>
 					<div class="page-contents">
 						<div>

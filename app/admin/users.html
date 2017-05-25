@@ -150,7 +150,7 @@
 									<td>
 										<input type="text" id="old_password" name="old_password" placeholder="{lang('user.oldPasswordTip')}">
 										<if data="!is_agent('Edge/14')">
-											<i class="glyphicon glyphicon-eye-open"></i>
+											<span class="glyphicon glyphicon-eye-open"></span>
 										</if>
 									</td>
 								</tr>
@@ -160,7 +160,7 @@
 								<td>
 									<input type="text" id="user_password" name="user_password" placeholder="{$lang['newPasswordTip']}">
 									<if data="!is_agent('Edge/14')">
-										<i class="glyphicon glyphicon-eye-open"></i>
+										<span class="glyphicon glyphicon-eye-open"></span>
 									</if>
 								</td>
 							</tr>
@@ -180,7 +180,7 @@
 					</table>
 				</form>
 				<form id="jquery-upload-form" action="{SITE_URL}mod.php?file::upload" method="post" enctype="multipart/form-data" style="display:none">
-					<input type="hidden" name="file_desc" value="用于头像的图片"/>
+					<input type="hidden" name="file_desc" value="{lang('file.avatarImage')}"/>
 					<input type="file" name="file" accept="image/png,image/jpeg,image/gif,image/bmp"/>
 				</form>
 			</elseif>
@@ -192,7 +192,7 @@
 					    	<if data="user_avatar()">
 					    		<img src="{get_user_avatar()}" alt="{lang('user.avatar')}">
 								<else>
-									<i class="glyphicon glyphicon-user media-icon"></i>
+									<span class="glyphicon glyphicon-user media-icon"></span>
 								</else>
 					    	</if>
 					    </div>

@@ -169,6 +169,11 @@ return array (
     'extractionError'=>'文件上传成功，但在解压时遇到错误。',
     'editSuccess'=>'文件修改成功。',
     'editFail'=>'文件修改失败。',
+    'avatarImage'=>'用作头像的图片。',
+    'logoImage'=>'用作网站 LOGO 的图片。',
+    'postImage'=>'文章中的图片。',
+    'postFile'=>'文章中的附件。',
+    'linkLogo'=>'用作友情链接 LOGO 的图片。',
   ),
   'category' => 
   array (

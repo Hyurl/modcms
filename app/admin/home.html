@@ -16,6 +16,7 @@
 	#file-latest, #server-info{max-height: 213px;}
 	#file-latest .panel-content:last-child{margin-bottom: -8px !important;}
 	#file-latest .panel-body{padding-top: 19px;padding-bottom: 18px;}
+	#file-latest .media-icon{line-height: 1.6;}
 	</style>
 </head>
 <body data-menu="home" style="overflow-x: hidden;">
@@ -23,7 +24,7 @@
 		<div class="grid">
 			<a title="{lang('admin.viewDetails')}" href="users.html">
 				<div class="grid-content">
-					<div class="grid-icon"><i class="glyphicon glyphicon-user"></i></div>
+					<div class="grid-icon"><span class="glyphicon glyphicon-user"></span></div>
 					<div class="grid-title">{lang('user.label')}</div>
 					<div class="grid-details">
 						<if data="get_multi_user(array('limit'=>5))">
@@ -40,7 +41,7 @@
 		<div class="grid">
 			<a title="{lang('admin.viewDetails')}" href="categories.html">
 				<div class="grid-content">
-					<div class="grid-icon"><i class="glyphicon glyphicon-list-alt"></i></div>
+					<div class="grid-icon"><span class="glyphicon glyphicon-list-alt"></span></div>
 					<div class="grid-title">{lang('category.label')}</div>
 					<div class="grid-details">
 					 	<if data="get_multi_category(array('limit'=>5))">
@@ -57,7 +58,7 @@
 		<div class="grid">
 			<a title="{lang('admin.viewDetails')}" href="posts.html">
 				<div class="grid-content">
-					<div class="grid-icon"><i class="glyphicon glyphicon-book"></i></div>
+					<div class="grid-icon"><span class="glyphicon glyphicon-book"></span></div>
 					<div class="grid-title">{lang('post.label')}</div>
 					<div class="grid-details">
 						<if data="get_multi_post(array('orderby'=>'post_time', 'sequence'=>'desc', 'limit'=>5))">
@@ -74,7 +75,7 @@
 		<div class="grid">
 			<a title="{lang('admin.viewDetails')}" href="comments.html">
 				<div class="grid-content">
-					<div class="grid-icon"><i class="glyphicon glyphicon-comment"></i></div>
+					<div class="grid-icon"><span class="glyphicon glyphicon-comment"></span></div>
 					<div class="grid-title">{lang('comment.label')}</div>
 					<div class="grid-details">
 						<if data="get_multi_comment(array('orderby'=>'comment_time', 'sequence'=>'desc', 'limit'=>5))">
@@ -93,7 +94,7 @@
 		<div class="panel-row">
 			<div class="panel" id="post-latest">
 				<div class="panel-heading">
-					<h4 class="panel-title">{lang('post.latestPosts')}<a title="{lang('admin.viewMore')}" href="posts.html?orderby=post_time&sequence=desc"><i class="glyphicon glyphicon-arrow-right"></i></a></h4>
+					<h4 class="panel-title">{lang('post.latestPosts')}<a title="{lang('admin.viewMore')}" href="posts.html?orderby=post_time&sequence=desc"><span class="glyphicon glyphicon-arrow-right"></span></a></h4>
 				</div>
 				<div class="panel-body">
 					<while data="get_multi_post()">
@@ -115,7 +116,7 @@
 			</div>
 			<div class="panel" id="comment-latest">
 				<div class="panel-heading">
-					<h4 class="panel-title">{lang('comment.latestComments')}<a title="{lang('admin.viewMore')}" href="comments.html?orderby=comment_time&sequence=desc"><i class="glyphicon glyphicon-arrow-right"></i></a></h4>
+					<h4 class="panel-title">{lang('comment.latestComments')}<a title="{lang('admin.viewMore')}" href="comments.html?orderby=comment_time&sequence=desc"><span class="glyphicon glyphicon-arrow-right"></span></a></h4>
 				</div>
 				<div class="panel-body">
 					<while data="get_multi_comment()">
@@ -126,7 +127,7 @@
 										<if data="comment_user('avatar')">
 											<img src="{get_user_avatar(64, comment_user('avatar'))}" alt="{lang('user.avatar')}">
 											<else>
-												<i class="glyphicon glyphicon-user media-icon"></i>
+												<span class="glyphicon glyphicon-user media-icon"></span>
 											</else>
 										</if>
 									</div>
@@ -154,7 +155,7 @@
 		<div class="panel-row">
 			<div class="panel" id='file-latest'>
 				<div class="panel-heading">
-					<h4 class="panel-title">{lang('file.latestFiles')}<a title="{lang('admin.viewMore')}" href="files.html" ><i class="glyphicon glyphicon-arrow-right"></i></a></h4>
+					<h4 class="panel-title">{lang('file.latestFiles')}<a title="{lang('admin.viewMore')}" href="files.html" ><span class="glyphicon glyphicon-arrow-right"></span></a></h4>
 				</div>
 				<div class="panel-body"> 
 					!{$i = 0}

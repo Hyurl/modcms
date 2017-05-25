@@ -1,3 +1,5 @@
+select{width: auto !important;min-width: 125px;}
+input.form-control{max-width: 400px;}
 #post-list-table td{
 	cursor: pointer;
 }
@@ -21,8 +23,9 @@
 	box-shadow: none;
 	-webkit-box-shadow: none;
 }
-select{width: auto !important;min-width: 125px;}
-input.form-control{max-width: 400px;}
+.modal input{max-width: none;}
+.note-color .note-icon-caret{line-height: 1.6;}
+.note-font button{line-height: 1.6;}
 @media (min-width: 768px){
 	.form-horizontal .control-label {
 		text-align: left;

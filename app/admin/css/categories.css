@@ -25,10 +25,11 @@
 	border-right-color: #fff;
 	z-index: 0;
 }
-#category-list .list-group-item>i{float: right; padding: 13px; margin-top: -12px; cursor: pointer;}
-#category-list i+span.badge{
+#category-list .list-group-item>.glyphicon{float: right; padding: 13px; margin-top: -12px; cursor: pointer;}
+#category-list .list-group-item>.glyphicon:hover{background-color: #ddd;}
+/*#category-list .glyphicon+.badge{
 	margin-right: 0;
-}
+}*/
 #category-details{
 	display: inline-block;
 	padding: 10px;
@@ -42,7 +43,7 @@
 	overflow: hidden;
 	border-bottom-color: #dedede;
 }
-#category-details>.page-header h4>i{
+#category-details>.page-header h4>.glyphicon{
 	float: right;
 	display: none;
 	cursor: pointer;
@@ -69,7 +70,7 @@
 	#category-details{
 		display: none;
 	}
-	#category-details>.page-header h4>i{
+	#category-details>.page-header h4>.glyphicon{
 		display: block;
 	}
 }

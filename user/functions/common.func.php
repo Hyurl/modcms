@@ -13,13 +13,15 @@ add_action(array('file.get', 'user.get', 'post.get', 'comment.get', 'link.get'),
 	if(!empty($data['link_logo']) && strpos($data['link_logo'], '://') === false){ //友情链接 LOGO
 		$data['link_logo'] = site_url().$data['link_logo'];
 	}
-	if(!empty($data['post_content'])){ //替换文章中的图片链接
-		$data['post_content'] = preg_replace('/<img(.*)src="upload\//', '<img$1src="'.site_url().'upload/', $data['post_content']);
+	if(!empty($data['post_content'])){ //替换文章中的图片/链接
+		$original = array('/<img(.*)src="upload\//', '/<a(.*)href="upload\//');
+		$replacement = array('<img$1src="'.site_url().'upload/', '<a$1href="'.site_url().'upload/');
+		$data['post_content'] = preg_replace($original, $replacement, $data['post_content']);
 	}
 	return $data;
 });
 
-/** 在更新/新建用户/文章时将头像/特色图链接更改为相对路径 */
+/** 在更新/新建用户/文章时将头像/图片/链接更改为相对路径 */
 add_action(array('user.add', 'user.update', 'post.add', 'post.update', 'link.add', 'link.update'), function($arg){
 	if(!empty($arg['user_avatar']) && strapos($arg['user_avatar'], site_url()) === 0){
 		$arg['user_avatar'] = substr($arg['user_avatar'], strlen(site_url()));
@@ -31,7 +33,9 @@ add_action(array('user.add', 'user.update', 'post.add', 'post.update', 'link.add
 		$arg['link_logo'] = substr($arg['link_logo'], strlen(site_url()));
 	}
 	if(!empty($arg['post_content'])){
-		$arg['post_content'] = str_replace('<img src="'.site_url().'upload/', '<img src="upload/', $arg['post_content']);
+		$original = array('<img src="'.site_url().'upload/', '<a href="'.site_url().'upload/');
+		$replacement = array('<img src="upload/', '<a href="upload/');
+		$arg['post_content'] = str_replace($original, $replacement, $arg['post_content']);
 	}
 	return $arg;
 });
@@ -251,12 +255,12 @@ function plugin_dir_url($filename = ''){
  */
 function cms_rewrite_config($file){
 	$config = array();
-	$isIni = pathinfo($file, PATHINFO_EXTENSION) == 'ini';
+	$isIni = strtolower(pathinfo($file, PATHINFO_EXTENSION)) == 'ini';
 	if(file_exists($file1 = __ROOT__.'mod/config/'.$file)) {
 		$_config = $isIni ? parse_ini_file($file1) : include $file1;
 		$config = array_xmerge($config, $_config);
 	}
-	if(file_exists($file2 = admin_dir().'config/'.$file)) {
+	if(file_exists($file2 = admin_dir('config/').$file)) {
 		$_config = $isIni ? parse_ini_file($file2) : include $file2;
 		$config = array_xmerge($config, $_config);
 	}

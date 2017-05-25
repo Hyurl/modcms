@@ -40,6 +40,6 @@ function admin_get_plugin_icon($foldername, $logo){
 	if($logo && file_exists(__ROOT__.$file)){
 		import(site_url($file));
 	}else{
-		echo '<i class="glyphicon glyphicon-leaf media-icon"></i>';
+		echo '<span class="glyphicon glyphicon-leaf media-icon"></span>';
 	}
 }

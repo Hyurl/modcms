@@ -43,14 +43,14 @@
 			<ul class="nav navbar-nav">
 				<!-- 导航栏走测菜单按钮 -->
 				<li>
-					<button id="dashboard"><i class="glyphicon glyphicon-dashboard"></i>{lang('admin.dashboard')}</button>
+					<button id="dashboard"><span class="glyphicon glyphicon-dashboard"></span>{lang('admin.dashboard')}</button>
 				</li>
 			</ul>
 			<ul class="nav navbar-nav navbar-right">
 				<!-- 导航栏右侧菜单按钮 -->
 				<li id="help">
 					<!-- 帮助 -->
-					<button id="btn-help" title="{lang('admin.help')}"><i class="glyphicon glyphicon-question-sign"></i><!-- 帮助按钮开关 --></button>
+					<button id="btn-help" title="{lang('admin.help')}"><span class="glyphicon glyphicon-question-sign"></span><!-- 帮助按钮开关 --></button>
 					<div id="help-info">
 						<span class="prismatic"></span>
 						<section>
@@ -68,11 +68,11 @@
 							<input type="submit" value="{lang('admin.search')}">
 						</form>
 					</div>
-					<button id="btn-search" title="{lang('admin.search')}"><i class="glyphicon glyphicon-search"></i></button>
+					<button id="btn-search" title="{lang('admin.search')}"><span class="glyphicon glyphicon-search"></span></button>
 				</li>
 				<li id="avatar">
 					<!-- 登录用户信息 -->
-					<button id="btn-avatar" title="{lang('user.userInfo')}"><i class="glyphicon glyphicon-user"></i></button>
+					<button id="btn-avatar" title="{lang('user.userInfo')}"><span class="glyphicon glyphicon-user"></span></button>
 					<div id="userinfo" class="popdown">
 						<nav>
 							<if data="me_avatar()">
@@ -98,24 +98,7 @@
 				<!-- 侧边导航列表 -->
 				<li role="separator"></li>
 				!{$tab = 1}
-				<foreach data="admin_load_menu('sidebar') as $menu">
-					<if data="($menu['privilege'] == 'admin' && !IS_ADMIN) || ($menu['privilege'] == 'editor' && !IS_AUTH)">
-						<continue>
-					</if>
-					<li class="list-group-item">
-						<a id="{$menu['id']}" href="{$menu['href']}" title="{$menu['title']}">
-							<if data="!empty($menu['icon'])">
-								<i class="glyphicon glyphicon-{$menu['icon']}"></i>{$menu['text']}
-								<else>
-									{$menu['text']}
-								</else>
-							</if>
-						</a>
-					</li>
-					<if data="$menu['separator']">
-						<li role="separator"></li>
-					</if>
-				</foreach>
+				{admin_output_menu('sidebar')}
 			</ul>
 		</nav>
 		<footer id="copyright">

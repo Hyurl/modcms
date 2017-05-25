@@ -9,7 +9,7 @@
 	.modules-list>li:first-child{border-top: none;}
 	.modules-list>li>a{color: #000;padding: 10px;display: block;}
 	.list-group-item{border-bottom: none;}
-	.list-group-item i{margin-top: -3px;margin-right: 10px;}
+	.list-group-item .glyphicon{margin-top: -3px;margin-right: 10px;}
 	li[role="separator"]{background-color: #eee;}
 	li[role="separator"]+li{border-top: none;}
 	</style>
@@ -17,24 +17,7 @@
 <body data-menu="modules">
 	<div class="container">
 		<ul class="list-group modules-list">
-			<foreach data="admin_load_menu('modules') as $menu">
-				<if data="($menu['privilege'] == 'admin' && !IS_ADMIN) || ($menu['privilege'] == 'editor' && !IS_AUTH)">
-						<continue>
-					</if>
-					<li class="list-group-item">
-						<a id="{$menu['id']}" href="{$menu['href']}" title="{$menu['title']}">
-							<if data="!empty($menu['icon'])">
-								<i class="glyphicon glyphicon-{$menu['icon']}"></i>{$menu['text']}
-								<else>
-									{$menu['text']}
-								</else>
-							</if>
-						</a>
-					</li>
-					<if data="$menu['separator']">
-						<li role="separator"></li>
-					</if>
-			</foreach>
+			{admin_output_menu('modules')}
 		</ul>
 	</div>
 	<include data="foot.html">

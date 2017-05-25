@@ -214,7 +214,7 @@
 		</if>
 	</div>
 	<form id="jquery-upload-form" action="{SITE_URL}mod.php?file::upload" method="post" enctype="multipart/form-data" style="display:none">
-		<input type="hidden" name="file_desc" value="用于文章的图片"/>
+		<input type="hidden" name="file_desc" value="{lang('file.postImage')}"/>
 		<input type="file" name="file[]" accept="image/png,image/jpeg,image/gif,image/bmp" multiple/>
 	</form>
 	<script>
@@ -254,6 +254,9 @@
 			addedTip: "{lang('admin.addedTip')}",
 			updatedTip: "{lang('admin.updatedTip')}",
 			uploadFailed: "{lang('file.uploadFailed1')}",
+			file: "{lang('file.label')}",
+			postFile: "{lang('file.postFile')}",
+			postImage: "{lang('file.postImage')}"
 		};
 	</script>
 	<include data="foot.html">

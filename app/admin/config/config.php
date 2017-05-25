@@ -61,6 +61,10 @@ return array (
       'username' => '',
       'password' => '',
     ),
+    'versionURL'=>array(
+      'modcms' => 'http://modphp.hyurl.com/modcms/version',
+      'modphp' => 'http://modphp.hyurl.com/version'
+      ),
   ),
   'site' => 
   array (

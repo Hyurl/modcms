@@ -1,0 +1,26 @@
+﻿ModCMS 是基于 ModPHP 制作的一个体积小巧、功能完整的内容管理系统，它涵盖了 ModPHP 的所有默认模块，并在其基础上增添了众多 CMS 功能，例如模板和插件管理等。
+作为 ModPHP 的第一个 CMS 实现，ModCMS 同时也是一个非常好的样板，开发者可以借鉴它来开发自己的 CMS 系统，或者在其基础上扩展新功能。继承于 ModPHP，ModCMS 也是一款开源软件，开发者可以在 Apache 2.0 协议的许可下对其进行自己的修改，发布新版本，无论它是商业的还是免费的。
+
+以下协议内容来自 ModPHP：
+
+ModPHP 遵循 Apache 2.0 开源协议发布，该协议鼓励代码共享和尊重原作者的著作权。
+你可以在遵循 Apache 2.0 协议以及本协议的基础上免费使用 ModPHP，更改其源代码，创作并发布开源或商业软件。
+但是，你需要遵守下面的条件：
+1. 需要给使用 ModPHP 或者其再发行版本的使用者一份 Apache License；
+2. 如果你修改了代码，必须要在源文件或独立文件上提供修改说明；
+3. 再发行版本中必须带有原作协议、商标、专利申明和来自其他作者规定的其他申明；
+4. 你可以在再发行版本中增加自己的许可，但是不可表现为对本协议或者 Apache License 构成修改。
+
+Copyright 2016 李阿远(Ayon Lee) http://modphp.hyurl.com
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.

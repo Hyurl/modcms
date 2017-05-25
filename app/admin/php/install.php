@@ -24,7 +24,7 @@ if(preg_match('/Apache\/([0-9.])\s/i', $_SERVER['SERVER_SOFTWARE'], $match) && v
 }
 
 /** 协议内容 */
-$license = str_replace("\n", '<br>', file_get_contents(ADMIN_DIR.'license.txt'));
+$license = str_replace("\n", '<br>', file_get_contents(__ROOT__.'modcms-license.txt'));
 
 /** 检测新版本 */
 $version = @json_decode(file_get_contents($VERSION_URLS['modcms']), true) ?: @curl(array('url'=>$VERSION_URLS['modcms'], 'parseJSON'=>true));

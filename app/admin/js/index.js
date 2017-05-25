@@ -23,8 +23,10 @@ $(function(){
 				icon = '<i class="glyphicon glyphicon-dashboard"></i>';
 			$('title').text(title);
 			$('#dashboard').html(icon+title);
+			/** 菜单高亮 */
 			if(menu && $('#'+menu).closest('.sidebar').length > 0){
-				$('#'+menu).closest('li').addClass('active').siblings().removeClass('active');
+				sidebar.find('li').removeClass('active');
+				$('#'+menu).closest('li').addClass('active');
 			}
 			storage('ModAdminURL', _window.location.href);
 			$_document.on('click', function(){
@@ -267,7 +269,8 @@ $(function(){
 				}
 				versionCounts[key] = 0;
 				for(var i in versionURLs[key]){
-					$.get(SITE_URL+'mod.php?obj=mod&act=checkUpdate&type='+key+'&version='+versionURLs[key][i]['version']+'&versionURL='+versionURLs[key][i]['url'], function(result){
+					if(!versionURLs[key][i]['url']) continue;
+					$.get(SITE_URL+'mod.php?obj=mod&act=checkUpdate&type='+key+'&version='+versionURLs[key][i]['version']+'&versionURL='+encodeURIComponent(versionURLs[key][i]['url']), function(result){
 						var key = result.type;
 						if(key == 'modphp') key = 'modcms';
 						if(result.success && version_compare(result.data.version, result.version) > 0){
