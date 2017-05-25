@@ -51,10 +51,9 @@ $(function(){
 			/** 检查数据库更新 */
 			checkUpdate();
 			/** 连接 WebSocket */
-			if(WebSocketMode && autoCheckUpdate && typeof WebSocket != 'undefined'){
+			if(WebSocketMode && !WS.source && typeof WebSocket != 'undefined'){
 				WS.start((location.protocol == 'https:' ? 'wss' : 'ws')+'://'+location.hostname+':'+WebSocketPort+location.pathname+location.search);
 			}
-			autoCheckUpdate = false;
 		}catch(error){
 			frame.attr('src', storage('ModAdminURL'));
 		}
