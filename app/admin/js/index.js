@@ -288,6 +288,7 @@ $(function(){
 					});
 				}
 			}
+			autoCheckUpdate = false;
 		}
 	}
 });
