@@ -1,4 +1,4 @@
-﻿ModCMS 说明：
+ModCMS 说明：
 
 后台模板制作说明：
 	1. ModCMS 后台目录为 __ROOT__/app/admin/，使用通用的外部框架，通过 iframe 加载并显示具体页面。
