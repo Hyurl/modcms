@@ -99,9 +99,9 @@ function admin_has_compiled_temp($dir){
 /** 检查是否登录 */
 if(config('mod.installed')){
 	if(!is_logined() && display_file() != 'app/admin/login.html' && display_file() != 'app/admin/install.html'){
-		redirect(SITE_URL.'admin/login.html');
+		redirect(ADMIN_URL.'login.html');
 	}elseif(is_logined() && display_file() == 'app/admin/login.html'){
-		redirect(SITE_URL.'admin/');
+		redirect(ADMIN_URL);
 	}
 }
 

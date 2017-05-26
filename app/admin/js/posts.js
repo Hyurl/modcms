@@ -104,7 +104,7 @@ $(function(){
 					var data = result.data,
 						id = 1 + ($_GET['page'] - 1) * $_GET['limit'];
 					for(var i in data){
-						var html = '<tr data-id="'+data[i]['post_id']+'"><td>'+id+'</td><td><a title="'+Lang.viewDetails+'" target="_blank" href="'+(SITE_URL+data[i]['post_link'] || create_url(POST_STATIC_URL, data[i]))+'">'+data[i]['post_title']+'</a></td>';
+						var html = '<tr data-id="'+data[i]['post_id']+'"><td>'+id+'</td><td><a title="'+Lang.viewDetails+'" target="_blank" href="'+(data[i]['post_link'] ? SITE_URL+data[i]['post_link'] : create_url(POST_STATIC_URI, data[i]))+'">'+data[i]['post_title']+'</a></td>';
 						if(!$_GET['user_id']){
 							var isMe = data[i].user_id == ME_ID;
 							if(isMe){

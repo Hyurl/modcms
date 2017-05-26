@@ -18,7 +18,7 @@ return array(
 			'id'=>'site-home',
 			'privilege'=>'all',
 			'icon'=>'home',
-			'href'=>SITE_URL,
+			'href'=>SITE_URL.(config('mod.pathinfoMode') ? 'index.php' : ''),
 			'text'=>lang('admin.siteHome'),
 			'title'=>'',
 			'separator'=>true

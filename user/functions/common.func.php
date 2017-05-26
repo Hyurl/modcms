@@ -83,7 +83,7 @@ add_action('mod.checkUpdate', function($arg){
 add_action('mod.updateCMS', function($arg){
 	if(error()) return error();
 	$ok = false;
-	if(config('mod.installed') && (!is_admin() || me_id() != 1)) return error(lang('mod.permissionDenied'));
+	if(config('mod.installed') && !is_console() && (!is_admin() || me_id() != 1)) return error(lang('mod.permissionDenied'));
 	if(empty($arg['src']) || empty($arg['md5'])) return error(lang('mod.missingArguments'));
 	$file = __ROOT__.'modcms_'.__TIME__.'.zip';
 	$len = file_put_contents($file, @file_get_contents($arg['src']) ?: @curl(array('url'=>$arg['src'], 'followLocation'=>1)));
@@ -227,7 +227,7 @@ function admin_dir($filename = ''){
  * @return string           后台根目录路径[$filename]
  */
 function admin_url($filename = ''){
-	return site_url().'admin/'.$filename;
+	return site_url().(config('mod.pathinfoMode') ? 'index.php/' : '').'admin/'.$filename;
 }
 
 /**

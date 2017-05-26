@@ -269,11 +269,11 @@ $.fn.editMulti = function(options){
  */
 function create_url(format, data){
 	for(var x in data){
-		if(typeof data[x] != 'object' && format.match(/\{(.*)\}/)){
+		if(typeof data[x] != 'object'){
 			format = format.replace('{'+x+'}', data[x]);
 		}
 	}
-	return SITE_URL+format;
+	return SITE_URL+(PATHINFO_MODE ? 'index.php/' : '')+format;
 }
 
 /** 关闭菜单 */

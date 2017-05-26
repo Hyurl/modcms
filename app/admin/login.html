@@ -158,7 +158,7 @@
 				</else>
 			</if>
 			<div class="panel-footer">
-				<a href="{site_url()}">{lang('admin.siteHome')}</a>
+				<a href="{site_url().(config('mod.pathinfoMode') ? 'index.php' : '')}">{lang('admin.siteHome')}</a>
 				<if data="empty($_GET['action']) && config('user.password.recoverEmail')">
 					<a style="float: right" href="login.html?action=repass">{lang('user.recoverPassword')}</a>
 				</if>

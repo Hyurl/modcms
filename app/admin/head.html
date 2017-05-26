@@ -22,18 +22,22 @@
 	const IS_AUTH = IS_ADMIN || IS_EDITOR; //是否为管理员或编辑
 	const ME_ID = {config('mod.installed') ? (me_id() ?: 0) : 0}; //当前用户 ID
 	const VERSION_URLS = JSON.parse('{json_encode($VERSION_URLS)}'); //更新链接
+	const PATHINFO_MODE = {config('mod.pathinfoMode') ?: 0}; //pathinfo 模式
+
 	/** _window 父窗口 */
 	_window = window.parent;
 	/** _document 父窗口文档 */
 	_document = _window.document;
+
+	/** 打开父页面 */
 	var path = location.pathname,
 		index = path.lastIndexOf('/'),
 		baseName = path.substring(index >= 0 ? index+1 : 0, path.length);
 	if(window.parent == window && baseName != 'login.html' && baseName != 'install.html'){
 		storage('ModAdminURL', location.href);
-		location.href = SITE_URL+'admin/';
+		location.href = ADMIN_URL;
 	}else if(window.parent != window && (baseName == 'login.html' || baseName == 'install.html')){
 		storage('ModAdminURL', null);
-		_window.location.href = SITE_URL+'admin/'+baseName;
+		_window.location.href = ADMIN_URL+baseName;
 	}
 </script>
