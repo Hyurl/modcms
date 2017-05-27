@@ -1,7 +1,7 @@
 html, body{width:100%;height:100%;margin: 0;padding: 0;font-family: "Microsoft YaHei";background-color: #eee;}
 button{color: #fff;}
 a:hover, a:focus, a:active, button:hover, button:focus, button:active, .sidebar .has-submenu>.glyphicon:hover{outline: none;background-color: rgba(0,0,0,0.3) !important;}
-i{font-size: 16px;padding-top: 1px;}
+/*i{font-size: 16px;padding-top: 1px;}*/
 .navbar{border-radius: 0;min-height: 0;background-color: rgb(55,59,62);border: none;margin: 0;border-bottom: 1px rgba(0,0,0,0.3) solid;height: 40px;}
 .navbar-nav{float: left;margin: 0;}
 /*.navbar-nav, #aside-menu{max-width: 50%;}*/

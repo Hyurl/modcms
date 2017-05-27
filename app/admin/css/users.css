@@ -19,7 +19,7 @@ input+.glyphicon{display: none;float: right;margin: -25px 10px 0 -25px;}
 .user-activities>div>h4{border-bottom: 1px solid #dedede;margin: 0 -10px;padding: 20px 10px 15px;}
 .user-activities>div>h4>small{float: right;}
 .user-avatar{text-align: center;}
-.user-avatar i{font-size: 48px;margin-top: 6px;}
+.user-avatar .media-icon{font-size: 48px;margin-top: 5px;line-height: 1;}
 .activity-contents{min-height: 20px;}
 #user-center .activity-contents>div{border-bottom: 1px solid #eee;}
 #user-center .activity-contents>div:last-child{border-bottom: none;padding-bottom: 5px;}

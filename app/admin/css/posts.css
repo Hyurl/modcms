@@ -26,6 +26,7 @@ input.form-control{max-width: 400px;}
 .modal input{max-width: none;}
 .note-color .note-icon-caret{line-height: 1.6;}
 .note-font button{line-height: 1.6;}
+.dropdown-menu>li>a *{margin: 0;}
 @media (min-width: 768px){
 	.form-horizontal .control-label {
 		text-align: left;

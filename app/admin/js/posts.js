@@ -269,6 +269,7 @@ $(function(){
 				}
 			}else{
 				alert(result.data);
+				$(this).data('sendAvailable', true);
 			}
 		},
 		error: function(xhr){
@@ -278,6 +279,7 @@ $(function(){
 				alert(Lang.serverConnectionError2);
 			}
 			console.log(xhr.responseText);
+			$(this).data('sendAvailable', true);
 		}
 	});
 
