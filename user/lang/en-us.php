@@ -586,5 +586,6 @@ return array (
     'dbSqliteTip'=>'If using SQLite database, then set this empty.',
     'dateFormat'=>'Date Format',
     'dateFormatTip'=>'Set a global date format.',
+    'auto'=>'Auto',
     )
 );

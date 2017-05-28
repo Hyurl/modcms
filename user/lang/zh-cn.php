@@ -586,5 +586,6 @@ return array (
     'dbSqliteTip'=>'如果使用 SQLite 数据库，则设置为空',
     'dateFormat'=>'日期格式',
     'dateFormatTip'=>'设置全局日期格式',
+    'auto'=>'自动',
     )
 );
