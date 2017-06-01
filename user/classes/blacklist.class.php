@@ -10,9 +10,9 @@ final class blacklist extends mod{
 		}
 		$result = database::open(0)->select('blacklist', 'blacklist_id, blacklist_uid', 'blacklist_uid > 0', $limit, 'blacklist_uid asc');
 		$blacklist = array();
-		while($single = $result->fetch(PDO::FETCH_ASSOC)){
+		while($single = $result->fetch()){
 			$id = $single;
-			$user = database::select('user', 'user_name, user_nickname', "user_id = {$single['blacklist_uid']}")->fetch(PDO::FETCH_ASSOC);
+			$user = database::select('user', 'user_name, user_nickname', "user_id = {$single['blacklist_uid']}")->fetch();
 			$user = array('blacklist_user'=>($user['user_name'] ?: $user['user_nickname']));
 			$blacklist[] = array_merge($id, $user);
 		}
@@ -29,7 +29,7 @@ final class blacklist extends mod{
 		}
 		$result = database::open(0)->select('blacklist', 'blacklist_id, blacklist_'.$name, 'blacklist_'.$name.' <> ""', $limit, 'blacklist_'.$name.' asc');
 		$blacklist = array();
-		while($single = $result->fetch(PDO::FETCH_ASSOC)){
+		while($single = $result->fetch()){
 			$blacklist[] = $single;
 		}
 		$extra = array(

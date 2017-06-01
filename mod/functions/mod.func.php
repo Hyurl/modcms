@@ -422,7 +422,7 @@ function create_url($format, $args){
  * @return array            URL 中包含的参数，匹配结果为空则返回 false
  */
 function analyze_url($format, $url = ''){
-	$url = $url ?: url(); //如果未提供 URL 地址，则使用当前访问的地址
+	$url = urldecode($url) ?: url(); //如果未提供 URL 地址，则使用当前访问的地址
 	$uri = strstr($url, '?', true) ?: $url;
 	if(strapos($uri, site_url('index.php')) === 0) //URL 以网站地址 + index.php 开始
 		$uri = site_url().substr($uri, strlen(site_url())+10);
@@ -539,7 +539,7 @@ function import($file, $tag = '', $attr = ''){
 		echo '<script type="text/javascript" src="'.$url.'"'.$attr."></script>\n";
 	}elseif($ext == 'css'){ //css 文件
 		echo '<link type="text/css" rel="stylesheet" href="'.$url.'"'.$attr." />\n";
-	}elseif(in_array($ext, array('jpeg', 'jpg', 'bmp', 'png', 'gif', 'svg'))){ //图片文件
+	}elseif(is_img($file)){ //图片文件
 		echo '<img src="'.$url.'"'.$attr.' />';
 	}elseif($tag){ //其他通过 html 标签引入的文件，如 iframe 引入 html
 		echo '<'.$tag.' src="'.$url.'"'.$attr.($tag == 'img' || $tag == 'embed' ? ' />' : '></'.$tag.'>');

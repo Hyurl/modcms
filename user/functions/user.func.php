@@ -23,9 +23,21 @@ add_hook('user.add', function(){
 add_action('user.add', function($input){
 	if(in_array(config('user.register.verify'), array('vcode', 'email')) && !is_admin()){
 		if(session_status() != PHP_SESSION_ACTIVE) session_start();
-		if(!isset($input['vcode']) || strtolower($input['vcode']) != strtolower($_SESSION['vcode'])) { //判断验证码是否相等
+		if(empty($input['vcode']) || strtolower($input['vcode']) != strtolower(@$_SESSION['vcode'])) { //判断验证码是否相等
 			return error(lang('admin.wrongVcode'));
-		}elseif((time() - $_SESSION['time']) > 60*30){ //判断验证码是否过期
+		}elseif((time() - @$_SESSION['time']) > 60*30){ //判断验证码是否过期
+			return error(lang('admin.vcodeTimeout'));
+		}
+	}
+});
+
+// 验证用户登录验证码
+add_action('user.login', function($input){
+	if(in_array(config('user.login.verify'), array('vcode', 'email'))){
+		if(session_status() != PHP_SESSION_ACTIVE) session_start();
+		if(empty($input['vcode']) || strtolower($input['vcode']) != strtolower(@$_SESSION['vcode'])) { //判断验证码是否相等
+			return error(lang('admin.wrongVcode'));
+		}elseif((time() - @$_SESSION['time']) > 60*30){ //判断验证码是否过期
 			return error(lang('admin.vcodeTimeout'));
 		}
 	}
@@ -49,6 +61,41 @@ add_action('user.update', function($input){
 		}
 	}
 });
+
+// 通过邮件检测用户是否存在
+add_action('user.checkExistenceByEmail', function($arg){
+	if(empty($arg['user_email'])) return error(lang('mod.missingArguments'));
+	$result = database::open(0)->select('user', 'user_id', "`user_email` = '{$arg['user_email']}'", 1);
+	if($result->fetch()){
+		return success('User exists.');
+	}else{
+		return error(lang('mod.notExists', lang('user.label')));
+	}
+}, false);
+
+// 使用邮箱验证登录用户
+add_action('user.loginByEmail', function($arg){
+	do_hooks('user.login', $arg); //执行登录前挂钩函数
+	if(error()) return error();
+	if(!session_id()) session_id(strtolower(rand_str(26))); //生成随机 Session ID
+	if(session_status() != PHP_SESSION_ACTIVE) @session_start();
+	if(empty($arg['user_email'])) return error(lang('mod.missingArguments'));
+	if(empty($_SESSION['user_email']) || $_SESSION['user_email'] != $arg['user_email'])
+		return error(lang('user.emailLoginForbidden'));
+	$result = database::open(0)->select('user', '*', "`user_email` = '{$arg['user_email']}'", 1); //获取符合条件的用户
+	if($user = $result->fetch()){
+		$_SESSION['ME_ID'] = (int)$user['user_id']; //保存用户 ID 到 Session 中
+		_user('me_id', (int)$user['user_id']);
+		_user('me_level', (int)$user['user_level']);
+		$expires = !empty($arg['remember_me']) ? time()+ini_get('session.gc_maxlifetime') : null; //Cookie 生存期
+		$params = session_get_cookie_params();
+		setcookie(session_name(), session_id(),  $expires, $params['path']); //重写客户端 Cookie
+		$user = user::getMe();
+		do_hooks('user.login.complete', $user['data']);
+		return $user;
+	}
+	return error($hasUser ? lang('user.wrongPassword') : lang('mod.notExists', lang('user.label')));
+}, false);
 
 /** 使用邮件发送找回密码链接 */
 add_action('user.mailRepass', function($input){
@@ -78,6 +125,7 @@ add_action('user.mailRepass', function($input){
 	}
 }, false);
 
+// 重置密码
 add_action('user.recoverPassword', function($input){
 	if(error()) return error();
 	$recover = config('user.password.recoverEmail');

@@ -143,14 +143,6 @@ add_action('comment.get', function($arg){
 	}
 });
 
-/** 仅允许评论者本人或者编辑以上权限用户获取未审核评论 */
-add_action('comment.get.before', function($arg){
-	if(is_single() && config('comment.review') && !is_admin() && !is_editor() && !is_client_call()){
-		$arg['comment_status'] = 1;
-		return $arg;
-	}
-});
-
 /** 获取未审核评论数 */
 add_action('comment.getUnreviewedCount', function($arg){
 	if(!is_editor() && !is_admin()) return error(lang('mod.permissionDenied'));

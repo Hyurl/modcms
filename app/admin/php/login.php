@@ -45,3 +45,8 @@ if(config('mod.mail.host') && config('mod.mail.username')){
 	$mailSvr = false;
 	$mailWarning = lang('admin.emailServiceWarnig');
 }
+
+//使用邮件验证码登录
+if(config('user.login.verify') == 'email'){
+	$attr = 'name="user_email" placeholder="'.lang('user.email').'"';
+}

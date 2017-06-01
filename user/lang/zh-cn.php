@@ -99,9 +99,9 @@ return array (
     'me'=>'我',
     'userGenders'=>array('male' => '男', 'female' => '女'),
     'userLevels'=>array('匿名', '普通用户', '活跃用户', '特别用户', '编辑人员', '管理员'),
-    'recoverPassword'=>'找回密码',
+    'recoverPassword'=>'重置密码',
     'recoverPasswordTip'=>'尊敬的 {user}，你正在重新设置登录密码：',
-    'recoverPassDisabled'=>'找回密码功能已关闭。',
+    'recoverPassDisabled'=>'重置密码功能已关闭。',
     'recoverPasswordSuccess'=>'密码修改成功，请使用新密码进行登录。',
     'recoverPasswordFail'=>'密码重置失败。',
     'recoverPassEmailTip'=>'尊敬的 {user}，你刚在我们的网站上进行了找回密码操作，为了完成这个操作，请在 30 分钟内访问下面的链接并在打开的新页面中完成更改密码操作：',
@@ -127,7 +127,8 @@ return array (
     'emailIsUsed'=>'邮箱地址已被另一个用户使用。',
     'emailIsNotUsed'=>'该邮箱没有没有匹配的用户。',
     'invalidEmailFormat'=>'邮件地址格式错误。',
-
+    'loginVcode'=>'登录验证码',
+    'emailLoginForbidden'=>'该邮箱未被允许登录。',
   ),
   'file' => 
   array (
@@ -226,6 +227,9 @@ return array (
     'baiduPush'=>'百度推送',
     'baiduTokenTip'=>'填写赠送的 TOKEN',
     'baiduPushDesc'=>'你需要首先在百度站长平台中添加你的网站才能使用主动推送功能。',
+    'postDesc'=>'摘要',
+    'postDescTip'=>'用一段文字简要地概括这篇文章',
+    'thumbnail'=>'特色图',
   ),
   'comment' => 
   array (
@@ -587,5 +591,6 @@ return array (
     'dateFormat'=>'日期格式',
     'dateFormatTip'=>'设置全局日期格式',
     'auto'=>'自动',
+    'cookieDisabled'=>'Cookie 已被禁用，你需要允许浏览器保存此网站的 Cookie 才能使用它的全部功能。',
     )
 );

@@ -10,6 +10,9 @@ $(function(){
 
 	var uploadForm = $('#jquery-upload-form'),
 		postContent = $('#post-content-div'),
+		thumbnail = $('#post_thumbnail'),
+		thumbnailImg = $('#post-thumbnail-img'),
+		thumbnailClean = $('#thumbnail-clean'),
 		postListTbody = $('#post-list-table>tbody'),
 		EditorMenu = {}, //编辑页面菜单
 		ListMenu = {};
@@ -104,7 +107,7 @@ $(function(){
 					var data = result.data,
 						id = 1 + ($_GET['page'] - 1) * $_GET['limit'];
 					for(var i in data){
-						var html = '<tr data-id="'+data[i]['post_id']+'"><td>'+id+'</td><td><a title="'+Lang.viewDetails+'" target="_blank" href="'+(data[i]['post_link'] ? SITE_URL+data[i]['post_link'] : create_url(POST_STATIC_URI, data[i]))+'">'+data[i]['post_title']+'</a></td>';
+						var html = '<tr data-id="'+data[i]['post_id']+'"><td>'+id+'</td><td><a title="'+Lang.viewDetails+'" target="_blank" href="'+(data[i]['post_link'] || create_url(POST_STATIC_URI, data[i]))+'">'+data[i]['post_title']+'</a></td>';
 						if(!$_GET['user_id']){
 							var isMe = data[i].user_id == ME_ID;
 							if(isMe){
@@ -161,15 +164,16 @@ $(function(){
 		/** 更改目录模态框 */
 		var modal = $('#change-category-modal');
 		modal.find(':submit').click(function(){
-			var catId = parseInt(modalBody.find('select').val());
+			var catId = parseInt(modal.find('select').val());
 			if(catId > 0){
 				postListTbody.editMulti($.extend({
 					obj: 'post',
 					act: 'update',
 					data: {category_id: catId},
 					callback: function(data){
-						var catName = modalBody.find('select').find('option[value="'+catId+'"]').text();
-						$(this).find('td[data="category-name"]').text(catName);
+						var catName = modal.find('select').find('option[value="'+catId+'"]').text();
+						console.log($(this).find('td[data="category-name"]'));
+						postListTbody.find('tr.active').children('td[data="category-name"]').text(catName);
 						modal.modal('hide');
 					}
 				}, Lang));
@@ -217,8 +221,29 @@ $(function(){
 				var input = $('.note-image-input');
 				input.after('<button type="button" class="btn btn-default" id="select-image" style="display:block">'+Lang.selectImage+'</button>');
 				input.remove();
+				var label = $('<label>');
+				label.attr({'for': 'as-thumbnail', 'class': 'radio-inline', 'style': 'float: left'});
+				label.append('<input type="checkbox" id="as-thumbnail"/> 设置为特色图');
+				$('.note-image-btn').parent().prepend(label);
 			},
-			onImageUpload: function(image){},
+			onImageUpload: function(files){
+				if(typeof FormData == 'undefined'){
+					alert(Lang.notHTML5Warning);
+				}else{
+					var fd = new FormData();
+					for(var i=0; i<files.length; i++){
+						fd.append('file[]', files[i]);
+					}
+					fd.append('file_desc', uploadForm.children('input[name="file_desc"]').val());
+					$.ajax($.extend({
+						url: uploadForm.attr('action'),
+						method: 'post',
+						data: fd,
+						processData : false,
+						contentType : false
+					}, handleImageUpload));
+				}
+			},
 			onChange: function(content) {
 				$('#post_content').val(content);
 				if(typeof localStorage != 'undefined') localStorage.setItem(storeBaseName+'post_content', content);
@@ -289,19 +314,10 @@ $(function(){
 		uploadForm.find(':file').attr('accept', 'image/png,image/jpeg,image/gif,image/bmp').click();
 	});
 
-	/** 上传文件 */
-	uploadForm.ajaxSubmit({
-		beforeSend: function(){
-			if(!$(document.activeElement).is('.note-editable')){
-				$('#select-image').closest('.modal').modal('hide');
-				$('.note-editable').one('focus', function(){
-					uploadForm.submit();
-				}).focus();
-				return false;
-			}
-		},
+	var handleImageUpload = {
 		success: function(result){
 			if(result.success){
+				var checkbox = $('#as-thumbnail');
 				$.each(result.data, function(i, n){
 					if(n.error){
 						alert(n.name+' '+Lang.uploadFailed+': '+n.error);
@@ -310,8 +326,11 @@ $(function(){
 						if($.inArray(ext, ['png', 'jpg', 'jpeg', 'gif', 'bmp']) >= 0){ //处理图片
 							var image = $('<img>').attr('src', n.file_src);
 							postContent.summernote('insertNode', image[0]);
-							if(i == 0 && !$('#post_thumbnail').val()){
-								$('#post_thumbnail').val(n.file_src);
+							if(i == 0 && checkbox.is(':checked')){
+								thumbnail.val(n.file_src);
+								thumbnailImg.attr('src', n.file_src);
+								thumbnailClean.show();
+								checkbox.click();
 							}
 						}else{ //处理普通文件
 							var link = document.createElement('a');
@@ -330,12 +349,29 @@ $(function(){
 					alert(result.data);
 				}
 			}
+			uploadForm.find(':file').val('');
 		},
 		error: function(xhr){
 			alert(Lang.serverConnectionError);
 			console.log(xhr.responseText);
+			uploadForm.find(':file').val('');
 		}
-	}).find(':file').on('change', function(){
+	};
+
+	/** 上传文件 */
+	uploadForm.ajaxSubmit($.extend({
+		beforeSend: function(){
+			if(!$(document.activeElement).is('.note-editable')){
+				$('#select-image').closest('.modal').modal('hide');
+				postContent.one('summernote.focus', function(){
+					setTimeout(function(){
+						uploadForm.submit();
+					}, 200);
+				}).summernote('focus');
+				return false;
+			}
+		}
+	}, handleImageUpload)).find(':file').on('change', function(){
 		if($(this).val()){
 			$(this).parent().submit();
 		}
@@ -363,10 +399,11 @@ $(function(){
 	}
 
 	if(typeof localStorage != 'undefined' && ($_GET['action'] == 'add' || $_GET['action'] == 'update')){
+		var postMeta = ['post_title', 'post_tags', 'post_link', 'post_desc'];
 		for(var i in localStorage){
 			if(i.indexOf('post_new_') === 0 && $_GET['action'] == 'add'){
 				var name = i.substr(9);
-				if($.inArray(name, ['post_title', 'post_tags', 'post_link']) >=0){
+				if($.inArray(name, postMeta) >=0){
 					$('#'+name).val(localStorage[i]);
 				}else if(name == 'post_content'){
 					$('#post_content').val(localStorage[i]);
@@ -378,7 +415,7 @@ $(function(){
 				var id = parseInt(i.substr(8)),
 					name = i.substr(8+id.toString().length+1);
 				if(id == postId.val()){
-					if($.inArray(name, ['post_title', 'post_tags', 'post_link']) >= 0){
+					if($.inArray(name, postMeta) >= 0){
 						$('#'+name).val(localStorage[i]);
 					}else if(name == 'post_content'){
 						$('#post_content').val(localStorage[i]);
@@ -389,7 +426,7 @@ $(function(){
 				}
 			}
 		}
-		$('#post-edit-form').find('input[id]').on('input', function(){
+		$('#post-edit-form').find('input[id], textarea[id]').on('input', function(){
 			localStorage.setItem(storeBaseName+$(this).attr('name'), $(this).val());
 		}).each(function(){
 			localStorage.setItem(storeBaseName+$(this).attr('name'), $(this).val());
@@ -401,4 +438,24 @@ $(function(){
 		localStorage.setItem(storeBaseName+'post_type', $('#post_type').val());
 		localStorage.setItem(storeBaseName+'post_content', postContent.html());
 	}
+
+	// 添加网络特色图
+	$(document).on('click', '.note-image-btn', function(){
+		var src = $('.note-image-url').val();
+		var checkbox = $('#as-thumbnail');
+		if(checkbox.is(':checked')){
+			thumbnail.val(src);
+			thumbnailImg.attr('src', src);
+			thumbnailClean.show();
+			checkbox.click();
+		}
+	});
+
+	// 删除特色图
+	thumbnailClean.click(function(){
+		thumbnail.val('');
+		thumbnailImg.attr('src', '');
+		thumbnailClean.hide();
+	});
+	console.log(thumbnailClean);
 });

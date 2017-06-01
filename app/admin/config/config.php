@@ -133,6 +133,10 @@ return array (
       'enable' => true,
       'verify' => 'vcode',
     ),
+    'login' => 
+    array (
+      'verify' => 'vcode',
+    ),
   ),
   'file' => 
   array (

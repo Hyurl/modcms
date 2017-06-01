@@ -125,28 +125,40 @@ add_action('mod.updateComponent', function($arg){
 add_action('mod.checkDbUpdate', function(){
 	if(error()) return error();
 	if(!is_admin()) return error(lang('mod.permissionDenied'));
-	if(database::open(0)->set('type') != 'mysql') return error(lang('admin.onlyForMySQL'));
+	$sqlite = database::open(0)->set('type') == 'sqlite';
 	$database = database();
-	$tables = array();
-	$result = database::query('SHOW TABLES');
+	$tip = lang('admin.dbUpdateTip');
 	$key = 'Tables_in_'.config('mod.database.name');
 	$prefix = config('mod.database.prefix');
-	$tip = lang('admin.dbUpdateTip');
-	while ($result && $table = $result->fetchObject()) {
-		if(strpos($table->$key, $prefix) === 0){
-			$tables[] = substr($table->$key, strlen($prefix));
+
+	//获取数据表
+	$tables = array();
+	$sql = $sqlite ? "select name from sqlite_master where type = 'table'" : 'SHOW TABLES';
+	$key = 'Tables_in_'.config('mod.database.name');
+	$result = database::query($sql);
+	while($result && $table = $result->fetchObject()){
+		$name = $sqlite ? $table->name : $table->$key;
+		if(strpos($name, $prefix) === 0){
+			$tables[] = substr($name, strlen($prefix));
 		}
 	}
+
+	// 获取字段属性
 	foreach ($tables as $i => $table) {
 		if(empty($tables[$table])){
 			$tables[$table] = array();
 			unset($tables[$i]);
-		} 
-		$result = database::query("SHOW COLUMNS FROM `{$prefix}{$table}`");
-		while ($result && $column = $result->fetch(PDO::FETCH_ASSOC)) {
-			$tables[$table][$column['Field']] = substr($column['Type'], 0, strpos($column['Type'], ' ')) ?: $column['Type'];
+		}
+		$sql = $sqlite ? "pragma table_info(`{$prefix}{$table}`)" : "SHOW COLUMNS FROM `{$prefix}{$table}`";
+		$result = database::query($sql);
+		$name = $sqlite ? 'name' : 'Field';
+		$type = $sqlite ? 'type' : 'Type';
+		while ($result && $column = $result->fetch()) {
+			$tables[$table][$column[$name]] = str_ireplace(array(' UNSIGNED', ' '), '', $column[$type]);
 		}
 	}
+
+	// 比较字段属性
 	foreach($database as $name => $table){
 		if(!isset($tables[$name])) return success($tip);
 		foreach($table as $key => $attr){
@@ -172,7 +184,8 @@ if(config('mod.mail.host') && config('mod.mail.username')){
 		->type('smtp')
 		->port(config('mod.mail.port'))
 		->from(config('mod.mail.from'))
-		->login(config('mod.mail.username'), config('mod.mail.password'))
+		->set('username', config('mod.mail.username'))
+		->set('password', config('mod.mail.password'))
 		->header('Content-Type', 'text/html; charset=UTF-8');
 }
 
@@ -202,6 +215,8 @@ add_action('mod.mailVcode', function($input){
 		mail::to($input['user_email'])
 			->subject('['.lang('admin.vcode').']'.config('site.name'))
 			->send($body);
+		$params = session_get_cookie_params();
+		setcookie(session_name(), session_id(),  $_SESSION['time']+60*30, $params['path']); //重写客户端 Cookie
 		return success(lang('admin.vcodeSendedTip'));
 	}else{
 		return error(lang('user.invalidEmailFormat'));

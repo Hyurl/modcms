@@ -40,7 +40,7 @@
 	margin-top: -10px;
 	margin-bottom: 0;
 	padding: 0;
-	overflow: hidden;
+	/*overflow: hidden;*/
 	border-bottom-color: #dedede;
 }
 #category-details>.page-header h4>.glyphicon{
@@ -49,6 +49,9 @@
 	cursor: pointer;
 	padding: 11px;
 	margin: -11px;
+}
+#category-details>.page-header h4>.glyphicon:hover{
+	background-color: #ddd;
 }
 #category-details>.page-contents>div{
 	overflow: auto;

@@ -1,11 +1,13 @@
 select{width: auto !important;min-width: 125px;}
 input.form-control{max-width: 400px;}
+.container{overflow: hidden;}
 #post-list-table td{
 	cursor: pointer;
 }
 #post-edit-form{
-	margin: 15px 10px 0 10px;
-	overflow: hidden;
+	margin: 0;
+	padding: 20px 15px 15px;
+	overflow: auto;
 }
 #post-edit-form>button[type=submit], #post-edit-form textarea[name="post_content"]{
 	display: none;
@@ -15,7 +17,7 @@ input.form-control{max-width: 400px;}
 }
 .note-editor.note-frame {
 	border: 1px solid #dedede !important;
-	overflow: auto;
+	overflow: visible;
 	margin-bottom: 0;
 }
 #change-category{
@@ -26,7 +28,31 @@ input.form-control{max-width: 400px;}
 .modal input{max-width: none;}
 .note-color .note-icon-caret{line-height: 1.6;}
 .note-font button{line-height: 1.6;}
+.note-toolbar.panel-heading{background-color: #f5f5f5 !important;}
 .dropdown-menu>li>a *{margin: 0;}
+.post-thumbnail-wraper{
+    max-width: 400px;
+    min-width: 75px;
+    min-height: 35px;
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    display: inline-block;
+}
+#post-thumbnail-img{width: 100%;}
+#thumbnail-clean{
+    float: right;
+    width: 40px;
+    height: 40px;
+    text-align: center;
+    line-height: 40px;
+    margin-bottom: -40px;
+    cursor: pointer;
+    color: #aaa;
+}
+#thumbnail-clean:hover{
+	background-color: rgba(0, 0, 0, 0.32);
+	color: #e01e1e;
+}
 @media (min-width: 768px){
 	.form-horizontal .control-label {
 		text-align: left;
@@ -37,6 +63,10 @@ input.form-control{max-width: 400px;}
 	div.col-sm-10, div.col-sm-2{
 		max-width: 900px;
 	}
+	#post-edit-form{margin-top: 10px;}
+}
+@media(max-width: 571px){
+	#post-edit-form{padding: 10px;}
 }
 @media (max-width: 479px){
 	input.form-control{max-width: 100%;}

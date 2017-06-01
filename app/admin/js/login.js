@@ -39,9 +39,26 @@ $(function(){
 	});
 	/** 发送邮件验证码 */
 	$('#email-vcode').not('.disabled').click(function(){
-		var email = $('#user_email').val(),
-			$this = $(this);
-		if(email && email.match(/[\S]+\@[\S]+\.[\S]+/)){
+		var email = $('#user_email'),
+			addr = email.length ? email.val() : $('#user').val(),
+			$this = $(this),
+			exists = false;
+		if(!email.length){ //通过邮箱检查用户是否存在
+			$.ajax({
+				url: SITE_URL+'mod.php?user::checkExistenceByEmail|user_email:'+addr,
+				async: false,
+				success: function(result){
+					exists = result.success;
+					if(!exists) alert(result.data);
+				},
+				error: function(xhr){
+					alert(Lang.serverConnectionError);
+					console.log(xhr.responseText);
+				}
+			})
+		}
+		if(!email.length && !exists) return false;
+		if(addr && addr.match(/[\S]+\@[\S]+\.[\S]+/)){
 			$this.button('loading');
 			$.ajax({
 				url: SITE_URL+'mod.php?mod::mailVcode',
@@ -49,7 +66,7 @@ $(function(){
 				data: {
 					action: $this.data('action'),
 					user_nickname: $('#user_name').val(),
-					user_email: email,
+					user_email: addr,
 				},
 				success: function(result){
 					alert(result.data);
@@ -62,7 +79,7 @@ $(function(){
 			});
 		}else{
 			alert(Lang.illegalEmailWarnig);
-			$('#user_email').focus();
+			email.length ? $('#user_email').focus() : $('#user').focus();
 		}
 		return false;
 	});

@@ -99,9 +99,9 @@ return array (
     'me'=>'Me',
     'userGenders'=>array('male' => 'Male', 'female' => 'Female'),
     'userLevels'=>array('Anonymous', 'Normal', 'Active', 'Special', 'Editor', 'Administrator'),
-    'recoverPassword'=>'Recover Password',
+    'recoverPassword'=>'Reset Password',
     'recoverPasswordTip'=>'Dear {user}, you\'re resetting your password:',
-    'recoverPassDisabled'=>'Recover password has been disabled.',
+    'recoverPassDisabled'=>'Reset password has been disabled.',
     'recoverPasswordSuccess'=>'Reset password succeed, please use the new password for login.',
     'recoverPasswordFail'=>'Reset password failed.',
     'recoverPassEmailTip'=>'Dear {user}, you just requested to reset your password on our website, for doing this, please visit the link given below in 30 minutes, and finish the steps in the open window:',
@@ -127,7 +127,8 @@ return array (
     'emailIsUsed'=>'This email address is used by another user.',
     'emailIsNotUsed'=>'This email address does not match any user.',
     'invalidEmailFormat'=>'Email format is invalid.',
-
+    'loginVcode'=>'Login Verify Code',
+    'emailLoginForbidden'=>'This email is not allowed to login.',
   ),
   'file' => 
   array (
@@ -226,6 +227,9 @@ return array (
     'baiduPush'=>'Baidu Push',
     'baiduTokenTip'=>'Set the given token.',
     'baiduPushDesc'=>'You need firstly add your site to Baidu Site Author Platform before using this function for initiative push.',
+    'postDesc'=>'Description',
+    'postDescTip'=>'Use a paragraph to describe this article.',
+    'thumbnail'=>'Thumbnail',
   ),
   'comment' => 
   array (
@@ -587,5 +591,6 @@ return array (
     'dateFormat'=>'Date Format',
     'dateFormatTip'=>'Set a global date format.',
     'auto'=>'Auto',
+    'cookieDisabled'=>'Cookie has been disabled, you need to enabled cookie saving before you can fully operate on this website.',
     )
 );

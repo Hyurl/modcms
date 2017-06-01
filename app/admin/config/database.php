@@ -41,7 +41,7 @@ return array (
   array (
     'post_id' => 'INTEGER PRIMARY KEY AUTO_INCREMENT',
     'post_title' => 'VARCHAR(255) DEFAULT NULL',
-    'post_content' => 'VARCHAR(16383) DEFAULT NULL',
+    'post_content' => 'VARCHAR(65535) DEFAULT NULL',
     'post_thumbnail' => 'VARCHAR(255) DEFAULT NULL',
     'post_commentable' => 'INTEGER DEFAULT 0',
     'post_comments' => 'INTEGER DEFAULT 0',
@@ -52,6 +52,7 @@ return array (
     'post_type' => 'INTEGER DEFAULT 0', //文章类型，0(默认)，1(短文), 2(页面)，3(草稿)
     'post_original' => 'INTEGER DEFAULT 0',  //是否原创
     'post_tags' => 'VARCHAR(255) DEFAULT NULL', //文章标签
+    'post_desc' => 'VARCHAR(1023) DEFAULT NULL', //文章摘要
   ),
   'comment' => 
   array (

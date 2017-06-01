@@ -3,10 +3,10 @@ if(extension_loaded('gd')){
 	$ver = gd_info();
 	preg_match('/[0-9\.]+/', $ver['GD Version'], $match);
 	if(version_compare($match[0], '2.0.0') < 0){
-		exit('GD 版本过低，无法使用图形功能。');
+		exit(lang('admin.gdWarning1'));
 	}
 }else{
-	exit('GD 扩展未开启，无法使用图形功能。');
+	exit(lang('admin.gdWarning2'));
 }
 if(session_status() != PHP_SESSION_ACTIVE) session_start();
 $_SESSION['vcode'] = rand_str(5);

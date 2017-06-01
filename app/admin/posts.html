@@ -128,7 +128,6 @@
 				!{get_post($_GET)}
 				<form class="form-horizontal" id="post-edit-form" role="form" method="post" action="{site_url()}mod.php?post::{get_post() ? 'update' : 'add'}">
 					<button type="submit">Submit</button>
-					<input type="hidden" name="post_thumbnail" value="{post_thumbnail()}">
 					<if data="get_post()">
 						<input type="hidden" name="post_id" value="{post_id()}">
 					</if>
@@ -145,7 +144,7 @@
 						</div>
 					</div>
 					<div class="form-group">
-						<label fo r="category_id" class="col-sm-2 control-label">{lang('category.label')}</label>
+						<label for="category_id" class="col-sm-2 control-label">{lang('category.label')}</label>
 						<div class="col-sm-2">
 							<select class="form-control" name="category_id" id="category_id">
 								<while data="get_multi_category(array('limit'=>100))">
@@ -166,6 +165,31 @@
 									</option>
 								</foreach>
 							</select>
+						</div>
+					</div>
+					<div class="form-group">
+						<label for="post_desc" class="col-sm-2 control-label">{lang('post.postDesc')}</label>
+						<div class="col-sm-10">
+							<textarea class="form-control" name="post_desc" id="post_desc" rows="4" placeholder="{lang('post.postDescTip')}">
+								{the_post('desc')}
+							</textarea>
+						</div>
+					</div>
+					<div class="form-group">
+						<label for="post_tags" class="col-sm-2 control-label">{lang('post.postTags')}</label>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" id="post_tags" name="post_tags" placeholder="{lang('post.postTagsTip')}" value="{post_tags()}">
+						</div>
+					</div>
+					<div class="form-group">
+						<label for="post_content" class="col-sm-2 control-label">{lang('post.postContent')}</label>
+						<div class="col-sm-10">
+							<textarea class="form-control" name="post_content" id="post_content" rows="10">
+								{post_content()}
+							</textarea>
+							<div id="post-content-div">
+								{post_content()}
+							</div>
 						</div>
 					</div>
 					<div class="form-group">
@@ -193,19 +217,12 @@
 						</div>
 					</div>
 					<div class="form-group">
-						<label for="post_tags" class="col-sm-2 control-label">{lang('post.postTags')}</label>
-						<div class="col-sm-10">
-							<input type="text" class="form-control" id="post_tags" name="post_tags" placeholder="{lang('post.postTagsTip')}" value="{post_tags()}">
-						</div>
-					</div>
-					<div class="form-group">
-						<label for="post_content" class="col-sm-2 control-label">{lang('post.postContent')}</label>
-						<div class="col-sm-10">
-							<textarea class="form-control" name="post_content" id="post_content" rows="10">
-								{post_content()}
-							</textarea>
-							<div id="post-content-div">
-								{post_content()}
+						<label class="col-sm-2 control-label">{lang('post.thumbnail')}</label>
+						<input type="hidden" id="post_thumbnail" name="post_thumbnail" value="{post_thumbnail()}"/>
+						<div class="col-sm-5">
+							<div class="post-thumbnail-wraper">
+								<span id="thumbnail-clean" class="glyphicon glyphicon-remove" style="{post_thumbnail() ? '' : 'display:none'}"></span>
+								<img id="post-thumbnail-img" src="{post_thumbnail()}" alt="{post_thumbnail() ?: lang('admin.none')}"/>
 							</div>
 						</div>
 					</div>
@@ -256,7 +273,8 @@
 			uploadFailed: "{lang('file.uploadFailed1')}",
 			file: "{lang('file.label')}",
 			postFile: "{lang('file.postFile')}",
-			postImage: "{lang('file.postImage')}"
+			postImage: "{lang('file.postImage')}",
+			notHTML5Warning: "{lang('admin.notHTML5Warning')}"
 		};
 	</script>
 	<include data="foot.html">

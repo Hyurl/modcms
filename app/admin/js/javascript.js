@@ -1,10 +1,16 @@
-if(typeof sessionStorage === 'undefined' && !cookie('noBrowserWarning')){
+if(!navigator.cookieEnabled && Lang.cookieDisabled){
+	alert(Lang.cookieDisabled);
+}
+if(typeof sessionStorage === 'undefined' && Lang.notHTML5Warning && !cookie('noBrowserWarning')){
 	alert(Lang.notHTML5Warning);
 	cookie('noBrowserWarning', true);
 }
 
 /** $_GET 和 PHP 的 $_GET 变量相同 */
-$_GET = location.search.parseStr();
+$_GET = ''.parseStr ? location.search.parseStr() : {};
+
+if(typeof _window == 'undefined')
+	_window = window.parent;
 
 /** _$ 父窗口 jQuery */
 _$ = _window.$;
@@ -252,7 +258,7 @@ $.fn.editMulti = function(options){
 				}
 				alert(tip);
 				if(typeof options.callback == 'function'){
-					if(options.once) options.callback.call();
+					if(options.once) options.callback.call($this, result.data);
 				}else{
 					location.reload();
 				}

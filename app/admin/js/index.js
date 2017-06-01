@@ -225,18 +225,20 @@ $(function(){
 	WS.bind('WebSocket.open', function(){
 		WS.send({obj: 'comment', act: 'getUnreviewedCount'});
 	});
+	getUnreviewedCount = function(){
+		if(WS.source){
+			WS.send({obj: 'comment', act: 'getUnreviewedCount'});
+		}else{
+			$.get(SITE_URL+'mod.php?comment::getUnreviewedCount', function(result){
+				WS.trigger('comment.getUnreviewedCount', result);
+			});
+		}
+	}
 
 	/** 定时检测是否有未审核评论 */
 	if(IS_AUTH && timer){
-		e = setInterval(function(){
-			if(WS.source){
-				WS.send({obj: 'comment', act: 'getUnreviewedCount'});
-			}else{
-				$.get(SITE_URL+'mod.php?comment::getUnreviewedCount', function(result){
-					WS.trigger('comment.getUnreviewedCount', result);
-				});
-			}
-		}, timer*1000);
+		e = setInterval(getUnreviewedCount, timer*1000);
+		getUnreviewedCount();
 	}
 
 	/** 评论菜单右边小标记点击事件 */

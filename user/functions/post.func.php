@@ -40,7 +40,7 @@ if(config('site.baiduSEO')){
  * @return string       简介内容
  */
 function get_post_desc($len = 100){
-	return cms_get_content_desc(post_content(), $len);
+	return the_post('desc') ?: cms_get_content_desc(post_content(), $len);
 }
 
 /** 

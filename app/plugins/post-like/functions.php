@@ -30,7 +30,7 @@ add_action('post.get', function($input){
 		$input['post_content'] .= '
 <div style="text-align:center;margin-top:20px;">
 	<button class="btn btn-default post-like'.$likeDisabled.'" style="background:#fff url('.$pluginURL.'/like.png) no-repeat 5px 5px;padding-left:35px;" role="button" href="javascript:;" data-id="'.$input['post_id'].'">
-		赞('.$input['post_likes'].')
+		赞 ('.$input['post_likes'].')
 	</button>
 </div>
 <script>
