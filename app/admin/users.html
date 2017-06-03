@@ -149,7 +149,7 @@
 									<td><label for="old_password">{lang('user.oldPassword')}</label></td>
 									<td>
 										<input type="text" id="old_password" name="old_password" placeholder="{lang('user.oldPasswordTip')}">
-										<if data="!is_agent('Edge/14')">
+										<if data="!is_agent('Edge/14') && !is_agent('rv:11')">
 											<span class="glyphicon glyphicon-eye-open"></span>
 										</if>
 									</td>
@@ -159,7 +159,7 @@
 								<td><label for="user_password">{lang('user.newPassword')}</label></td>
 								<td>
 									<input type="text" id="user_password" name="user_password" placeholder="{$lang['newPasswordTip']}">
-									<if data="!is_agent('Edge/14')">
+									<if data="!is_agent('Edge/14') && !is_agent('rv:11')">
 										<span class="glyphicon glyphicon-eye-open"></span>
 									</if>
 								</td>

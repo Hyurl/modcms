@@ -131,7 +131,7 @@
 	<div>
 		<label for="site-mail-password">{lang('user.password')}</label>
 		<input type="password" class="form-control" id="site-mail-password" name="mod.mail.password" value="{config('mod.mail.password')}" placeholder="{lang('admin.emailPasswordTip')}"/>
-		<if data="!is_agent('Edge/14')">
+		<if data="!is_agent('Edge/14') && !is_agent('rv:11')">
 			<span class="glyphicon glyphicon-eye-open"></span>
 		</if>
 	</div>

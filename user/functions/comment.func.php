@@ -86,7 +86,7 @@ add_action('comment.add', function($arg){
 	if((me_id() && get_blacklist(array('blacklist_uid' => me_id()))) || (me_email() && get_blacklist(array('blacklist_email'=>me_email())))) {
 		return error(lang('comment.youAreBlacked'));
 	}
-	if(empty($arg['client_ip'])) $arg['client_ip'] = get_client_ip();
+	$arg['client_ip'] = get_client_ip();
 	if(!empty($arg['client_ip']) && get_blacklist(array('blacklist_ip'=>$arg['client_ip']))){
 		return error(lang('comment.youAreBlacked'));
 	}

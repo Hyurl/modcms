@@ -131,12 +131,6 @@ $(function(){
 		$(this).toggleClass('active');
 		showListMenu();
 	});
-	
-	/** 通过网络获取 IP 地址 */
-	$.get('https://ipv4.ip.nf/me.json', function(data){
-		if(typeof data != 'object') data = JSON.parse(data);
-		modal.find('form').find('input[name="comment_ip"]').val(data.ip.ip);
-	});
 
 	/** 提交评论表单 */
 	modal.find('form').ajaxSubmit({

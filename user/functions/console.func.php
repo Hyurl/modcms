@@ -8,7 +8,7 @@ function update_cms($ver = null){
 		$result = mod::updateCMS($version); //执行升级操作
 		if($result['success']){
 			echo "Update succeeded, restart ModCMS to get everything done.\n\n";
-			update_log('modcms-update-log.txt', true); //输出更新日志
+			cms_update_log('modcms-update-log.txt', true); //输出更新日志
 		}else{
 			echo $result['data'];
 		}
@@ -35,7 +35,7 @@ function cms_update_log($file = 'modcms-update-log.txt', $first = false){
 
 /** cms_license() 查看产品协议 */
 function cms_license(){
-	return update_log('modcms-license.txt');
+	return cms_update_log('modcms-license.txt');
 }
 
 /** 更改交互式控制台标题 */
@@ -55,11 +55,11 @@ add_action('console.open.check_cms_update', function(){
 	$url = 'http://modphp.hyurl.com/modcms/version';
 	$arg = array('url'=>$url, 'parseJSON'=>true);
 	if(ping('hyurl.com')){
-		$file = __ROOT__.'modphp.zip';
+		$file = __ROOT__.'modcms.zip';
 		$ver = @json_decode(file_get_contents($url), true) ?: @curl($arg); //访问远程链接并获取响应
-		$gt = $ver && !curl_info('error') ? version_compare($ver['version'], MOD_VERSION) : -1;
+		$gt = $ver && !curl_info('error') ? version_compare($ver['version'], CMS_VERSION) : -1;
 		if($gt > 0 || (!$gt && file_exists($file) && $ver['md5'] != md5_file($file))){
-			update($ver); //保存新版本信息
+			update_cms($ver); //保存新版本信息
 			$tip = "ModCMS {$ver['version']} ".($gt > 0 ? 'is now availible' : 'has updates').", use \"update_cms\" to get the new version.";
 			fwrite(STDOUT, $tip.PHP_EOL); //输出更新提示
 		}
