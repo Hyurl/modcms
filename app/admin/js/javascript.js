@@ -308,7 +308,7 @@ $(function(){
 
 	/** 眼睛按钮事件 */
 	$(document).on('click', 'input[type=text]+.glyphicon, input[type=password]+.glyphicon', function(){
-		if(!navigator.userAgent.match('Edge') && navigator.userAgent.match('rv:11')){
+		if(!navigator.userAgent.match('Edge') && !navigator.userAgent.match('rv:11')){
 			if($(this).is('.glyphicon-eye-open')){
 				$(this).removeClass('glyphicon-eye-open').addClass('glyphicon-eye-close').prev('input').attr('type', 'text').focus();
 			}else{
@@ -317,7 +317,7 @@ $(function(){
 		}
 	});
 	$(document).on('input', 'input[type=text], input[type=password]', function(event){
-		if(!navigator.userAgent.match('Edge') && navigator.userAgent.match('rv:11')){
+		if(!navigator.userAgent.match('Edge') && !navigator.userAgent.match('rv:11')){
 			if($(this).val()){
 				$(this).next('.glyphicon').css('display', 'inline');
 			}else{
