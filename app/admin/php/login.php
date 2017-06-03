@@ -10,9 +10,9 @@ if(count($login) == 1){
 }else{
 	$attr = 'name="user" placeholder="';
 	foreach ($login as $k) {
-		if(isset($kv[$k])) $attr .= $kv[$k].'/ ';
+		if(isset($kv[$k])) $attr .= $kv[$k].'/';
 	}
-	$attr = rtrim($attr, '/ ').'"';
+	$attr = rtrim($attr, '/').'"';
 }
 
 if(config('user.password.recoverEmail') == 'link'){
