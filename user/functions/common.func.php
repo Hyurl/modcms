@@ -85,7 +85,7 @@ add_action('mod.updateCMS', function($arg){
 	$ok = false;
 	if(config('mod.installed') && !is_console() && (!is_admin() || me_id() != 1)) return error(lang('mod.permissionDenied'));
 	if(empty($arg['src']) || empty($arg['md5'])) return error(lang('mod.missingArguments'));
-	$file = __ROOT__.'modcms_'.__TIME__.'.zip';
+	$file = __ROOT__.'modcms.zip';
 	$len = file_put_contents($file, @file_get_contents($arg['src']) ?: @curl(array('url'=>$arg['src'], 'followLocation'=>1)));
 	if($len && md5_file($file) == $arg['md5']){
 		$ok = @zip_extract($file, __ROOT__);
@@ -97,7 +97,7 @@ add_action('mod.updateCMS', function($arg){
 			}
 		}
 	}
-	unlink($file);
+	// unlink($file);
 	return $ok ? success(lang('mod.updated')) : error(lang('admin.systemUpdateFailWarning'));
 }, false);
 

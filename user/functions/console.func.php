@@ -54,7 +54,7 @@ add_action('console.open.show_tip', function(){
 add_action('console.open.check_cms_update', function(){
 	$url = 'http://modphp.hyurl.com/modcms/version';
 	$arg = array('url'=>$url, 'parseJSON'=>true);
-	if(ping('hyurl.com')){
+	try{
 		$file = __ROOT__.'modcms.zip';
 		$ver = @json_decode(file_get_contents($url), true) ?: @curl($arg); //访问远程链接并获取响应
 		$gt = $ver && !curl_info('error') ? version_compare($ver['version'], CMS_VERSION) : -1;
@@ -63,5 +63,5 @@ add_action('console.open.check_cms_update', function(){
 			$tip = "ModCMS {$ver['version']} ".($gt > 0 ? 'is now availible' : 'has updates').", use \"update_cms\" to get the new version.";
 			fwrite(STDOUT, $tip.PHP_EOL); //输出更新提示
 		}
-	}
+	}catch(Exception $e){}
 }, false);
