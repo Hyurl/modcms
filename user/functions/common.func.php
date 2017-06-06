@@ -13,10 +13,10 @@ add_action(array('file.get', 'user.get', 'post.get', 'comment.get', 'link.get'),
 	if(!empty($data['link_logo']) && strpos($data['link_logo'], '://') === false){ //友情链接 LOGO
 		$data['link_logo'] = site_url().$data['link_logo'];
 	}
-	if(!empty($data['post_content'])){ //替换文章中的图片/链接
-		$original = array('/<img(.*)src="upload\//', '/<a(.*)href="upload\//');
-		$replacement = array('<img$1src="'.site_url().'upload/', '<a$1href="'.site_url().'upload/');
-		$data['post_content'] = preg_replace($original, $replacement, $data['post_content']);
+	if(!empty($data['post_content'])){ //替换文章中的文件链接
+		$original = array('src="upload/', 'href="upload/');
+		$replacement = array('src="'.site_url().'upload/', 'href="'.site_url().'upload/');
+		$data['post_content'] = str_replace($original, $replacement, $data['post_content']);
 	}
 	return $data;
 });
@@ -33,8 +33,8 @@ add_action(array('user.add', 'user.update', 'post.add', 'post.update', 'link.add
 		$arg['link_logo'] = substr($arg['link_logo'], strlen(site_url()));
 	}
 	if(!empty($arg['post_content'])){
-		$original = array('<img src="'.site_url().'upload/', '<a href="'.site_url().'upload/');
-		$replacement = array('<img src="upload/', '<a href="upload/');
+		$original = array('src="'.site_url().'upload/', 'href="'.site_url().'upload/');
+		$replacement = array('src="upload/', 'href="upload/');
 		$arg['post_content'] = str_replace($original, $replacement, $arg['post_content']);
 	}
 	return $arg;
