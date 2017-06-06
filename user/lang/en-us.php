@@ -175,6 +175,10 @@ return array (
     'postImage'=>'A picture used in posts.',
     'postFile'=>'An attachment used in posts.',
     'linkLogo'=>'A picture used as friendly-link logo.',
+    'postVideo'=>'A video used in posts.',
+    'onlySupportMp4'=>'Only support mp4 videos',
+    'uploadFromLocal'=>'Upload From My Computer',
+    'setAsThumbnail'=>'Set as thumbnail?',
   ),
   'category' => 
   array (

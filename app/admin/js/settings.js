@@ -263,16 +263,18 @@ $(function(){
 			$('i.glyphicon').hide();
 			target.attr({'disabled': true}).each(function(){
 				var $this = $(this);
-				$this.attr({'data-value': $this.val(), 'data-placeholder': $this.attr('placeholder'), 'placeholder': Lang.dbSqliteTip}).val('');
+				$this.data({'value': $this.val(), 'placeholder': $this.attr('placeholder')}).attr({'placeholder': Lang.dbSqliteTip}).val('');
 			}).val('');
 		}else{
 			target.attr({'disabled': false}).each(function(){
 				var $this = $(this);
-				$this.attr({'placeholder': $this.attr('data-placeholder')}).val($this.attr('data-value'));
+				if($this.data('value'))
+					$this.attr({'placeholder': $this.data('placeholder')}).val($this.data('value'));
 				if($this.attr('type') == 'password' && $this.val()){
 					$('i.glyphicon-eye-open').show();
 				}
 			});
 		}
 	}).trigger('change');
+	$.showMenu(null);
 });

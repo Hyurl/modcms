@@ -238,6 +238,7 @@
 		TOTAL = {_post('total') ?: 0};
 		PAGES = {_post('pages') ?: 0};
 		POST_STATIC_URI = "{config('post.staticURI')}";
+		LENGTH = {config('file.upload.maxSize')}*1024; //切片长度
 		Lang = {
 			serverConnectionError: "{lang('admin.serverConnectionError')}",
 			serverConnectionError1: "{lang('post.serverConnectionError1')}",
@@ -274,7 +275,12 @@
 			file: "{lang('file.label')}",
 			postFile: "{lang('file.postFile')}",
 			postImage: "{lang('file.postImage')}",
-			notHTML5Warning: "{lang('admin.notHTML5Warning')}"
+			notHTML5Warning: "{lang('admin.notHTML5Warning')}",
+			postVideo: "{lang('file.postVideo')}",
+			onlySupportMp4: "{lang('file.onlySupportMp4')}",
+			uploadFromLocal: "{lang('file.uploadFromLocal')}",
+			setAsThumbnail: "{lang('file.setAsThumbnail')}",
+			upload: "{lang('file.upload')}",
 		};
 	</script>
 	<include data="foot.html">

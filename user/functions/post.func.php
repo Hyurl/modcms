@@ -62,3 +62,17 @@ add_action('post.update', function($input){
 		return $input;
 	}
 });
+
+// 在添加或更新文章时，用 vidio 标签代替 iframe 标签调用 mp4
+add_action(array('post.add', 'post.update'), function($arg){
+	$arg['post_content'] = preg_replace('/<iframe(.*)src="(.*)\.mp4"(.*)>(.*)<\/iframe>/Ui', '<video$1src="$2.mp4"$3>Your browser does not support this video.</video>', $arg['post_content']);
+	return $arg;
+});
+
+// 在文件页面将 video 标签转换为 iframe 标签
+add_action('post.get', function($arg){
+	if(is_display('app/admin/posts.html')){
+		$arg['post_content'] = preg_replace('/<video(.*)src="(.*)"(.*)>(.*)<\/video>/Ui', '<iframe$1src="$2"$3>$4</iframe>', $arg['post_content']);
+		return $arg;
+	}
+});

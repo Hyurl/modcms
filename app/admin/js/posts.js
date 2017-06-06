@@ -223,8 +223,12 @@ $(function(){
 				input.remove();
 				var label = $('<label>');
 				label.attr({'for': 'as-thumbnail', 'class': 'radio-inline', 'style': 'float: left'});
-				label.append('<input type="checkbox" id="as-thumbnail"/> 设置为特色图');
+				label.append('<input type="checkbox" id="as-thumbnail"/> '+Lang.setAsThumbnail);
 				$('.note-image-btn').parent().prepend(label);
+				// 上传视频按钮
+				var input2 = $('.note-video-url');
+				var body = input2.closest('.modal-body');
+				body.prepend('<div class="form-group row-fluid"><label>'+Lang.uploadFromLocal+'</label><div class="progress"><div id="video-progress-bar" class="progress-bar progress-bar-success progress-bar-striped active" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%;">0%</div></div><input id="video-button" type="file" name="file" accept="video/mp4" style="margin-bottom: 10px;"/><button id="upload-video" type="button" class="btn btn-default">'+Lang.upload+'</button></div>');
 			},
 			onImageUpload: function(files){
 				if(typeof FormData == 'undefined'){
@@ -457,5 +461,111 @@ $(function(){
 		thumbnailImg.attr('src', '');
 		thumbnailClean.hide();
 	});
-	console.log(thumbnailClean);
+
+	// 分段上传视频
+	$('#upload-video').click(upload);
+	var xhr = new XMLHttpRequest();
+	var bar = document.getElementById('video-progress-bar'); //进度条
+	var videoBtn = document.getElementById('video-button');
+	var start = 0; //切片开始位置
+	var end = LENGTH; //切片结束位置
+	var file_src = ''; //分段上传时的目标文件地址
+
+	function upload(){						
+		var file = videoBtn.files[0]; //文件对象
+		if(!file){
+			return;
+		}else if(file.name.substring(file.name.lastIndexOf('.')+1) != 'mp4'){
+			alert(Lang.onlySupportMp4);
+			return;
+		}
+		if(start < file.size){
+			bar.parentNode.style.display = 'block';
+			videoBtn.style.display = 'none';
+			xhr.open('POST', SITE_URL+'mod.php?file::upload', true);
+			xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest'); //将其标记为 ajax 请求
+			xhr.onreadystatechange = function(){
+				if(this.readyState == 4){
+					if(this.status == 200){
+						result = JSON.parse(this.responseText); //解析 JOSN
+						if(result.success){
+							if(!file_src)
+								file_src = result.data[0].file_src; //记录文件地址
+							start = end; //新的切片起始点
+							end = start + LENGTH; //新的切片结束点
+							upload(); //递归执行上传函数
+						}else{
+							alert(result.data[0].error);
+							bar.style.width = '0%';
+						}
+					}else{
+						alert(Lang.serverConnectionError);
+					}
+				}
+			};
+			// 上传进度
+			xhr.upload.onprogress = function(ev){
+				if(ev.lengthComputable){
+					var pecent = 100 *(ev.loaded + start) / file.size; //获取上传百分比
+					if(pecent > 100){
+						pecent = 100;
+					}
+					// 改变进度条
+					bar.style.width = pecent + '%';
+					bar.innerHTML = parseInt(pecent) + '%';
+				}
+			};
+
+			var blob = file.slice(start, end); //将文件切割为 blob 对象
+			var fd = new FormData(); //使用 FormData 对象上传
+			fd.append('file', blob); //将 blob 添加到 FormData 中
+			fd.append('file_name', file.name); //标记文件名
+			fd.append('file_desc', Lang.postVideo);
+			if(file_src){
+				fd.append('file_src', file_src); //标记为后续片段
+			}
+			xhr.send(fd); //发送请求
+		}else{ //上传完成
+			// alert(file.name + " 上传成功。");
+			$('.modal').one('hidden.bs.modal', function(){
+				var video = $('<iframe>').attr({
+					src: file_src,
+					height: 360,
+					width: 640,
+					frameborder: "0",
+					controls: 'controls',
+				});
+				postContent.summernote('insertNode', video[0]);
+				video.load(function(){
+					$(this).contents().find('video').attr('autoplay', false);
+				});
+				bar.style.width = '0%';
+				bar.innerHTML = '0%';
+				bar.parentNode.style.display = 'none';
+				videoBtn.value = '';
+				videoBtn.files = null;
+				videoBtn.style.display = 'block';
+			}).modal('hide');
+		}
+	}
+
+	var iframe = $('iframe');
+
+	//禁止 Iframe 中的视频自动播放 
+	iframe.load(function(){
+		var $this = $(this)
+		try{
+			$this.contents().find('video').attr('autoplay', false);
+		}catch(e){}
+	});
+
+	// 改变窗口带小时同步改变 Iframe 大小
+	// var height = iframe.attr('height') || iframe.height();
+	// var width = iframe.attr('width') || iframe.width();
+	// var resizeIframe = function(){
+	// 	var pct = iframe.width()/width;
+	// 	iframe.css('height', height*pct);
+	// };
+	// resizeIframe();
+	// $(window).resize(resizeIframe);
 });

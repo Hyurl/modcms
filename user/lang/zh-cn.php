@@ -175,6 +175,10 @@ return array (
     'postImage'=>'文章中的图片。',
     'postFile'=>'文章中的附件。',
     'linkLogo'=>'用作友情链接 LOGO 的图片。',
+    'postVideo'=>'文章中上传的视频。',
+    'onlySupportMp4'=>"仅支持 MP4 格式的视频。",
+    'uploadFromLocal'=>'本地上传',
+    'setAsThumbnail'=>'设置为特色图？',
   ),
   'category' => 
   array (

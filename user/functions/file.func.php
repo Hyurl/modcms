@@ -88,3 +88,10 @@ add_action('file.removeTempFolder', function($input){
 	}
 	return error(lang('admin.tempDeleteFail'));
 }, false);
+
+// 分段上传文件时检查用户权限
+add_action('file.save', function($file){
+	if(!empty($file['file_src']) && get_file(array('file_src'=>$file['file_src'])) && file_user('id') != me_id()){
+		return error(lang('mod.permissionDenied'));
+	}
+});

@@ -53,6 +53,8 @@ input.form-control{max-width: 400px;}
 	background-color: rgba(0, 0, 0, 0.32);
 	color: #e01e1e;
 }
+.progress{margin-bottom: 10px;display: none;}
+iframe{max-width: 100%;}
 @media (min-width: 768px){
 	.form-horizontal .control-label {
 		text-align: left;

@@ -201,8 +201,13 @@ function staticuri($file = '', $format = ''){
 	static $uri = array();
 	if(!$uri) $uri = load_config_file('static-uri.php');
 	if(!$file) return $uri;
+	if(is_string($file) && strapos($file, __ROOT__) === 0) //替换为相对于 __ROOT__ 的路径
+		$file = substr($file, strlen(__ROOT__));
 	if(is_assoc($file)){ //同时设置多个伪静态规则
-		$uri = array_merge($uri, $file);
+		foreach ($file as $k => $v) {
+			if(strapos($k, __ROOT__) === 0) $k = substr($k, strlen(__ROOT__));
+			$uri[$k] = $v;
+		}
 		return true;
 	}elseif($format){
 		return $uri[$file] = $format;
@@ -654,7 +659,7 @@ function display_file($url = '', $set = false){
 			if($isIndex) $_GET = array_merge($_GET, $args);
 			return $file = $tpl;
 		}
-		if(!config('mod.installed')) return $file = $tpl;
+		if(!config('mod.installed')) goto err404;
 		$config = config();
 		foreach(database() as $key => $value){
 			$URI = @$config[$key]['staticURI'] ?: @$config[$key]['staticURL'];
@@ -695,8 +700,9 @@ function display_file($url = '', $set = false){
 				}
 			}
 		}
+		err404:
+		return $file = $tplPath.config('site.errorPage.404'); //如果没有匹配的模板，则报告 404 错误
 	}
-	return $file = $tplPath.config('site.errorPage.404'); //如果没有匹配的模板，则报告 404 错误
 }
 
 /**
