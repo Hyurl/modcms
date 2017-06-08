@@ -41,7 +41,7 @@ return array (
   array (
     'post_id' => 'INTEGER PRIMARY KEY AUTO_INCREMENT',
     'post_title' => 'VARCHAR(255) DEFAULT NULL',
-    'post_content' => 'VARCHAR(65535) DEFAULT NULL',
+    'post_content' => 'TEXT DEFAULT NULL',
     'post_thumbnail' => 'VARCHAR(255) DEFAULT NULL',
     'post_commentable' => 'INTEGER DEFAULT 0',
     'post_comments' => 'INTEGER DEFAULT 0',
