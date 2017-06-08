@@ -211,7 +211,7 @@ return array (
     'postType'=>'Type',
     'selectCategory'=>'Select Category',
     'changeCategory'=>'Change category',
-    'changeCategoryWarning'=>'Please select a category',
+    'changeCategoryWarning'=>'Please select a category.',
     'postTitleTip'=>'Indicates the the main idea of this post.',
     'postLinkTip'=>'Customize the post link.',
     'isOriginal'=>'Original',

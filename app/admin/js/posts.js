@@ -172,7 +172,6 @@ $(function(){
 					data: {category_id: catId},
 					callback: function(data){
 						var catName = modal.find('select').find('option[value="'+catId+'"]').text();
-						console.log($(this).find('td[data="category-name"]'));
 						postListTbody.find('tr.active').children('td[data="category-name"]').text(catName);
 						modal.modal('hide');
 					}

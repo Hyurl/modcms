@@ -57,7 +57,7 @@ function get_post_date(){
 }
 
 add_action('post.update', function($input){
-	if(is_websocket()){
+	if(is_websocket() && !empty($input['post_content'])){
 		$input['post_content'] = trim($input['post_content']);
 		return $input;
 	}
@@ -65,8 +65,10 @@ add_action('post.update', function($input){
 
 // 在添加或更新文章时，用 vidio 标签代替 iframe 标签调用 mp4
 add_action(array('post.add', 'post.update'), function($arg){
-	$arg['post_content'] = preg_replace('/<iframe(.*)src="(.*)\.mp4"(.*)>(.*)<\/iframe>/Ui', '<video$1src="$2.mp4"$3>Your browser does not support this video.</video>', $arg['post_content']);
-	return $arg;
+	if(!empty($arg['post_content'])){
+		$arg['post_content'] = preg_replace('/<iframe(.*)src="(.*)\.mp4"(.*)>(.*)<\/iframe>/Ui', '<video$1src="$2.mp4"$3>Your browser does not support this video.</video>', $arg['post_content']);
+		return $arg;
+	}
 });
 
 // 在文件页面将 video 标签转换为 iframe 标签
