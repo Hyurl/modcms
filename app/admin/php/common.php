@@ -73,7 +73,8 @@ function admin_output_menu($menus, $submenu = false){
  */
 function admin_count_records($table, $arg = array()){
 	if(empty($arg)){
-		$count = database::open(0)->select($table, 'count(*) as count')->fetchObject()->count;
+		$result = database::open(0)->select($table, 'count(*) as count');
+		$count = $result ? $result->fetchObject()->count : 0;
 	}else{
 		$where = array();
 		foreach ($arg as $key => $value) {
@@ -81,7 +82,8 @@ function admin_count_records($table, $arg = array()){
 				$where[$key] = $value;
 			}
 		}
-		$count = $where ? database::open(0)->select($table, 'count(*) as count', $where)->fetchObject()->count : 0;
+		$result = $where ? database::open(0)->select($table, 'count(*) as count', $where) : false;
+		$count = $result ? $result->fetchObject()->count : 0;
 	}
 	return (int)$count;
 }

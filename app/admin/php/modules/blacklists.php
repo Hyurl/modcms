@@ -1,6 +1,7 @@
 <?php
 function admin_count_blacklist($key){
-	return (int)database::select('blacklist', 'count(*) as count', "`blacklist_{$key}` <> ''")->fetchObject()->count;
+	$result = database::select('blacklist', 'count(*) as count', "`blacklist_{$key}` <> ''");
+	return $result ? (int)$result->fetchObject()->count : 0;
 }
 
 $blacklist = array(
