@@ -266,9 +266,10 @@ function plugin_dir_url($filename = ''){
 /** 
  * cms_rewrite_config() 重写 ModPHP 用户配置文件
  * @param  [type] $file [description]
+ * @param  [type] $put  [description]
  * @return [type]       [description]
  */
-function cms_rewrite_config($file){
+function cms_rewrite_config($file, $put = true){
 	$config = array();
 	$isIni = strtolower(pathinfo($file, PATHINFO_EXTENSION)) == 'ini';
 	if(file_exists($file1 = __ROOT__.'mod/config/'.$file)) {
@@ -284,7 +285,7 @@ function cms_rewrite_config($file){
 		$config = array_xmerge($config, $_config);
 	}
 	if($file == 'config.php') config($config);
-	if(!$isIni) export($config, $file3);
+	if(!$isIni && $put) export($config, $file3);
 }
 
 /** 第一次运行 */
@@ -506,5 +507,11 @@ add_action('mod.setTimezone', function($input){
 add_action('mod.template.load', function(){
 	if(!is_template()){
 		config('mod.template.compiler.enable', true);
+	}
+});
+
+add_action('mod.config', function($arg){
+	if(is_display('app/admin/settings.html')){
+		cms_rewrite_config('config.php', false);
 	}
 });

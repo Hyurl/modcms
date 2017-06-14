@@ -22,7 +22,7 @@ $(function(){
 				menu = $_document.find('body').data('menu'),
 				icon = '<i class="glyphicon glyphicon-dashboard"></i>';
 			$('title').text(title);
-			$('#dashboard').html(icon+title);
+			$('#dashboard').html(icon+title).attr('title', title);
 			/** 菜单高亮 */
 			if(menu && $('#'+menu).closest('.sidebar').length > 0){
 				sidebar.find('li').removeClass('active');

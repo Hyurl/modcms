@@ -129,6 +129,7 @@ return array (
     'invalidEmailFormat'=>'邮件地址格式错误。',
     'loginVcode'=>'登录验证码',
     'emailLoginForbidden'=>'该邮箱未被允许登录。',
+    'showAvatar'=>'显示用户头像',
   ),
   'file' => 
   array (

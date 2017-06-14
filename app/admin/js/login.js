@@ -92,4 +92,31 @@ $(function(){
 	});
 
 	storage('ModAdminURL', false);
+
+	// 关闭头像并重新输入账号
+	$('#avatar-box .glyphicon-remove').click(function(){
+		$('#avatar-box').hide();
+		$('#username-box').show().children('input').val('').focus();
+		$('.panel-login').centralize();
+	});
+
+	// 账号输入框失焦时获取并显示用户头像
+	$('#user').blur(function(){
+		var target = $('#avatar-box');
+		if(target.length){
+			$.get(SITE_URL+'mod.php?user::getAvatar|'+$(this).attr('name')+':'+$(this).val(), function(result){
+				if(result.success){
+					if(result.data.user_avatar){
+						$('#avatar-box img.avatar').attr("src", result.data.user_avatar).show().siblings('.avatar').hide();
+					}else{
+						$('#avatar-box span.avatar').show().siblings('.avatar').hide();
+					}
+					$('#username-box').fadeOut('fast', function(){
+						target.fadeIn('fast');
+						$('.panel-login').centralize();
+					});
+				}
+			});
+		}
+	});
 });

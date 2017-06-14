@@ -11,6 +11,18 @@
 		</select>
 	</div>
 	<div>
+		!{$key = 'user.login.showAvatar'}
+		<label for="user-register-enable">{lang('user.showAvatar')}</label>
+		<span>
+			<label class="radio-inline">
+				<input type="radio" id="user-register-enable" name="{$key}" value="true"{config($key) ? ' checked' : ''}> {lang('admin.yes')}
+			</label>
+			<label class="radio-inline">
+				<input type="radio" name="{$key}" value="false"{!config($key) ? ' checked' : ''}> {lang('admin.no')}
+			</label>
+		</span>
+	</div>
+	<div>
 		!{$key = 'user.register.enable'}
 		<label for="user-register-enable">{lang('user.enableReg')}</label>
 		<span>

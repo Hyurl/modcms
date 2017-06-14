@@ -67,9 +67,9 @@ iframe{max-width: 100%;}
 	}
 	#post-edit-form{margin-top: 10px;}
 }
-@media(max-width: 571px){
+/*@media(max-width: 571px){
 	#post-edit-form{padding: 10px;}
-}
+}*/
 @media (max-width: 479px){
 	input.form-control{max-width: 100%;}
 }

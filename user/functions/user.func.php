@@ -183,3 +183,26 @@ function get_user_avatar($width = 64, $src = ''){
 	}
 	return $src;
 }
+
+// 获取用户头像
+add_action('user.getAvatar', function($arg){
+	$login = explode('|', config('user.keys.login'));
+	$where = '';
+	foreach($login as $k) { //根据登录字段组合用户信息获取条件
+		if(!empty($arg[$k])){
+			$where = "`{$k}` = '{$arg[$k]}'";
+			break;
+		}elseif(count($login) > 1 && !empty($arg['user'])){
+			$where .= " OR `{$k}` = '{$arg['user']}'";
+		}
+	}
+	if(!$where) return error(lang('mod.missingArguments'));
+	$where = ltrim($where, ' OR ');
+	$result = database::open(0)->select('user', '*', $where); //获取符合条件的用户
+	$hasUser = false;
+	if($result && $user = $result->fetch()){
+		$avatar = $user['user_avatar'] ? SITE_URL.$user['user_avatar'] : '';
+		return success(array('user_avatar'=> $avatar));
+	}
+	return error('User not exists.');
+}, false);

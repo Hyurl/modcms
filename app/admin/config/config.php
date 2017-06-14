@@ -136,6 +136,7 @@ return array (
     'login' => 
     array (
       'verify' => 'vcode',
+      'showAvatar'=>false,
     ),
   ),
   'file' => 
