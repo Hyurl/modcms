@@ -17,6 +17,13 @@ add_action(array('file.get', 'user.get', 'post.get', 'comment.get', 'link.get'),
 		$original = array('src="upload/', 'href="upload/');
 		$replacement = array('src="'.site_url().'upload/', 'href="'.site_url().'upload/');
 		$data['post_content'] = str_replace($original, $replacement, $data['post_content']);
+		if(is_single() && preg_match_all('/href="(.*)"/Ui', $data['post_content'], $matches)){
+			for ($i=0;$i<count($matches[1]); $i++) {
+				if(!stripos($matches[1][$i], '://')){
+					$data['post_content'] = str_replace($matches[0][$i], 'href="'.site_url().$matches[1][$i].'"', $data['post_content']);
+				}
+			}
+		}
 	}
 	return $data;
 });
