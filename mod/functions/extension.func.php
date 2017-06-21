@@ -671,7 +671,7 @@ function curl($options = array()){
 		'sslVerify'=>false, //SSL 安全验证
 		'proxy'=>'', //代理服务器(格式: 8.8.8.8:80)
 		'clientIp'=>'', //原始客户端 IP，当 curl 用来充当代理服务器时使用
-		'timeout'=>10, //设置超时;
+		'timeout'=>5, //设置超时;
 		'onlyIpv4'=>true, //只解析 IPv4
 		'username'=>'', //HTTP 访问认证用户名;
 		'password'=>'', //HTTP 访问认证密码;
@@ -914,7 +914,7 @@ function parse_cli_param($argv = array(), $i = 0, $isArg = false, $args = array(
 		$argv = array_slice($argv, 1);
 	}
 	if(!$argv) return $args;
-	if($argv[0][0] == '-'){
+	if(@$argv[0][0] == '-'){
 		if(isset($argv[0][1]) && $argv[0][1] != '-' && !isset($argv[0][2])){ //-k 短键名参数
 			$key = $argv[0][1];
 		}elseif(isset($argv[0][1]) && $argv[0][1] == '-' && isset($argv[0][2]) && $argv[0][2] != '-'){ //--key 长键名参数
@@ -944,7 +944,7 @@ function parse_cli_param($argv = array(), $i = 0, $isArg = false, $args = array(
 		elseif($argv[0] != ';') //下一个命令开始
 			$args['param'][$i]['args'][] = rtrim($value, ';');
 	}
-	if($argv[$_i-1][strlen($argv[$_i-1])-1] == ';'){ //多命令分句
+	if(@$argv[$_i-1][strlen($argv[$_i-1])-1] == ';'){ //多命令分句
 		$i += 1;
 		$isArg = false;
 	}else{
@@ -1038,13 +1038,13 @@ function doc($func = '', $return = false){
 	if($isMd = strpos($func, '::')){ //判断是否为方法
 		$class = substr($func, 0, $isMd);
 		$mdName = substr($func, $isMd+2);
-		if(!method_exists($class, $mdName) && !$return){ //判断方法是否存在
-			echo "This method is not yet defined.";
+		if(!method_exists($class, $mdName)){ //判断方法是否存在
+			if(!$return) echo "This method is not yet defined.";
 			return;
 		}
 	}else{
-		if(!function_exists($func) && !$return){ //判断函数是否存在
-			echo "This function is not yet defined.";
+		if(!function_exists($func)){ //判断函数是否存在
+			if(!$return) echo "This function is not yet defined.";
 			return;
 		}
 	}
@@ -1116,4 +1116,49 @@ function doc($func = '', $return = false){
 	}else{
 		echo $doc ?: "This ".($isMd ? 'method' : 'function')." doesn't have a document.";
 	}
+}
+
+/**
+ * encrypt() 加密一段数据
+ * @param  string $data 待加密的数据
+ * @param  string $key  密钥
+ * @return string       加密后的数据
+ */
+function encrypt($data, $key){
+	$key = (string)$key;
+	$klen = strlen($key);
+	if(!$klen){ //密钥不能为空
+		trigger_error("The second argument passed to encrypt() must not be empty.", E_USER_WARNING);
+		return false;
+	}
+	$data = $key.(string)$data; //确保数据长度 >= 密钥长度
+	$len = strlen($data);
+	for ($i=$j=0,$str=''; $i < $len; $i++,$j++) { 
+		if($j == $klen) $j=0;
+		$str .= chr(ord($data[$i]) + ord($key[$j]));
+	}
+	return base64_encode($str);
+}
+
+/**
+ * decrypt() 解密一段由 encrypt() 函数加密的数据
+ * @param  string $data 待解密的数据
+ * @param  string $key  密钥
+ * @return string       解密后的数据
+ */
+function decrypt($data, $key){
+	$key = (string)$key;
+	$klen = strlen($key);
+	if(!$klen){
+		trigger_error("The second argument passed to decrypt() must not be empty.", E_USER_WARNING);
+		return false;
+	}
+	$data = (string)$data;
+	$data = base64_decode($data);
+	$len = strlen($data);
+	for ($i=$j=0,$str=''; $i < $len; $i++,$j++) { 
+		if($j == $klen) $j=0;
+		$str .= chr(ord($data[$i])-ord($key[$j]));
+	}
+	return substr($str, $klen);
 }

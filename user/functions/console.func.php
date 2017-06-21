@@ -40,11 +40,11 @@ function cms_license(){
 
 /** 更改交互式控制台标题 */
 add_action('console.open', function(){
-	global $TITLE, $PROMPT;
+	global $TITLE;
 	$TITLE = "ModCMS Console";
-	$PROMPT = ">>> ";
 });
 
+//控制台中显示提示
 add_action('console.open.show_tip', function(){
 	$tip = 'Type "doc", "cms_update_log", "cms_license" for more information.';
 	fwrite(STDOUT, $tip.PHP_EOL);
@@ -53,10 +53,11 @@ add_action('console.open.show_tip', function(){
 /** 交互式控制台中检查 ModCMS 更新 */
 add_action('console.open.check_cms_update', function(){
 	$url = 'http://modphp.hyurl.com/modcms/version';
-	$arg = array('url'=>$url, 'parseJSON'=>true);
+	$opt = array('http'=>array('method'=>'GET', 'timeout'=>1));
+	$arg = array('url'=>$url, 'parseJSON'=>false, 'timeout'=>1);
 	try{
 		$file = __ROOT__.'modcms.zip';
-		$ver = @json_decode(file_get_contents($url), true) ?: @curl($arg); //访问远程链接并获取响应
+		$ver = @json_decode(file_get_contents($url, false, stream_context_create($opt)) ?: @curl($arg), true); //访问远程链接并获取响应
 		$gt = $ver && !curl_info('error') ? version_compare($ver['version'], CMS_VERSION) : -1;
 		if($gt > 0 || (!$gt && file_exists($file) && $ver['md5'] != md5_file($file))){
 			update_cms($ver); //保存新版本信息

@@ -517,6 +517,7 @@ add_action('mod.template.load', function(){
 	}
 });
 
+//更新配置前先在内存中重写配置
 add_action('mod.config', function($arg){
 	if(is_display('app/admin/settings.html')){
 		cms_rewrite_config('config.php', false);

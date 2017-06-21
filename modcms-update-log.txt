@@ -1,4 +1,18 @@
 【ModCMS 更新日志】
+版本 1.4.2 (2017-6-21 10:48)
+1. 将 ModPHP 内核更新为 2.2.0，并根据其调整一些设置。
+2. 建议在模板中使用 do_hooks() 函数执行两个 API所绑定的回调函数（无参数）：
+   mod.template.load.header --- 在引入公共头部文件后调用
+   mod.template.load.footer --- 在引入公共尾部文件前调用
+   例如:
+   <include data="header.html"/>
+   {do_hooks('mod.template.load.header')}
+   <!-- 主体内容 -->
+   {do_hooks('mod.template.load.footer')}
+   <include data="footer.html"/>
+   这两个 API 将作为日后编写前台插件时统一使用的 API，插件可以在这两个 API 所绑定的
+   回调函数中，直接输出内容到页面中，以此来更改网站的外观和功能。
+
 版本 1.4.1 (2017-6-18 15:15)
 1. 将 ModPHP 内核更新为 2.1.9。
 2. 文章内容中添加相对链接将被自动替换成相对于网站根目录的绝对链接，但只在文章详情页有效。

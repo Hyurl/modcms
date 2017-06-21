@@ -9,7 +9,6 @@ return array (
     'language' => 'zh-CN',
     'timezone' => 'Asia/Shanghai',
     'dateFormat' => 'Y-m-d H:i', //日期格式
-    'outputBuffering' => 0,
     'escapeTags' => '<script><style><iframe>',
     'pathinfoMode' => false,
     'database' => 
@@ -23,7 +22,7 @@ return array (
     ),
     'session' => 
     array (
-      'name' => 'MODID',
+      'name' => '',
       'maxLifeTime' => 10080,
       'savePath' => 'tmp/',
     ),
@@ -46,7 +45,6 @@ return array (
     'SocketServer' => 
     array (
       'port' => 8080,
-      'maxInput' => 1024*1024*8,
     ),
     'plugins' => 
     array (
