@@ -2,8 +2,8 @@
 版本 1.4.2 (2017-6-21 10:48)
 1. 将 ModPHP 内核更新为 2.2.0，并根据其调整一些设置。
 2. 建议在模板中使用 do_hooks() 函数执行两个 API所绑定的回调函数（无参数）：
-   mod.template.load.header --- 在引入公共头部文件后调用
-   mod.template.load.footer --- 在引入公共尾部文件前调用
+   mod.template.load.header --- 公共头部文件中(或后)调用
+   mod.template.load.footer --- 公共尾部文件中(或前)调用
    例如:
    <include data="header.html"/>
    {do_hooks('mod.template.load.header')}
