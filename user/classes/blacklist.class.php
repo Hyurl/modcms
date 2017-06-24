@@ -4,7 +4,7 @@ final class blacklist extends mod{
 	const PRIMKEY = "blacklist_id";
 
 	static function getUsers($arg = array()){
-		$limit = @$limit['limit'] ?: 0;
+		$limit = @(int)$arg['limit'] ?: 0;
 		if($limit && !empty($arg['page'])){
 			$limit = $limit*($arg['page']-1).",".$limit;
 		}
@@ -23,7 +23,7 @@ final class blacklist extends mod{
 	}
 
 	static function getEmails(array $arg, $name = 'email'){
-		$limit = @$limit['limit'] ?: 0;
+		$limit = @(int)$arg['limit'] ?: 0;
 		if($limit && !empty($arg['page'])){
 			$limit = $limit*($arg['page']-1).",".$limit;
 		}
