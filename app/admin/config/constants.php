@@ -1,6 +1,6 @@
 <?php
 /** 定义常量 */
-define('CMS_VERSION', '1.4.2'); //ModCMS 版本
+define('CMS_VERSION', '1.4.3'); //ModCMS 版本
 define('SITE_URL', site_url()); //网站根目录 URL 地址
 define('ADMIN_URL', admin_url()); //后台根目录 URL 地址
 define('ADMIN_DIR', admin_dir()); //后台根目录路径

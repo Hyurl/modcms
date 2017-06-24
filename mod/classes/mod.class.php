@@ -1,7 +1,9 @@
 <?php
 /**
- * mod.php 核心类
- * 所有模块都继承于核心类
+ * ModPHP 核心类，所有模块都继承于核心类，并以此获取对数据进行基本操作的能力。
+ * Mod 类提供了一系列基本的操作数据记录的方法，如 mod::add()、mod::update() 等，
+ * 子类可以重新定义某些方法，也可以直接使用，例如 user::add() 是直接继承的，
+ * 而 file::add() 则是由 file 类重写的。
  */
 class mod{
 	const TABLE = ''; //当前数据表
@@ -25,10 +27,13 @@ class mod{
 	 */
 	final protected static function relateTables($table){
 		$tables = '';
-		foreach(database($table, true) as $key => $value){
-			foreach(database() as $k => $v){
+		$database = database();
+		foreach(database($table) as $key){
+			if(!$database) break;
+			foreach($database as $k => $v){
 				if(isset($v[$key]) && stripos($v[$key], 'PRIMARY KEY')){
-					$tables .= ','.array_search($v, database());
+					$tables .= ','.$k;
+					unset($database[$k]);
 				}
 			}
 		}
@@ -45,10 +50,11 @@ class mod{
 		foreach(database($table, true) as $key => $value){
 			if(stripos($value, 'PRIMARY KEY')){
 				foreach(database() as $k => $v){
-					if(array_key_exists($key, $v) && $k != $table){
-						$tables .= ','.array_search($v, database());
+					if(isset($v[$key]) && $k != $table){
+						$tables .= ','.$k;
 					}
 				}
+				break;
 			}
 		}
 		return $table.$tables;
@@ -66,6 +72,7 @@ class mod{
 			foreach(database($tables[$i], true) as $k => $v){
 				if(stripos($v, 'PRIMARY KEY')){
 					$where[$tables[$i].'.'.$k] = '{'.$tables[0].'.'.$k.'}';
+					break;
 				}
 			}
 		}
@@ -111,7 +118,8 @@ class mod{
 			if(empty($arg[$primkey])) return error(lang('mod.missingArguments'));
 			$result = static::get(array($primkey=>$arg[$primkey])); //尝试获取请求的记录
 			if($result['success']){ //检查是否有所有者、编辑或管理员权限
-				if($hasOwner && me_id() != $result['data']['user_id'] && !is_editor() && !is_admin()) return error($langDinied);
+				if($hasOwner && me_id() != $result['data']['user_id'] && !is_editor() && !is_admin())
+					return error($langDinied);
 			}else{
 				return error(); //记录不存在
 			}
@@ -126,18 +134,23 @@ class mod{
 	 */
 	final protected static function dataSerializer(&$arg = array(), $act = ''){
 		$keys = array();
-		foreach(array_keys(database()) as $tb){
-			if($_keys = config($tb.'.keys.serialize')){
-				$keys = array_merge($keys, explode('|', $_keys)); //获取需要(反)序列化的字段
+		if($act == 'get'){ //获取操作时需要反序列化所有关联表的字段
+			$tables = explode(',', static::relateTables(static::TABLE));
+			foreach($tables as $table){
+				if($_keys = config($table.'.keys.serialize')){
+					$keys = array_merge($keys, explode('|', str_replace(' ', '', $_keys))); //需要反序列化的字段
+				}
 			}
+		}else{ //添加/更新操作时仅序列化本表的字段
+			$keys = config(static::TABLE.'.keys.serialize'); //需要序列化的字段
 		}
 		if($keys){
 			foreach($keys as $key){
-				if(array_key_exists($key, $arg)){
+				if(isset($arg[$key])){
 					if(config('mod.jsonSerialize')){ //使用 JSON 进行(反)序列化
-						$arg[$key] = ($act != 'get') ? json_encode($arg[$key] ?: array()) : (@json_decode($arg[$key], true) ?: array());
+						$arg[$key] = ($act != 'get') ? json_encode($arg[$key]) : @json_decode($arg[$key], true);
 					}else{ //使用 PHP 内置(反)序列化方式
-						$arg[$key] = ($act != 'get') ? serialize($arg[$key] ?: array()) : (@unserialize($arg[$key]) ?: array());
+						$arg[$key] = ($act != 'get') ? serialize($arg[$key]) : @unserialize($arg[$key]);
 					}
 				}
 			}
@@ -157,11 +170,15 @@ class mod{
 			$hasRoot = strapos($arg[$link], site_url()) === 0; //判断链接是否为绝对 URL 地址
 			$index = config('mod.pathinfoMode') ? 'index.php/' : ''; //pathinfo 模式
 			if($act != 'get'){
-				if($hasRoot) $arg[$link] = substr($arg[$link], strlen(site_url($index))); //获取相对链接
-				if(file_exists($arg[$link])) return error(lang('mod.linkUnavailable')); //链接不能与文件名冲突
+				if($hasRoot) //获取相对链接
+					$arg[$link] = substr($arg[$link], strlen(site_url()));
+				if(strapos($arg[$link], 'index.php/') === 0)
+					$arg[$link] = substr($arg[$link], 10); //去掉链接的 index.php/ 前缀
+				if(file_exists($arg[$link]))
+					return error(lang('mod.linkUnavailable')); //链接不能与文件名冲突
 				$modules = array();
 				foreach(database() as $k => $v){
-					if(array_key_exists($k.'_link', $v)) $modules[] = $k; //获取使用链接功能的模块
+					if(isset($v[$k.'_link'])) $modules[] = $k; //获取使用链接功能的模块
 				}
 				foreach($modules as $module){
 					$get_module = 'get_'.$module;
@@ -171,7 +188,7 @@ class mod{
 							return error(lang('mod.linkUnavailable'));
 					}
 				}
-			}else if(!$hasRoot){
+			}elseif(!$hasRoot){
 				$arg[$link] = site_url($index).$arg[$link]; //在获取记录时将相对 URL 地址转为绝对地址
 			}
 		}
@@ -195,16 +212,15 @@ class mod{
 					$arg['user_id'] = me_id(); //填充用户 ID
 				if(in_array($tb.'_time', database($tb)))
 					$arg[$tb.'_time'] = time(); //填充时间戳
-				if($keys = str_replace(' ', '', config($tb.'.keys.require'))){
-					$keys = explode('|', $keys);
+				if($keys = config($tb.'.keys.require')){
+					$keys = explode('|', str_replace(' ', '', $keys));
 					foreach($keys as $key){ //添加数据时检查必需字段
 						if(empty($arg[$key])) return error(lang('mod.missingArguments'));
 					}
 				}
 			}elseif($act == 'update'){ //更新操作
-				if(error()) return error();
-				if($keys = str_replace(' ', '', config($tb.'.keys.filter'))){
-					$keys = explode('|', $keys);
+				if($keys = config($tb.'.keys.filter')){
+					$keys = explode('|', str_replace(' ', '', $keys));
 					foreach($keys as $key){ //更新数据时过滤字段
 						if(!is_admin() || $key[0] == '*') //不对管理员进行过滤，除非字段前加 * 标记
 							unset($arg[ltrim($key, '*')]);
@@ -212,10 +228,11 @@ class mod{
 				}
 			}
 			if($act != 'delete'){
+				$tags = config('mod.escapeTags'); //需要转义的 HTML 标签
 				foreach($arg as $k => $v){
 					if(!in_array($k, database($tb)))
 						unset($arg[$k]); //过滤无效字段
-					elseif(is_string($v) && ($tags = config('mod.escapeTags')))
+					elseif($v && is_string($v))
 						$arg[$k] = escape_tags($v, $tags); //转义 HTML 脚本标签
 				}
 				static::dataSerializer($arg);
@@ -249,10 +266,11 @@ class mod{
 
 	/**
 	 * install() 安装系统
+	 * @static
 	 * @param  array  $arg 请求参数
 	 * @return array       请求结果
 	 */
-	final static function install(array $arg = array()){
+	final static function install(array $arg){
 		if(static::TABLE) return error(lang('mod.methodDenied', __method__));
 		if(config('mod.installed')) return error(lang('mod.installed'));
 		if(is_writable(__ROOT__.'user/config')){
@@ -279,7 +297,8 @@ class mod{
 
 	/**
 	 * uninstall() 卸载系统
-	 * @param  array  $arg 请求参数
+	 * @static
+	 * @param  array  $arg [可选]请求参数
 	 * @return array       请求结果
 	 */
 	final static function uninstall(array $arg = array()){
@@ -311,10 +330,11 @@ class mod{
 
 	/** 
 	 * config() 更新配置
+	 * @static
 	 * @param  array  $arg 请求参数
 	 * @return array       请求结果
 	 */
-	final static function config(array $arg = array()){
+	final static function config(array $arg){
 		if(static::TABLE) return error(lang('mod.methodDenied', __method__));
 		if(!config('mod.installed')) return error(lang('mod.notInstalled')); 
 		if(is_writable(__ROOT__.'user/config')){
@@ -338,10 +358,11 @@ class mod{
 
 	/**
 	 * add() 通用的添加记录方式
-	 * @param  array  $arg 请求参数
+	 * @static
+	 * @param  array  $arg 请求参数，可以包含所有的数据表字段
 	 * @return array       刚添加的记录
 	 */
-	static function add(array $arg = array()){
+	static function add(array $arg){
 		$tb = static::TABLE;
 		if(!$tb) return error(lang('mod.methodDenied', __method__));
 		do_hooks($tb.'.add', $arg); //执行添加前挂钩函数
@@ -358,7 +379,8 @@ class mod{
 
 	/**
 	 * update() 通用的更新记录方式，也可以用来更新系统
-	 * @param  array  $arg 请求参数
+	 * @static
+	 * @param  array  $arg [可选]请求参数，可以包含所有的数据表字段(必须提供主键字段)
 	 * @return array       更新后的记录或者更新结果(更新系统时)
 	 */
 	static function update(array $arg = array()){
@@ -379,7 +401,6 @@ class mod{
 					$ok = zip_extract($file, __ROOT__); //解压安装包
 					export(load_config_file('config.php'), __ROOT__.'user/config/config.php'); //更新配置
 				}
-				// unlink($file);
 			}else{ //更新数据库
 				include __ROOT__.'mod/common/update.php'; //调用执行数据库更新程序
 				if(error()) return error();
@@ -392,7 +413,8 @@ class mod{
 			$id = !empty($arg[$primkey]) ? $arg[$primkey] : 0;
 			static::handler($arg, 'update');
 			if(error()) return error();
-			if($arg && database::open(0)->update($tb, $arg, $primkey.' = '.$id)){ //更新数据库记录
+			database::open(0);
+			if($arg && database::update($tb, $arg, "`$primkey` = ".database::quote($id))){ //更新数据库记录
 				$result = static::get(array($primkey=>$id)); //获取更新后的记录
 				do_hooks($tb.'.update.complete', $result['data']); //执行模块更新后挂钩函数
 				return error() ?: $result;
@@ -404,10 +426,11 @@ class mod{
 
 	/**
 	 * delete() 通用的删除记录方式
-	 * @param  array  $arg  请求参数
+	 * @static
+	 * @param  array  $arg  请求参数，可以包含所有的数据表字段(必须提供主键字段)
 	 * @return array        操作结果
 	 */
-	static function delete(array $arg = array()){
+	static function delete(array $arg){
 		$tb = static::TABLE;
 		$primkey = static::PRIMKEY;
 		if(!$tb) return error(lang('mod.methodDenied', __method__));
@@ -418,7 +441,7 @@ class mod{
 		database::open(0);
 		$tables = explode(',', static::tableRelated($tb)); //获取从表
 		for($i=0; $i<count($tables); $i++){ //依次删除从表中的记录
-			if(!database::delete($tables[$i], $primkey.' = '.$id) && $i == 0)
+			if(!database::delete($tables[$i], "`$primkey` = ".database::quote($id)) && $i == 0)
 				return error(lang('mod.deleteFailed', lang($tb.'.label')));
 		}
 		do_hooks($tb.'.delete.complete', $arg); //执行模块删除记录完成后挂钩函数
@@ -427,19 +450,21 @@ class mod{
 
 	/**
 	 * get() 通用的获取单条记录方式
-	 * @param  array  $arg 请求参数
+	 * @static
+	 * @param  array  $arg 请求参数，可以包含所有的数据表字段，但应提供具有唯一性的字段
 	 * @return array       请求的记录或错误
 	 */
-	final static function get(array $arg = array()){
+	final static function get(array $arg){
 		$tb = static::TABLE;
 		if(!$tb) return error(lang('mod.methodDenied', __method__));
 		foreach($arg as $k => $v){
-			if(!in_array($k, database($tb)) || strpos($k, $tb) !== 0) unset($arg[$k]); //删除无效参数
+			if(!in_array($k, database($tb))) unset($arg[$k]); //删除无效参数
 		}
 		if(!$arg) return error(lang('mod.missingArguments'));
 		$result = static::getMulti(array_merge($arg, array('limit'=>1))); //通过获取多记录的方法获取一条记录
-		if($result['success']) return success($result['data'][0]); //返回获取的记录
-		else{ //返回错误
+		if($result['success']){
+			return success($result['data'][0]); //返回获取的记录
+		}else{ //返回错误
 			$noData = lang('mod.noData', lang($tb.'.label'));
 			$lang = $result['data'] != $noData ? $result['data'] : lang('mod.notExists', lang($tb.'.label')); //错误消息
 			return error($lang);
@@ -448,32 +473,44 @@ class mod{
 
 	/**
 	 * getMulti() 通用的获取多条记录方式
-	 * @param  array  $arg  请求参数
+	 * @static
+	 * @param  array  $arg  [可选]请求参数，可以包含所有的数据表字段，以及下面这些额外的参数：
+	 *                      [orderby] => 按指定的字段排序，默认主键
+	 *                      [sequence] => 排序方式, asc 升序(默认)，desc 降序，rand 随机
+	 *                      [limit] => 单页获取上限，默认 10
+	 *                      [page] => 获取页码，默认 1
 	 * @return array        符合条件的记录或错误
 	 */
 	final static function getMulti(array $arg = array()){
 		$tb = static::TABLE;
 		if(!$tb) return error(lang('mod.methodDenied', __method__));
 		$default = array(
-			'orderby'=>static::PRIMKEY, //按指定字段排序
-			'sequence'=>'asc', //排序方式, asc 升序，desc 降序，rand 随机
-			'limit'=>10, //单页获取上限
-			'page'=>1 //当前页码
+			'orderby'=>static::PRIMKEY,
+			'sequence'=>'asc',
+			'limit'=>10,
+			'page'=>1
 			);
 		$arg = array_merge($default, $arg);
 		do_hooks($tb.'.get.before', $arg); //执行记录获取前挂钩函数
 		if(error()) return error();
-		$sqlite = database::open(0)->set('type') == 'sqlite';
+		//确保参数合法
+		if(!in_array($arg['orderby'], database($tb)))
+			$arg['orderby'] = static::PRIMKEY;
+		if(!in_array($arg['sequence'], array('asc', 'desc', 'rand')))
+			$arg['sequence'] = 'asc';
+		$arg['limit'] = (int)$arg['limit'];
+		$arg['page'] = (int)$arg['page'];
+		$sqlite = database::open(0)->set('type') == 'sqlite'; //是否为 SQLite 数据库
 		if(strtolower($arg['sequence']) == 'rand')
 			$orderby = $sqlite ? 'random()' : 'rand()';
 		else
 			$orderby = $arg['orderby'].' '.$arg['sequence'];
+		$where = array();
 		foreach($arg as $k => $v){
 			if(in_array($k, database($tb)) && $v !== null){
 				$where[$tb.'.'.$k] = $extra[$k] = $v; //组合 where 查询条件
 			}
 		}
-		if(!isset($where)) $where = array();
 		$_where = $where;
 		$_limit = $arg['limit'];
 		$tables = static::relateTables($tb); //获取从表
@@ -484,65 +521,77 @@ class mod{
 
 	/**
 	 * search() 搜索记录，使用模糊查询，需要配置模块的搜索字段
-	 * @param  array  $arg       请求参数
-	 * @return array             请求结果或错误
+	 * @static
+	 * @param  array  $arg  请求参数，可以包含所有的数据表字段，以及下面这些额外的参数：
+	 *                      [keyword] => 查询的关键字
+	 *                      [orderby] => 按指定的字段排序，默认主键
+	 *                      [sequence] => 排序方式, asc 升序(默认)，desc 降序，rand 随机
+	 *                      [limit] => 单页获取上限，默认 10
+	 *                      [page] => 获取页码，默认 1
+	 * @return array        请求结果或错误
 	 */
-	final static function search(array $arg = array()){
+	final static function search(array $arg){
 		$tb = static::TABLE;
 		if(!$tb) return error(lang('mod.methodDenied', __method__));
 		$default = array(
-			'keyword'=>'', //关键字
-			'orderby'=>static::PRIMKEY, //按指定字段排序
-			'sequence'=>'asc', //排序方式, asc 升序，desc 降序，rand 随机
-			'limit'=>10, //单页获取上限
-			'page'=>1 //当前页码
+			'keyword'=>'',
+			'orderby'=>static::PRIMKEY,
+			'sequence'=>'asc',
+			'limit'=>10,
+			'page'=>1
 			);
 		$arg = array_merge($default, $arg);
-		if(config($tb.'.keys.search')){
-			if(!$arg['keyword']) return error(lang('mod.missingArguments'));
-			else $arg['keyword'] = urldecode($arg['keyword']); //对关键字进行 url 解码
-			$extra['keyword'] = $arg['keyword'];
-			do_hooks($tb.'.get.before', $arg); //执行记录获取前挂钩函数
-			if(error()) return error();
-			$sqlite = database::open(0)->set('type') == 'sqlite';
-			if(strtolower($arg['sequence']) == 'rand')
-				$orderby = $sqlite ? 'random()' : 'rand()';
-			else
-				$orderby = $arg['orderby'].' ' . $arg['sequence'];
-			$keyword = $arg['keyword'];
-			if(is_string($keyword)) $keyword = array($keyword);
-			foreach($keyword as $k => $v){
-				$keyword[$k] = str_replace('%', '[%]', $v); //转义 % 字符
+		if(!config($tb.'.keys.search'))
+			return error(lang('mod.noSearchKeys', lang($tb.'.label')));
+		if(!$arg['keyword'])
+			return error(lang('mod.missingArguments'));
+		$extra['keyword'] = $arg['keyword'];
+		do_hooks($tb.'.get.before', $arg); //执行记录获取前挂钩函数
+		if(error()) return error();
+		//确保参数合法
+		if(!in_array($arg['orderby'], database($tb)))
+			$arg['orderby'] = static::PRIMKEY;
+		if(!in_array($arg['sequence'], array('asc', 'desc', 'rand')))
+			$arg['sequence'] = 'asc';
+		$arg['limit'] = (int)$arg['limit'];
+		$arg['page'] = (int)$arg['page'];
+		$sqlite = database::open(0)->set('type') == 'sqlite'; //是否为 SQLite 数据库
+		if(strtolower($arg['sequence']) == 'rand')
+			$orderby = $sqlite ? 'random()' : 'rand()';
+		else
+			$orderby = $arg['orderby'].' ' . $arg['sequence'];
+		$where = array();
+		foreach($arg as $k => $v){
+			if(in_array($k, database($tb)) && $v !== null){
+				$where[$tb.'.'.$k] = $extra[$k] = $v; //设置 where 条件
 			}
-			$keys = explode('|', str_replace(' ', '',config($tb.'.keys.search')));
-			foreach($keyword as $v){
-				for($i=0; $i < count($keys); $i++){ 
-					$a[$i][] = '`'.$keys[$i]."` LIKE '%".$v."%'"; //组合 like 条件
-				}
+		}
+		$keyword = $arg['keyword'];
+		if(is_string($keyword)) $keyword = array($keyword); //始终使用多关键字查询
+		$a = $b = array();
+		$keys = explode('|', str_replace(' ', '', config($tb.'.keys.search')));
+		foreach($keyword as $v){
+			$v = str_replace('%', '[%]', $v); //转义 %
+			for($i=0; $i < count($keys); $i++){ 
+				$a[$i][] = "`{$keys[$i]}` LIKE ".database::quote("%{$v}%"); //组合 like 条件
 			}
-			for($i=0; $i < count($a); $i++){ 
-				$b[] = '('.implode(' AND ', $a[$i]).')'; //组合 AND 语句
-			}
-			$where = array();
-			$_where = '('.implode(' OR ', $b).')'; //组合 OR 语句
-			foreach($arg as $k => $v){
-				if(in_array($k, database($tb)) && $v !== null){
-					$where[$tb.'.'.$k] = $extra[$k] = $v; //设置 where 条件
-				}
-			}
-			$_where = $where = $where ? $_where.' AND '.database::open(0)->parseWhere($where) : $_where; //解析并组合 where 条件
-			$_limit = $arg['limit'];
-			$tables = static::relateTables($tb);
-			$__where = static::relateWhere($tables);
-			if($__where) $where .= ' AND '.database::parseWhere($__where);
-			$limit = $arg['limit'] ? $arg['limit']*($arg['page']-1).",".$arg['limit'] : 0; //limit 条件
-			return static::fetchMulti($tables, $where, $limit, $orderby, $extra, $tb, $arg, $_where, $_limit);
-		}else return error(lang('mod.noSearchKeys', lang($tb.'.label')));
+		}
+		for($i=0; $i < count($a); $i++){ 
+			$b[] = '('.implode(' AND ', $a[$i]).')'; //组合 AND 语句
+		}
+		$_where = '('.implode(' OR ', $b).')'; //组合 OR 语句
+		$_where = $where = $where ? $_where.' AND '.database::parseWhere($where) : $_where; //解析并组合 where 条件
+		$_limit = $arg['limit'];
+		$tables = static::relateTables($tb);
+		$__where = static::relateWhere($tables);
+		if($__where) $where .= ' AND '.database::parseWhere($__where);
+		$limit = $arg['limit'] ? $arg['limit']*($arg['page']-1).",".$arg['limit'] : 0; //limit 条件
+		return static::fetchMulti($tables, $where, $limit, $orderby, $extra, $tb, $arg, $_where, $_limit);
 	}
 	
 	/** fetchMulti() 获取多记录 */
 	final protected static function fetchMulti($tables, $where, $limit, $orderby, $extra, $tb, $arg, $_where, $_limit){
-		$result = database::open(0)->select($tables, '*', $where, $limit, $orderby); //获取符合条件的记录
+		$result = database::select($tables, '*', $where, $limit, $orderby); //获取符合条件的记录
 		$data = array();
 		while($result && $single = $result->fetch()){
 			static::handler($single, 'get');
@@ -563,21 +612,38 @@ class mod{
 
 	/**
 	 * getPrev() 通用的获取上一条记录方式
-	 * @param  array  $arg      请求的参数
-	 * @param  string $sign     比较运算符号
-	 * @param  string $sequence 排序方式，asc 或 desc
-	 * @return array            请求的记录或错误
+	 * @static
+	 * @param  array  $arg  请求参数，可以包含所有的数据表字段(必须提供主键字段)，以及下面这些额外的参数：
+	 *                      [orderby] => 按指定的字段排序，默认主键
+	 *                      [sequence] => 排序方式, asc 升序(默认)，desc 降序
+	 * @return array        请求的记录或错误
 	 */
-	final static function getPrev(array $arg = array(), $sign = '>=', $sequence = 'desc'){
+	final static function getPrev(array $arg, $sign = '>='){
 		$tb = static::TABLE;
 		$primkey = static::PRIMKEY;
 		if(!$tb) return error(lang('mod.methodDenied', $sign == '>=' ? __method__ : 'getNext'));
+		$default = array(
+			'orderby'=>static::PRIMKEY,
+			'sequence'=>'asc',
+			);
+		$arg = array_merge($default, $arg);
 		do_hooks($tb.'.get.before', $arg); //执行记录获取前挂钩函数
-		if(empty($arg[$primkey])) return error(lang('mod.missingArguments'));
-		$id = $arg[$primkey];
-		$orderby = $primkey." {$sign} {$id}, ".(isset($arg['orderby']) ? $arg['orderby'] : $primkey)." {$sequence}";
+		if(empty($arg[$primkey])) //获取相邻的记录必须提供主键字段
+			return error(lang('mod.missingArguments'));
+		$id = (int)$arg[$primkey];
+		unset($arg[$primkey]);
+		//确保传入参数合法
+		if(!in_array($arg['orderby'], database($tb)))
+			$arg['orderby'] = $primkey;
+		if(!in_array($arg['sequence'], array('asc', 'desc')))
+			$arg['sequence'] = 'asc';
+		if($sign == '>=') //查询上一记录
+			$sequence = $arg['sequence'] == 'asc' ? 'desc' : 'asc';
+		else //查询下一记录
+			$sequence = $arg['sequence'];
+		$orderby = "`$primkey` $sign $id, {$arg['orderby']} $sequence";
 		foreach($arg as $k => $v){
-			if(in_array($k, database($tb)) && $v !== null && $k != $primkey){
+			if(in_array($k, database($tb)) && $v !== null){
 				$where[$tb.'.'.$k] = $extra[$k] = $v; //组合 where 条件
 			}
 		}
@@ -594,16 +660,20 @@ class mod{
 
 	/**
 	 * getNext() 通用的获取下一条记录方式
-	 * @param  array  $arg  请求参数
+	 * @static
+	 * @param  array  $arg  请求参数，可以包含所有的数据表字段(必须提供主键字段)，以及下面这些额外的参数：
+	 *                      [orderby] => 按指定的字段排序，默认主键
+	 *                      [sequence] => 排序方式, asc 升序(默认)，desc 降序
 	 * @return array        请求的记录或错误
 	 */
-	final static function getNext(array $arg = array()){
-		return static::getPrev($arg, '<=', 'asc'); //调用获取上一记录的方法，只将排序反转
+	final static function getNext(array $arg){
+		return static::getPrev($arg, '<='); //调用获取上一记录的方法，只将排序反转
 	}
 
 	/**
 	 * trash() 操作无效的数据库记录
-	 * @param  string $action 'get' 或者 'delete' 操作
+	 * @static
+	 * @param  string $action get 或者 delete 操作
 	 * @return array          获取的记录或删除操作成功提示
 	 */
 	final protected static function trash($action = 'get'){

@@ -11,6 +11,8 @@ return array (
     'dateFormat' => 'Y-m-d H:i', //日期格式
     'escapeTags' => '<script><style><iframe>',
     'pathinfoMode' => false,
+    'jsonSerialize' => true,
+    'debug'=>true,
     'database' => 
     array (
       'host' => 'localhost',

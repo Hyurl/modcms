@@ -3,7 +3,7 @@
 add_action('blacklist.get', function($arg){
 	if($arg['blacklist_uid']){
 		$user = database::open(0)
-						->select('user', 'user_name, user_nickname', "user_id = {$arg['blacklist_uid']}")
+						->select('user', 'user_name, user_nickname', "user_id = ".(int)$arg['blacklist_uid'])
 						->fetch();
 		$user = array(
 			'blacklist_user' => $user['user_name'] ?: $user['user_nickname']

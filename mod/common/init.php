@@ -9,7 +9,7 @@ if(version_compare(PHP_VERSION, '5.3.0') < 0) //ModPHP 需要运行在 PHP 5.3+ 
 $NSFile = str_replace('\\', '/', realpath($_SERVER['SCRIPT_FILENAME']));
 
 /** 定义常量 MOD_VERSION, __TIME__, __ROOT_, __SCRIPT__ */
-define('MOD_VERSION', '2.2.0'); //ModPHP 版本
+define('MOD_VERSION', '2.2.1'); //ModPHP 版本
 define('__TIME__', time(), true); //开始运行时间
 define('__ROOT__', str_replace('\\', '/', dirname(dirname(__DIR__))).'/', true); //网站根目录
 define('__SCRIPT__', substr($NSFile, strlen(__ROOT__)) ?: $NSFile, true); //执行脚本
@@ -20,10 +20,22 @@ if(!defined('STDOUT')) define('STDOUT', fopen('php://stdout','w'));
 if(!defined('STDERR')) define('STDERR', fopen('php://stderr','w'));
 if(__SCRIPT__ == 'mod/common/init.php') return false;
 
+ini_set('default_charset', 'UTF-8'); //设置默认脚本编码
+ini_set('user_agent', 'ModPHP/'.MOD_VERSION); //设置 PHP 远程请求客户端
+
 //自动加载类文件
-set_include_path(get_include_path().PATH_SEPARATOR.__ROOT__.'mod/classes/'.PATH_SEPARATOR.__ROOT__.'user/classes/');
-spl_autoload_extensions('.class.php');
-spl_autoload_register();
+spl_autoload_register(function($class){
+	$class1 = strtolower($class);
+	foreach (array('mod', 'user') as $path) {
+		if(is_file($file = __ROOT__."$path/classes/$class1.class.php")){
+			include $file; //按小写类名称引入
+			break;
+		}elseif(is_file($file = __ROOT__."$path/classes/$class.class.php")){
+			include $file; //按调用的类名称引入
+			break;
+		}
+	}
+});
 
 /** 加载核心函数文件 */
 include_once __ROOT__.'mod/functions/extension.func.php';
@@ -31,6 +43,13 @@ include_once __ROOT__.'mod/functions/mod.func.php';
 
 $NSInstalled = config('mod.installed');
 $NSDatabase = database();
+
+date_default_timezone_set(config('mod.timezone')); //设置默认时区
+if(is_browser()){ //开/关调试模式
+	ini_set('display_errors', config('mod.debug'));
+	ini_set('display_startup_errors', config('mod.debug'));
+	ini_set('html_errors', config('mod.debug'));
+}
 
 /** 加载默认函数文件 */
 foreach (glob(__ROOT__.'mod/functions/*.php') as $NSFile) {
@@ -45,19 +64,16 @@ foreach (glob(__ROOT__.'mod/functions/*.php') as $NSFile) {
 if($NSInstalled) register_module_functions(); //注册模块函数
 
 //预初始化
-$NSPreInit = function(){
-	/** 设置文档类型和默认时区 */
-	if(is_agent()) set_content_type('text/html');
-	date_default_timezone_set(config('mod.timezone'));
-
+$NSPreInit = function() use($NSInstalled){
 	/** 自动重定向至固定网站地址 */
 	if(is_agent() && strapos(url(), site_url()) !== 0 && !is_proxy() && strapos(str_replace('\\', '/', realpath($_SERVER['SCRIPT_FILENAME'])), __ROOT__) === 0)
 		redirect(site_url().substr(url(), strlen(detect_site_url())), 301);
 
 	/** 配置 Session */
-	ini_set('session.gc_maxlifetime', config('mod.session.maxLifeTime')*60); //生存期
-	if(config('mod.session.name')) session_name(config('mod.session.name')); //Session 名称
-	$path = config('mod.session.savePath');
+	$sess = config('mod.session');
+	ini_set('session.gc_maxlifetime', $sess['maxLifeTime']*60); //生存期
+	if($sess['name']) session_name($sess['name']); //Session 名称
+	$path = $sess['savePath'];
 	if($path){
 		if($path[0] != '/' && $path[1] != ':') $path = __ROOT__.$path;
 		session_save_path($path); //会话文件保存目录
@@ -65,7 +81,7 @@ $NSPreInit = function(){
 	if(is_agent()){
 		$url = parse_url(trim(site_url(), '/'));
 		$path = @$url['path'] ?: '/';
-		session_set_cookie_params(0, $path);
+		session_set_cookie_params(0, $path); //客户端 Cookie 作用域
 		$sname = session_name();
 		$sid = @$_COOKIE[$sname] ?: @$_REQUEST[$sname];
 		if($sid){
@@ -77,28 +93,8 @@ $NSPreInit = function(){
 		}
 	}
 
-	/** 配置模板引擎 */
-	$compiler = config('mod.template.compiler');
-	template::$rootDir = __ROOT__;
-	template::$rootDirURL = site_url();
-	template::$saveDir = __ROOT__.$compiler['savePath'];
-	template::$extraTags = $compiler['extraTags'];
-
-	/** 连接数据库 */
-	if(config('mod.installed')){
-		$conf = config('mod.database');
-		database::open(0)
-				->set('type', $conf['type'])
-				->set('host', $conf['host'])
-				->set('dbname', $conf['name'])
-				->set('port', $conf['port'])
-				->set('prefix', $conf['prefix'])
-				->login($conf['username'], $conf['password']);
-		if($err = database::$error) return error($err);
-	}
-
-	/** 填充 $_GET */
-	if(__SCRIPT__ == 'mod.php' && url() != site_url('mod.php')){
+	/** 解析 URL 参数并填充 $_GET */
+	if(__SCRIPT__ == 'mod.php'){
 		$url = parse_url(url());
 		if(isset($url['query']) && preg_match('/[_0-9a-zA-Z]+::.*/', $url['query'])){ //形式：obj::act|arg1:value1[|...]
 			array_shift($_GET);
@@ -123,10 +119,19 @@ $NSPreInit = function(){
 				}
 			}
 		}
+	}
 
-		if(isset($_REQUEST['HTTP_REFERER'])){ //允许通过请求参数自定义来路页面
-			$_SERVER['HTTP_REFERER'] = $_REQUEST['HTTP_REFERER'];
-		}
+	/** 连接数据库 */
+	if($NSInstalled){
+		$conf = config('mod.database');
+		database::open(0)
+				->set('type', $conf['type'])
+				->set('host', $conf['host'])
+				->set('dbname', $conf['name'])
+				->set('port', $conf['port'])
+				->set('prefix', $conf['prefix'])
+				->login($conf['username'], $conf['password']);
+		if(database::$error) exit(database::$error); //遇到错误，终止程序
 	}
 };
 $NSPreInit();
@@ -142,30 +147,38 @@ if(file_exists(template_path('functions.php'))) include_once template_path('func
 
 init(); //执行系统初始化
 function init(){
-	/** 前台禁止访问的方法列表 */
+	/** 禁止客户端访问的方法列表 */
 	global ${'DENIES'.__TIME__};
-	${'DENIES'.__TIME__} = array_map(function($v){
-		return 'file::'.strtolower($v);
-	}, explode('|', 'open|prepend|append|write|insert|output|save|getContents|getInfo'));
+	${'DENIES'.__TIME__} = array(
+		'file::open',
+		'file::prepend',
+		'file::append',
+		'file::write',
+		'file::insert',
+		'file::output',
+		'file::save',
+		'file::getcontents',
+		'file::getinfo',
+		);
 
 	/** 加载自动恢复程序 */
 	include_once __ROOT__.'mod/common/recover.php';
-
-	conv_request_vars(); //转换表单请求参数
 
 	/** 系统初始化接口 */
 	$init = array(
 		'__DISPLAY__' => null //false 表示展示 404 页面，null 无操作
 		);
-	if(config('mod.installed') && !is_socket())
+	if(config('mod.installed'))
 		do_hooks('mod.init', $init); //执行初始化回调函数
 
 	/** 解析客户端请求，获取展示页面 */
 	if(is_agent()){
+		set_content_type('text/html'); //设置文档类型
 		$tplPath = template_path('', false);
-		$err403 = $tplPath.config('site.errorPage.403');
-		$err404 = $tplPath.config('site.errorPage.404');
-		$err500 = $tplPath.config('site.errorPage.500');
+		$errPage = config('site.errorPage');
+		$err403 = $tplPath.$errPage[403];
+		$err404 = $tplPath.$errPage[404];
+		$err500 = $tplPath.$errPage[500];
 		if(__SCRIPT__ == 'index.php'){
 			if($init['__DISPLAY__'] === false || !display_file()){
 				display_file($err404, true);
@@ -223,21 +236,29 @@ function init(){
 /** 执行客户端请求 */
 if(is_agent()){
 	if(__SCRIPT__ == 'mod.php'){ //通过 URL 传参的方式执行类方法
-		if(!is_403()){
-			unset(${'DENIES'.__TIME__});
-			$reqMd = $_SERVER['REQUEST_METHOD'];
-			$act = $_GET['act'];
-			if(!is_get() && !is_post()) $reqMd = 'REQUEST';
-			do_hooks('mod.client.call', ${'_'.$reqMd}); //在执行类方法前执行挂钩回调函数
-			$result = error() ?: $_GET['obj']::$act(${'_'.$reqMd});
-			set_content_type('application/json');
-			exit(json_encode(array_merge($result, array('obj'=>$_GET['obj'], 'act'=>$act)))); //输出 JSON 结果
-		}else report_403();
+		if(is_403() || is_404() || is_500()) goto display; //HTTP 错误跳转到显示页面
+		conv_request_vars(); //转换表单请求参数
+		$reqMd = $_SERVER['REQUEST_METHOD'];
+		$act = $_GET['act'];
+		if(!is_get() && !is_post()) $reqMd = 'REQUEST';
+		do_hooks('mod.client.call', ${'_'.$reqMd}); //在执行类方法前执行挂钩回调函数
+		$result = error() ?: $_GET['obj']::$act(${'_'.$reqMd});
+		$data  = array_merge($result, array('obj'=>$_GET['obj'], 'act'=>$act));
+		set_content_type('application/json'); //设置文档类型为 json
+		exit(json_encode($data)); //输出 JSON 结果
 	}elseif(__SCRIPT__ == 'index.php'){ /** 载入模板文件 */
+		display:
+		/** 配置模板引擎 */
+		template::$rootDir = __ROOT__;
+		template::$rootDirURL = site_url();
+		template::$saveDir = __ROOT__.config('mod.template.compiler.savePath');
+		template::$extraTags = config('mod.template.compiler.extraTags');
 		do_hooks('mod.template.load'); //在载入模板前执行挂钩回调函数
+		//错误处理
 		if(is_403()) report_403();
 		elseif(is_404()) report_404();
 		elseif(is_500()) report_500();
+		//载入模板
 		if(!config('mod.template.compiler.enable')){
 			include_once display_file(); //直接载入展示文件
 		}else{

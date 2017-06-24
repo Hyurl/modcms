@@ -1,5 +1,5 @@
 <?php
-/** 用户模块 */
+/** 用户模块，包含用户登录、登出和获取当前登录用户的方法 */
 final class user extends mod{
 	const TABLE = 'user';
 	const PRIMKEY = 'user_id';
@@ -14,6 +14,7 @@ final class user extends mod{
 
 	/**
 	 * getMe() 获得当前登录用户
+	 * @static
 	 * @return array  当前登录的用户或错误
 	 */
 	static function getMe(){
@@ -31,25 +32,28 @@ final class user extends mod{
 
 	/**
 	 * login() 登录
-	 * @param  array $arg 请求参数
+	 * @static
+	 * @param  array $arg 请求参数，可以包含所有的数据表字段，必须提供一个配置中所设置的用来登录的字段，
+	 *                    如果设置了多个字段用来登录，还可以简单地提供一个通用的 [user] 参数
 	 * @return array      当前登录的用户或错误
 	 */
-	static function login($arg = array()){
+	static function login(array $arg){
 		do_hooks('user.login', $arg); //执行登录前挂钩函数
 		if(error()) return error();
+		database::open(0);
 		$login = explode('|', config('user.keys.login'));
 		$where = '';
 		foreach($login as $k) { //根据登录字段组合用户信息获取条件
 			if(!empty($arg[$k])){
-				$where = "`{$k}` = '{$arg[$k]}'";
+				$where = "`{$k}` = ".database::quote($arg[$k]);
 				break;
 			}elseif(count($login) > 1 && !empty($arg['user'])){
-				$where .= " OR `{$k}` = '{$arg['user']}'";
+				$where .= " OR `{$k}` = ".database::quote($arg['user']);
 			}
 		}
 		if(!$where || !isset($arg['user_password'])) return error(lang('mod.missingArguments'));
 		$where = ltrim($where, ' OR ');
-		$result = database::open(0)->select('user', '*', $where); //获取符合条件的用户
+		$result = database::select('user', '*', $where); //获取符合条件的用户
 		$hasUser = false;
 		while($result && $user = $result->fetch()){
 			$hasUser = true;
@@ -71,6 +75,7 @@ final class user extends mod{
 
 	/**
 	 * logout() 登出
+	 * @static
 	 * @return array 操作结果
 	 */
 	static function logout(){

@@ -5,7 +5,7 @@ add_action('user.update', function($arg){
 		if(!isset($arg['old_password']) || empty($arg['user_id']))
 			return error(lang('mod.missingArguments'));
 		$pwd = database::open(0)
-					   ->select('user', 'user_password', "`user_id` = {$arg['user_id']}")
+					   ->select('user', 'user_password', "`user_id` = ".(int)$arg['user_id'])
 					   ->fetchObject()
 					   ->user_password; //获取数据库中的密码
 		if(!password_verify($arg['old_password'], $pwd)) //校验密码是否一致
@@ -65,7 +65,8 @@ add_action('user.update', function($input){
 // 通过邮件检测用户是否存在
 add_action('user.checkExistenceByEmail', function($arg){
 	if(empty($arg['user_email'])) return error(lang('mod.missingArguments'));
-	$result = database::open(0)->select('user', 'user_id', "`user_email` = '{$arg['user_email']}'", 1);
+	database::open(0);
+	$result = database::select('user', 'user_id', "`user_email` = ".database::quote($arg['user_email']), 1);
 	if($result->fetch()){
 		return success('User exists.');
 	}else{
@@ -82,7 +83,8 @@ add_action('user.loginByEmail', function($arg){
 	if(empty($arg['user_email'])) return error(lang('mod.missingArguments'));
 	if(empty($_SESSION['user_email']) || $_SESSION['user_email'] != $arg['user_email'])
 		return error(lang('user.emailLoginForbidden'));
-	$result = database::open(0)->select('user', '*', "`user_email` = '{$arg['user_email']}'", 1); //获取符合条件的用户
+	database::open(0);
+	$result = database::select('user', '*', "`user_email` = ".database::quote($arg['user_email']), 1); //获取符合条件的用户
 	if($user = $result->fetch()){
 		$_SESSION['ME_ID'] = (int)$user['user_id']; //保存用户 ID 到 Session 中
 		_user('me_id', (int)$user['user_id']);
@@ -156,7 +158,8 @@ add_action('user.recoverPassword', function($input){
 
 /** 通过 Email 获取用户 ID */
 function cms_get_uid_by_email($email){
-	$result = database::open(0)->select('user', 'user_id', "`user_email` = '{$email}'");
+	database::open(0);
+	$result = database::select('user', 'user_id', "`user_email` = ".database::quote($email));
 	if($result && $user = $result->fetchObject()){
 		return (int)$user->user_id;
 	}
@@ -187,18 +190,19 @@ function get_user_avatar($width = 64, $src = ''){
 // 获取用户头像
 add_action('user.getAvatar', function($arg){
 	$login = explode('|', config('user.keys.login'));
+	database::open(0);
 	$where = '';
 	foreach($login as $k) { //根据登录字段组合用户信息获取条件
 		if(!empty($arg[$k])){
-			$where = "`{$k}` = '{$arg[$k]}'";
+			$where = "`{$k}` = ".database::quote($arg[$k]);
 			break;
 		}elseif(count($login) > 1 && !empty($arg['user'])){
-			$where .= " OR `{$k}` = '{$arg['user']}'";
+			$where .= " OR `{$k}` = ".database::quote($arg['user']);
 		}
 	}
 	if(!$where) return error(lang('mod.missingArguments'));
 	$where = ltrim($where, ' OR ');
-	$result = database::open(0)->select('user', '*', $where); //获取符合条件的用户
+	$result = database::select('user', '*', $where); //获取符合条件的用户
 	$hasUser = false;
 	if($result && $user = $result->fetch()){
 		$avatar = $user['user_avatar'] ? SITE_URL.$user['user_avatar'] : '';

@@ -3,27 +3,34 @@
 /** conv_request_vars() 转换表单提交的变量 */
 function conv_request_vars(&$input = null){
 	if($input === null){
-		conv_request_vars($_GET);
-		conv_request_vars($_POST);
+		conv_request_vars($_GET); //转换 $_GET
+		conv_request_vars($_POST); //转换 $_POST
 		$reqOd = array('G'=>'_GET', 'P'=>'_POST', 'C'=>'_COOKIE');
 		$_REQUEST = array();
 		foreach (str_split(ini_get('request_order')) as $v) {
-			if(isset($reqOd[$v])) $_REQUEST = array_merge($_REQUEST, $GLOBALS[$reqOd[$v]]);
+			if(isset($reqOd[$v])) //重新填充 $_REQUEST 变量
+				$_REQUEST = array_merge($_REQUEST, $GLOBALS[$reqOd[$v]]);
 		}
 		return null;
 	}
 	$config = config();
 	foreach ($input as $k => $v) {
-		if(is_array($v)) conv_request_vars($v);
+		if(is_array($v)) conv_request_vars($v); //递归转换
 		elseif($v === 'true') $v = true; //将 'true' 转换为 true
 		elseif($v === 'false') $v = false; //将 'false' 转换为 false
 		elseif($v === 'undefined' || $v === 'null') $v = null; //将 'undefined' 和 'null' 转换为 null
 		elseif(is_numeric($v) && (int)$v < 2147483647) $v = (int)$v; //为确保平台兼容性，数字最大值不应超过 2147483646
-		if(!is_socket()){ //针对配置项的转换，将一部分 _ 转换为 .
-			$_k = "['".str_replace('_', "']['", $k)."']";
-			if(strpos($k, '_') && ((is_client_call('mod', 'install') && strpos($k, 'user_') !== 0) || is_client_call('mod', 'config')) && eval('return isset($config'.$_k.');')){
-				unset($input[$k]);
-				$k = str_replace('_', '.', $k);
+		//针对配置项的转换，将一部分 _ 转换为 .
+		if(is_client_call('mod')){
+			if(strpos($k, "'") !== false){
+				unset($input[$k]); //过滤非法参数
+				continue;
+			}elseif((is_client_call('', 'install') && strpos($k, 'user_') !== 0) || is_client_call('', 'config')){
+				$_k = "['".str_replace('_', "']['", $k)."']";
+				if(strpos($k, '_') && eval('return isset($config'.$_k.');')){
+					unset($input[$k]);
+					$k = str_replace('_', '.', $k);
+				}
 			}
 		}
 		$input[$k] = $v;
@@ -32,27 +39,41 @@ function conv_request_vars(&$input = null){
 }
 
 /**
- * load_config_file() 加载配置文件，用户配置优先
+ * load_config() 加载配置文件，用户配置优先
  * @param  string $file 配置文件名
+ * @param  string $dir  [可选]所在文件夹
  * @return array|false
  */
-function load_config_file($file){
-	$merge = $file == 'config.php';
-	$isIni = pathinfo($file, PATHINFO_EXTENSION) == 'ini';
-	if(file_exists($file1 = __ROOT__.'mod/config/'.$file)){ //从内核目录加载
-		$config = $isIni ? parse_ini_file($file1) : include $file1;
-	}else $config = array();
-	if(file_exists($file2 = __ROOT__.'user/config/'.$file)){ //从用户目录加载
-		$_config = $isIni ? parse_ini_file($file2) : include $file2;
-		$config = $merge ? array_xmerge($config, $_config) : $_config;
+function load_config($file, $dir = ''){
+	$config = array();
+	$import = function($file){
+		$ext = pathinfo($file, PATHINFO_EXTENSION);
+		if($ext == 'ini') //载入 ini
+			return parse_ini_file($file);
+		elseif($ext == 'json') //载入 json
+			return json_decode(file_get_contents($file));
+		else //载入 php
+			return include $file;
+	};
+	$file1 = __ROOT__.'mod/config/'.$file;
+	$file2 = $dir ? $dir.$file : __ROOT__.'user/config/'.$file;
+	if(file_exists($file2)){ //从用户目录加载
+		$config = $import($file2);
+		if(!$dir && $file == 'config.php' && file_exists($file1)){ //从内核目录加载 config.php
+			$_config = $import($file1);
+			$config = array_xmerge($_config, $config);
+		}
+	}elseif(!$dir && file_exists($file1)){ //从内核目录加载
+		$config =$import($file1);
 	}
 	return $config;
 }
+function_alias('load_config', 'load_config_file');
 
 /**
  * hooks() 存储 Api Hook 回调函数
- * @param  string $api    API 名称，使用点语法，如 user.add
- * @param  array  $value  API 回调函数集
+ * @param  string $api    [可选]API 名称，使用点语法，如 user.add
+ * @param  array  $value  [可选]API 回调函数集，或者设置为 null/false 来清空 API
  * @return array          如果未设置 $api 参数，返回所有回调函数集
  *                        如果设置了 $api 参数，但未设置 $value 参数，返回 $api 对应的回调函数集, 不存在则返回 false
  *                        如果同时设置 $api 和 $value 参数，则始终返回 $value
@@ -63,7 +84,7 @@ function hooks($api = '', $value = ''){
 	$_api = "['".str_replace('.', "']['", $api)."']"; //将点语法替换为数组形式
 	if($value === ''){
 		return eval('return isset($hooks'.$_api.') ? $hooks'.$_api.' : null;'); //eval() 用得好，功能很强大
-	}elseif($value === null){
+	}elseif($value === null || $value === false){
 		eval('unset($hooks'.$_api.');');
 		return null;
 	}else{
@@ -84,7 +105,7 @@ function hooks($api = '', $value = ''){
  * add_hook() 添加 Api Hook 回调函数
  * @param  string|array $api      API 名称, 可使用索引数组同时为多个 API 设置同一个回调函数
  * @param  callable     $func     回调函数
- * @param  boolean      $apiIsSet API 表示回调函数为集合，默认 true，如果设置为 false, 则 API 表示单个回调函数
+ * @param  boolean      $apiIsSet [可选]API 表示回调函数为集合，默认 true，如果设置为 false, 则 API 表示单个回调函数
  */
 function add_hook($api, $func, $apiIsSet = true) {
 	$apis = is_array($api) ? $api : array($api);
@@ -103,7 +124,7 @@ function_alias('add_hook', 'add_action');
 /**
  * remove_hook() 移除 Api Hook 回调函数
  * @param  string|array $api  API 名称, 可使用索引数组同时为多个 API 移除回调函数
- * @param  callable     $func 要移除的函数名，匿名函数只能通过清空 API 来移除绑定
+ * @param  callable     $func [可选]要移除的函数名，匿名函数只能通过清空 API 来移除绑定
  */
 function remove_hook($api, $func = ''){
 	$apis = is_array($api) ? $api : array($api);
@@ -128,7 +149,7 @@ function_alias('remove_hook', 'delete_action');
 /** 
  * do_hooks() 执行 Api Hook 回调函数
  * @param  string  $api    API 名称
- * @param  mixed   &$input 传入参数
+ * @param  mixed   &$input [可选]传入参数
  */
 function do_hooks($api, &$input = null){
 	$hooks = hooks($api);
@@ -151,8 +172,8 @@ function_alias('do_hooks', 'do_actions');
  *          ModPHP 拥有三层配置模式，即默认配置、用户配置、运行时配置，优先级从右到左
  *          默认配置文件: mod/config/config.php
  *          用户配置文件：user/config/config.php
- * @param  string $key   配置名
- * @param  string $value 配置值
+ * @param  string $key   [可选]配置名
+ * @param  string $value [可选]配置值
  * @return string        如果未设置 $key 参数，则返回所有配置组成的关联数组
  *                       如果仅设置 $key 参数，如果存在该配置，则返回配置值，否则返回 null
  *                       如果设置了 $value 参数，则始终返回 $value
@@ -160,7 +181,7 @@ function_alias('do_hooks', 'do_actions');
  */
 function config($key = '', $value = null){
 	static $config = array();
-	if(!$config) $config = load_config_file('config.php'); //从文件载入配置
+	if(!$config) $config = load_config('config.php'); //从文件载入配置
 	if(!$key) return $config;
 	if($value === null && is_string($key)){
 		$key = "['".str_replace('.', "']['", $key)."']";
@@ -178,28 +199,28 @@ function config($key = '', $value = null){
 
 /**
  * database() 返回配置的数据库结构数组
- * @param  string  $key      数组的一维键名
- * @param  boolean $withAttr 当设置 $key 参数时返回包含属性的关联数组，默认 false, 只返回包含字段名的索引数组
+ * @param  string  $key      [可选]数组的一维键名
+ * @param  boolean $withAttr [可选]当设置 $key 参数时返回包含属性的关联数组，默认 false, 只返回包含字段名的索引数组
  * @return array             如果设置了 $key，则返回 $database 的二维数组键名组成的数组，否则返回 $database
  */
 function database($key = '', $withAttr = false){
 	static $db = array();
-	if(!$db) $db = load_config_file('database.php');
+	if(!$db) $db = load_config('database.php');
 	if(!$key) return $db;
 	return isset($db[$key]) ? ($withAttr ? $db[$key] : array_keys($db[$key])) : null;
 }
 
 /**
  * staticuri() 设置或获取指定模板文件的伪静态 URI 格式
- * @param  string|array $file   模板文件名
- * @param  string       $format 伪静态 URI 格式
+ * @param  string|array $file   [可选]模板文件名
+ * @param  string       $format [可选]伪静态 URI 格式
  * @return mixed                如果未提供参数，则返回所有伪静态地址格式
  *                              如果仅提供 $file 参数，则返回对应的伪静态地址
  *                              如果同时提供两个参数，则始终返回 $format
  */
 function staticuri($file = '', $format = ''){
 	static $uri = array();
-	if(!$uri) $uri = load_config_file('static-uri.php');
+	if(!$uri) $uri = load_config('static-uri.php');
 	if(!$file) return $uri;
 	if(is_string($file) && strapos($file, __ROOT__) === 0) //替换为相对于 __ROOT__ 的路径
 		$file = substr($file, strlen(__ROOT__));
@@ -218,24 +239,18 @@ function_alias('staticuri', 'staticurl');
 
 /**
  * lang() 设置和获取语言提示
- * @param  string|array $key 指定语言提示或设置为关联数组以设置语言提示
+ * @param  string|array $key [可选]指定语言提示或设置为关联数组以设置语言提示
  *                           该函数还支持其他参数，当提供时，他们将用来替换语言中的标记
  *                           例如 lang('mod.noData') 的返回值是“无{module}数据。”，
  *                           则 lang('mod.noData', '用户') 的返回值则为“无用户数据。”
- * @return string|array      语言提示或所有语言提示
+ * @return string|array      指定语言提示或所有语言提示(如果未设置 $key )
  */
 function lang($key = ''){
 	static $lang = array();
 	$args = array_slice(func_get_args(), 1);
 	if(!$lang){
-		$path = 'lang/'.strtolower(config('mod.language')).'.php'; //对应示例： zh-CN => zh-cn.php
-		$path = str_replace('_', '-', $path); //support zh_CN as zh-CN
-		if(file_exists($file = __ROOT__.'mod/'.$path)){ //从内核目录加载语言包
-			$lang = include(__ROOT__.'mod/'.$path);
-		}
-		if(file_exists($file = __ROOT__.'user/'.$path)){ //从用户目录加载语言包
-			$lang = array_xmerge($lang, include($file));
-		}
+		$file = strtolower(config('mod.language')).'.php'; //对应示例： zh-CN => zh-cn.php
+		$lang = load_config($file, __ROOT__.'user/lang/') ?: load_config($file, __ROOT__.'mod/lang/') ?: load_config('en-us.php', __ROOT__.'mod/lang/'); //载入语言包
 	}
 	if(!$key) return $lang;
 	if(is_assoc($key)){ //设置语言提示
@@ -258,8 +273,7 @@ function lang($key = ''){
 /**
  * success() 返回成功的操作，用在类方法或 Api Hook 回调函数中
  * @param  string|array  $data  操作成功的提示或数据
- * @param  array         $extra 额外的信息
- * @param  boolean       $state 操作状态，默认为 true, 即成功，如果设置为 false, 将返回失败
+ * @param  array         $extra [可选]额外的信息
  * @return array                操作结果
  */
 function success($data, array $extra = array(), $state = true){
@@ -270,8 +284,8 @@ function success($data, array $extra = array(), $state = true){
 
 /**
  * error() 返回失败的操作，用在类方法或 Api Hook 回调函数中
- * @param  string|array  $data  操作失败的提示或数据
- * @param  array         $extra 额外的信息
+ * @param  string|array  $data  [可选]操作失败的提示或数据
+ * @param  array         $extra [可选]额外的信息
  * @return array                操作结果
  */
 function error($data = '', array $extra = array()){
@@ -299,7 +313,7 @@ function is_display($file){
 
 /**
  * is_template() 判断当前展示的页面是否为模板页面或在模板目录中
- * @param  string  $file 模板文件名
+ * @param  string  $file [可选]模板文件名
  * @return boolean
  */
 function is_template($file = ''){
@@ -313,17 +327,21 @@ function is_home(){
 
 /**
  * is_client_call() 判断当前是否为通过 URL 请求操作
- * @param  string  $obj 请求对象
- * @param  string  $act 请求方法
+ * @param  string  $obj [可选]请求对象
+ * @param  string  $act [可选]请求方法
  * @return boolean 
  */
 function is_client_call($obj = '', $act = ''){
-	if((__SCRIPT__ != 'mod.php' && !is_socket())) return false;
-	elseif($obj && $act) //compare both onj and act
+	if((__SCRIPT__ != 'mod.php' && !is_socket()))
+		return false;
+	elseif($obj && $act) //同时比较 obj 和 act
 		return !strcasecmp($obj, @$_GET['obj']) && !strcasecmp($act, @$_GET['act']);
-	elseif($obj) return !strcasecmp($obj, @$_GET['obj']);
-	elseif($act) return !strcasecmp($act, @$_GET['act']);
-	else return @$_GET['obj'] || @$_GET['act'];
+	elseif($obj) //比较 obj
+		return !strcasecmp($obj, @$_GET['obj']);
+	elseif($act) //比较 act
+		return !strcasecmp($act, @$_GET['act']);
+	else
+		return @$_GET['obj'] || @$_GET['act'];
 }
 
 /**
@@ -359,8 +377,6 @@ function detect_site_url($header = '', $host = ''){
 		$path = substr($path, 1, strrpos($path, '/')+1);
 		$docRoot = $getDocRoot($path);
 		$scheme = is_ssl() ? 'https' : 'http'; //协议类型
-		$port = is_ssl() ? '443' : '';
-		$host = strstr($host, ':', true) ?: $host; //$host 即请求头中的 Host
 	}else{ //客户端请求
 		$docRoot = str_replace('\\', '/', realpath($_SERVER['DOCUMENT_ROOT'])); //获取 Document Root
 		if($docRoot) $docRoot = $docRoot.'/';
@@ -381,7 +397,7 @@ function detect_site_url($header = '', $host = ''){
 
 /**
  * site_url() 获取网站根目录地址
- * @param  string $file 目录下的文件
+ * @param  string $file [可选]目录下的文件
  * @return string       网站根目录 URL 地址，如果设置 $file, 则将返回包含 $file 的地址
  */
 function site_url($file = ''){
@@ -391,7 +407,7 @@ function site_url($file = ''){
 
 /** 
  * template_url() 获取模板目录的完整 URL 地址
- * @param  string $file 目录下的文件
+ * @param  string $file [可选]目录下的文件
  * @return string       模板目录 URL 地址，如果设置 $file, 则将返回包含 $file 的地址
  */
 function template_url($file = ''){
@@ -400,7 +416,7 @@ function template_url($file = ''){
 
 /**
  * create_url() 自动生成 URL 链接，第一个参数为伪静态 URL 格式, 其他参数用于替换 {} 标注的关键字
- * @param  string $format 伪静态 URL 格式，如 page/{page}.html
+ * @param  string $format 伪静态 URL 格式，使用 / 作为分隔符，如 page/{page}.html
  * @param  array  $args   用以替换关键字的参数列表，为一个关联数组
  *                        也可以为函数传入多个参数，每一个参数对应一个要替换的关键字
  * @return                生成的链接，创建失败则返回 false
@@ -423,15 +439,16 @@ function create_url($format, $args){
 /**
  * analyze_url() 解析伪静态 URL 地址
  * @param  string  $format  伪静态 URL 格式，如: '{categoryName}/{post_id}.html';
- * @param  string  $url     待解析的 URL 地址，如果不设置，则默认为当前访问路径
+ * @param  string  $url     [可选]待解析的 URL 地址，如果不设置，则默认为当前访问路径
  * @return array            URL 中包含的参数，匹配结果为空则返回 false
  */
 function analyze_url($format, $url = ''){
-	$url = urldecode($url) ?: url(); //如果未提供 URL 地址，则使用当前访问的地址
+	$url = $url ?: url(); //如果未提供 URL 地址，则使用当前访问的地址
 	$uri = strstr($url, '?', true) ?: $url;
+	$uri = urldecode($uri); //对 URI 地址进行转义解码
 	if(strapos($uri, site_url('index.php')) === 0) //URL 以网站地址 + index.php 开始
 		$uri = site_url().substr($uri, strlen(site_url())+10);
-	if(strapos($uri, site_url()) === 0) //URL 以网站地址开始
+	elseif(strapos($uri, site_url()) === 0) //URL 以网站地址开始
 		$uri = substr($uri, strlen(site_url()));
 	$format = explode('/', trim($format, '/')); //使用 / 作为分隔符
 	$uri = explode('/', trim($uri, '/'));
@@ -440,10 +457,10 @@ function analyze_url($format, $url = ''){
 	for ($i=0; $i < count($format); $i++) {
 		if(!isset($uri[$i])) continue;
 		if($i == $end){
-			$ext1 = '.'.pathinfo($format[$i], PATHINFO_EXTENSION);
-			$ext2 = '.'.pathinfo($uri[$i], PATHINFO_EXTENSION);
+			$ext1 = strstr($format[$i], '.');
+			$ext2 = strrchr($uri[$i], '.');
 			if($ext1 != $ext2) return false; //判断后缀名是否相同(如果有)
-			elseif($ext1 != '.'){
+			elseif($ext1){
 				$format[$i] = strstr($format[$i], '.', true);
 				$uri[$i] = strstr($uri[$i], '.', true);
 			}
@@ -478,7 +495,7 @@ function current_file(){
 
 /**
  * current_dir() 获取当前目录
- * @param  string $file 目录下的文件
+ * @param  string $file [可选]目录下的文件
  * @return string       当前目录地址, 如果设置 $file, 则将返回包含 $file 的地址
  */
 function current_dir($file = ''){
@@ -487,8 +504,8 @@ function current_dir($file = ''){
 
 /**
  * template_path() 获取模板目录的路径
- * @param  string $file 目录下的文件
- * @param  bool   $abs  返回绝对路径
+ * @param  string $file [可选]目录下的文件
+ * @param  bool   $abs  [可选]返回绝对路径，默认 true
  * @return string       模板目录的地址，如果设置 $file, 则将返回包含 $file 的地址
  */
 function template_path($file = '', $abs = true){
@@ -506,7 +523,7 @@ function template_file(){
 
 /**
  * current_dir_url() 获取当前目录的完整 URL 地址
- * @param  string $file 目录下的文件
+ * @param  string $file [可选]目录下的文件
  * @return string       当前目录的 URL 地址, 如果设置 $file, 则将返回包含 $file 的地址
  */
 function current_dir_url($file = ''){
@@ -516,8 +533,8 @@ function current_dir_url($file = ''){
 /**
  * import() 在页面中载入 js、css 等文件，也可载入程序文件或其他文件(和 include 相同)
  * @param  string $file 文件名
- * @param  string $tag  html 标签
- * @param  string $attr 标签属性
+ * @param  string $tag  [可选]HTML 标签
+ * @param  string $attr [可选]标签属性
  * @return null|mixed   如果载入的是 php 文件或未知文件，则返回其内容
  */
 function import($file, $tag = '', $attr = ''){
@@ -558,16 +575,17 @@ function import($file, $tag = '', $attr = ''){
 
 /**
  * get_template_file() 获取 URL 请求显示的模板文件
- * @param  string  $url    URL 地址
- * @param  string  $tpldir 模板目录
- * @param  string  $uri    URI 地址
- * @return string|false    模板文件名
+ * @param  string  $url     [可选]URL 地址
+ * @param  string  $tpldir  [可选]模板目录
+ * @param  string  $rootURL [可选]根目录 URL 地址
+ * @param  string  $uri     [可选]URI 地址
+ * @return string|false     模板文件名
  */
 function get_template_file($url = '', $tpldir = '', $rootURL = '', $uri = ''){
 	if(!$uri){
 		$url = $url ?: url(); //如果不提供 URL 则使用当前访问的地址
 		$rootURL = $rootURL ?: current_dir_url();
-		if(strapos($url, $rootURL) === 0)
+		if($rootURL && strapos($url, $rootURL) === 0)
 			$uri = substr($url, strlen($rootURL)); //获取相对路径
 		$query = strstr($uri, '?'); //查询字符串
 		$uri = $_uri = strstr($uri, '?', true) ?: $uri;
@@ -581,7 +599,7 @@ function get_template_file($url = '', $tpldir = '', $rootURL = '', $uri = ''){
 			return $uri;
 		}else{
 			if(!empty($_uri) && $_uri[strlen($_uri)-1] != '/'){ //如果访问的是一个目录而 URL 不以 / 结尾，
-				redirect($rootURL.$_uri.'/'.$query, 301); //s自动跳转更正 URL 地址
+				redirect($rootURL.$_uri.'/'.$query, 301); //自动更正并跳转 URL 地址
 			}
 			foreach($exts as $ext){
 				if(file_exists($uri.'/index.'.$ext)) //如果存在索引文件
@@ -603,8 +621,8 @@ function get_template_file($url = '', $tpldir = '', $rootURL = '', $uri = ''){
 
 /**
  * display_file() 设置或者获取显示页面文件名
- * @param  string  $url URL 地址，不设置则为当前地址
- * @param  boolean $set 将 $url 设置为一个文件名，然后设置 $set 为 true，以此设置显示页面
+ * @param  string  $url [可选]URL 地址，不设置则为当前地址
+ * @param  boolean $set [可选]将 $url 设置为一个文件名，然后设置 $set 为 true，以此设置显示页面
  * @return string
  */
 function display_file($url = '', $set = false){
@@ -616,36 +634,44 @@ function display_file($url = '', $set = false){
 		if(strapos($url, __ROOT__) === 0)
 			$url = substr($url, strlen(__ROOT__)); //获取文件相对路径
 		return $file = $url;
-	}elseif(!$url && (__SCRIPT__ == 'mod.php' || is_socket()) && !empty($_SERVER['HTTP_REFERER'])){
-		$url = $_SERVER['HTTP_REFERER']; //使用来路页面作为需要解析的地址
+	}elseif(!$url && (__SCRIPT__ == 'mod.php' || is_socket())){
+		if(!empty($_SERVER['HTTP_REFERER']))
+			$url = $_SERVER['HTTP_REFERER']; //使用来路页面作为需要解析的地址
+		else
+			return $file = __SCRIPT__;
 	}
 	$url = $url ?: url();
 	if(!$url) return false;
 	$uri = strstr($url, '?', true) ?: $url;
-	if(strapos($uri, site_url('index.php')) === 0)             //去掉网址中的 index.php 入口文件
-		$uri = site_url().substr($uri, strlen(site_url())+10); //10 表示可能截掉 index.php? 或 index.php/
+	if(strapos($uri, site_url('index.php')) === 0){
+		$index = 'index.php/';
+		$uri = site_url().substr($uri, strlen(site_url())+10); //10 表示截掉 index.php? 或 index.php/
+	}else{
+		$index = '';
+	}
 	$tplPath = template_path('', false);
-	$appPath = config('mod.template.appPath') ?: $tplPath;
-	$index = config('mod.pathinfoMode') ? 'index.php/' : '';
+	$appPath = config('mod.template.appPath');
 	$home = config('site.home.template');
 	if($uri == site_url() || $uri == site_url($home)){ //首页
 		return $file = $tplPath.$home;
 	}elseif(strapos($uri, site_url()) === 0){
 		$uri = substr($uri, strlen(site_url())); //获取相对路径
-	}elseif(strpos($uri, '://')){
+	}elseif(strpos($uri, '://')){ //URL 地址不是本站地址
 		return $file = __SCRIPT__;
 	}
-	$isIndex = __SCRIPT__ == 'index.php';
+	$isIndex = __SCRIPT__ == 'index.php'; //是否运行索引（模板入口）文件
 	$uri = rtrim($uri, '/');
 	$tpl = '';
-	$tpl = get_template_file($url, $appPath, site_url()); //尝试从 app 目录获取模板文件
-	if(!$tpl) $tpl = get_template_file($url, $tplPath, site_url()); //尝试从模板你目录获取模板文件
-	if(!$tpl) return $file = $tplPath.config('site.errorPage.403'); //无模板则报告 403 错误
-	if(strapos($tpl, $appPath) !== 0) return false;
+	if(!$tpl && $appPath)
+		$tpl = get_template_file($url, $appPath, site_url()); //尝试从 app 目录获取模板文件
+	if(!$tpl && $tplPath)
+		$tpl = get_template_file($url, $tplPath, site_url()); //尝试从模板目录获取模板文件
+	if(!$tpl)
+		return $file = $tplPath.config('site.errorPage.404'); //无模板则报告 404 错误
 	if($tpl != $tplPath.$home){ //URL 地址对应一个真实的文件
 		$ext = '.'.strtolower(pathinfo($tpl, PATHINFO_EXTENSION));
 		if($ext != '.'){
-			$cts = load_config_file('mime.ini'); //加载 Mime 类型配置
+			$cts = load_config('mime.ini'); //加载 Mime 类型配置
 			$mime = @$cts[$ext] ?: 'text/plain';
 		}
 		if($isIndex) set_content_type($mime); //设置响应头中的 Mime 类型
@@ -659,48 +685,51 @@ function display_file($url = '', $set = false){
 			if($isIndex) $_GET = array_merge($_GET, $args);
 			return $file = $tpl;
 		}
-		if(!config('mod.installed')) goto err404;
-		$config = config();
-		foreach(database() as $key => $value){
-			$URI = @$config[$key]['staticURI'] ?: @$config[$key]['staticURL'];
-			if($URI){ //尝试获取模块记录
-				$get = 'get_'.$key;
-				if($args = analyze_url($URI, $uri)){ //解析 URL 地址
-					foreach($args as $k => $v){
-						if(in_array($k, database($key)) && strpos($k, $key) === 0){
-							$where[$k] = $v; //组合 where 条件
+		if(config('mod.installed')){
+			$config = config();
+			//尝试获取模块记录
+			foreach(database() as $key => $value){
+				if(!empty($config[$key]['staticURI'])){
+					$URI = $config[$key]['staticURI'];
+					$get = 'get_'.$key;
+					if($args = analyze_url($URI, $uri)){ //解析 URL 地址
+						foreach($args as $k => $v){
+							if(in_array($k, database($key)) && strpos($k, $key) === 0){
+								$where[$k] = $v; //组合 where 条件
+							}
+						}
+						if(isset($where) && ($result = database::open(0)->select($key, "{$key}_id", $where)) && $result->fetchObject()){ //检查记录是否存在
+							if($isIndex) $_GET = array_merge($_GET, $args);
+							$file = $tplPath.@$config[$key]['template'];
+							if($_file !== $file || $sid !== session_id()){
+								$_file = $file;
+								$sid = session_id(); //更新会话
+								$get($_GET); //获取记录
+							}
+							return $file;
 						}
 					}
-					if(isset($where) && ($result = database::open(0)->select($key, "{$key}_id", $where)) && $result->fetchObject()){ //检查记录是否存在
-						if($isIndex) $_GET = array_merge($_GET, $args);
-						$file = $tplPath.@$config[$key]['template'];
-						if($_file !== $file || $sid !== session_id()){
-							$_file = $file;
-							$sid = session_id(); //更新会话
-							$get($_GET); //获取记录
+				}
+			}
+			//尝试根据自定义永久链接获取记录
+			foreach(database() as $key => $value){
+				if(isset($value[$key.'_link'])){
+					if($link = substr($url, strlen(site_url($index)))){
+						$get = 'get_'.$key;
+						$result = database::open(0)->select($key, "{$key}_id", "`{$key}_link` = '{$link}'"); //检查记录是否存在
+						if($result && $result->fetchObject()){
+							$file = $tplPath.@$config[$key]['template'];
+							if($_file !== $file || $sid !== session_id()){
+								$_file = $file;
+								$sid = session_id();
+								$get(array($key.'_link'=>$link)); //获取记录
+							}
+							return $file;
 						}
-						return $file;
 					}
 				}
 			}
 		}
-		foreach(database() as $key => $value){
-			if(isset($value[$key.'_link'])){ //尝试根据自定义永久链接获取记录
-				$link = substr($url, strlen(site_url($index)));
-				$get = 'get_'.$key;
-				$result = database::open(0)->select($key, "{$key}_id", "`{$key}_link` = '{$link}'"); //检查记录是否存在
-				if($result && $result->fetchObject()){
-					$file = $tplPath.@$config[$key]['template'];
-					if($_file !== $file || $sid !== session_id()){
-						$_file = $file;
-						$sid = session_id();
-						$get(array($key.'_link'=>$link)); //获取记录
-					}
-					return $file;
-				}
-			}
-		}
-		err404:
 		return $file = $tplPath.config('site.errorPage.404'); //如果没有匹配的模板，则报告 404 错误
 	}
 }
@@ -964,9 +993,8 @@ function register_module_functions($module = ''){
 
 /**
  * report_http_error() 报告 HTTP 错误
- * @param string $msg  错误提示
  * @param string $code 状态码，403，404 或 500
- * @param string $file 错误页面文件名（相对于模板目录）
+ * @param string $msg  [可选]错误提示
  */
 function report_http_error($code, $msg = ''){
 	$uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : (display_file() ?: __SCRIPT__);
@@ -998,7 +1026,7 @@ function report_http_error($code, $msg = ''){
 	}else{
 		echo $msg ?: "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\n<html>\n<head>\n\t<title>{$code} {$status[$code]}</title>\n</head>\n<body>\n\t<h1>{$status[$code]}</h1>\n\t{$html[$code]}\n</body>\n</html>";
 		if(is_agent()){
-			do_hooks('mod.template.load.complete'); //在模板加载后执行挂钩回调函数
+			do_hooks('mod.template.load.complete');
 			exit();
 		}
 	}
@@ -1040,7 +1068,13 @@ function socket_retrive_session($sid, $event){
 	return false;
 }
 
-/** strapos() 查找字符串中第一次出现的位置，根据操作系统自动决定是否使用大小写敏感 */
+/**
+ * strapos() 查找字符串中第一次出现的位置，根据操作系统自动决定是否使用大小写敏感
+ * @param  string  $str   规定要搜索的字符串
+ * @param  string  $find  规定要查找的字符串
+ * @param  integer $start 规定在何处开始搜索
+ * @return mixed          返回字符串在另一字符串中第一次出现的位置，如果没有找到字符串则返回 FALSE。
+ */
 function strapos($str, $find, $start = 0){
 	return PHP_OS == 'WINNT' ? stripos($str, $find, $start) : strpos($str, $find, $start);
 }

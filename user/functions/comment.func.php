@@ -20,12 +20,13 @@ add_action('comment.add', function($arg){
 		if(session_status() != PHP_SESSION_ACTIVE) session_start();
 		$login = explode('|', config('user.keys.login'));
 		$require = explode('|', $anonymous['require']);
+		database::open(0);
 		$where = '';
 		foreach ($require as $key) {
 			if(empty($arg[$key])){
 				return error(lang('mod.missingArguments'));
 			}elseif(in_array($key, $login)){
-				$where = "`{$key}` = '{$arg[$key]}'"; //拼合 where 查询语句
+				$where = "`{$key}` = ".database::quote($arg[$key]); //拼合 where 查询语句
 				break;
 			}
 		}
@@ -37,7 +38,7 @@ add_action('comment.add', function($arg){
 				return error(lang('admin.vcodeTimeout'));
 			}
 		}
-		$result = database::open(0)->select('user', '*', $where); //尝试获取用户
+		$result = database::select('user', '*', $where); //尝试获取用户
 		if($result && $user = $result->fetch()){ //用户存在
 			if(!password_verify('', $user['user_password'])){ //校验密码是否为空
 				return error(lang('user.infoProtected'));
