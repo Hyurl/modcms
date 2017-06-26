@@ -54,7 +54,7 @@ add_hook('mod.init', function($init){
 		$_GET['post_type'] = 0;
 		if(get_multi_post($_GET)){
 			get_multi_post(0);
-		}else if(!empty($_GET['page']) && $_GET['page'] != 1){
+		}else if(!empty($_GET['page']) && $_GET['page'] != 1 && !is_client_call()){
 			$init['__DISPLAY__'] = false;
 		}
 	}
@@ -115,7 +115,7 @@ add_action('mod.updateComponent', function($arg){
 	$isTpl = @$arg['type'] == 'template';
 	if(!is_admin()) return error(lang('mod.permissionDenied'));
 	if(empty($arg['src']) || empty($arg['md5'])) return error(lang('mod.missingArguments'));
-	$file = __ROOT__.__TIME__.'.zip';
+	$file = __ROOT__.(int)INIT_TIME.'.zip';
 	@file_put_contents($file, @file_get_contents($arg['src']) ?: @curl(array('url'=>$arg['src'], 'followLocation'=>1)));
 	if(md5_file($file) == $arg['md5']){
 		$ok = zip_extract($file, __ROOT__.'app/'.($isTpl ? 'template/' : 'plugins/'));
