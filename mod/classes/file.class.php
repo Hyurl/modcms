@@ -13,20 +13,18 @@ final class file extends mod{
 	private static $info = array(); //文件信息
 
 	/** checkFileType() 检查文件类型 */
-	private static function checkFileType(&$input = array()){
-		$fileType = explode('|', config('file.upload.acceptTypes')); //获取配置
-		$name = !empty($input['file_name']) ? $input['file_name'] : $input['name'];
-		for ($i=0; $i < count($fileType); $i++) { 
-			if(!in_array(strtolower(pathinfo($name, PATHINFO_EXTENSION)), $fileType)) {
-				$input['error'] = lang('file.invalidType'); //不可用的类型作为错误处理并反馈给客户端
-			}
+	private static function checkFileType(&$file = array()){
+		$fileType = explode('|', strtolower(config('file.upload.acceptTypes'))); //获取配置
+		$name = !empty($file['file_name']) ? $file['file_name'] : $file['name'];
+		if(!in_array(extname($name), $fileType)){
+			$file['error'] = lang('file.invalidType'); //不可用的类型作为错误处理并反馈给客户端
 		}
 	}
 
 	/** checkFileSize() 检查文件大小 */
-	private static function checkFileSize(&$input = array()){
-		if($input["size"] == 0 || $input["size"] > config('file.upload.maxSize')*1024) {
-			$input['error'] = lang('file.sizeTooLarge'); //体积超出限制作为错误处理并反馈给客户端
+	private static function checkFileSize(&$file = array()){
+		if($file["size"] == 0 || $file["size"] > config('file.upload.maxSize')*1024) {
+			$file['error'] = lang('file.sizeTooLarge'); //体积超出限制作为错误处理并反馈给客户端
 		}
 	}
 
@@ -41,39 +39,66 @@ final class file extends mod{
 	}
 
 	/** saveUpload() 保存上传的文件 */
-	private static function saveUpload($input = array()){
-		$src = '';
-		$dataURIScheme = isset($input['tmp_data']); //是否为 Data URI Scheme 数据
+	private static function saveUpload($file = array(), &$encoding = false){
+		$dataURIScheme = isset($file['tmp_data']); //是否为 Data URI Scheme 数据
 		$uploadPath = config('file.upload.savePath');
-		if(!empty($input['file_src'])){
-			$savepath = $src = $input['file_src'];
+		$keepName = config('file.upload.keepName'); //是否保留原始文件名
+		$append = !empty($file['file_src']); //是否为追加数据
+		if($append){
+			$savepath = $file['file_src'];
 		}else{
 			$dir = $uploadPath.date('Y-m-d').'/'; //文件保存目录(按日期)
-			if(!is_dir($dir)) mkdir($dir);
+			if(!is_dir(__ROOT__.$dir)) mkdir(__ROOT__.$dir); //文件夹不存在则创建
 			//获取文件 MD5 名称
-			$ext = '.'.pathinfo($input['name'], PATHINFO_EXTENSION);
-			if($dataURIScheme)
-				$md5name = empty($input['file_name']) ? $input['name'] : md5($input['tmp_data']).$ext;
-			else
-				$md5name = md5_file($input['tmp_name']).$ext;
-			$savepath = $dir.$md5name; //保存路径为 目录 + MD5 名称
+			$md5Name = $dataURIScheme ? md5($file['tmp_data']) : md5_file($file['tmp_name']);
+			if($keepName){
+				if($dataURIScheme){
+					if(empty($file['file_name'])){
+						$mime = load_config_file('mime.ini');
+						$ext = array_search($file['type'], $mime);
+						$saveName = $md5Name.$ext;
+					}else{
+						$ext = '.'.extname($file['file_name']);
+						$saveName = $file['file_name'];
+					}
+				}else{
+					$ext = '.'.extname($file['name']);
+					$saveName = $file['name'];
+				}
+			}else{
+				if($dataURIScheme){
+					$mime = load_config_file('mime.ini');
+					$ext = array_search($file['type'], $mime);
+					$saveName = $md5Name.$ext;
+				}else{
+					$ext = '.'.extname($file['name']);
+					$saveName = $md5Name.$ext;
+				}
+			}
+			$savepath = $dir.$saveName; //保存路径为 目录 + 文件 名称
 		}
+		$encoding = $keepName ? get_cmd_encoding() : false;
+		if($encoding) $savepath = iconv('UTF-8', $encoding, $savepath);
 		$path = __ROOT__.$savepath;
-		if(!file_exists($path) || $src || !empty($input['file_name'])){
-			if($src && strapos(str_replace('\\', '/', realpath($path)), __ROOT__.$uploadPath) !== 0)
+		if(!$append && $keepName && file_exists($path) && md5_file($path) != $md5Name){
+			$savepath = substr($savepath, 0, -strlen($ext)).'_'.$md5Name.$ext; //获取唯一文件名
+			$path = __ROOT__.$savepath;
+		}
+		if(!file_exists($path) || $append){
+			if($append && strapos(str_replace('\\', '/', realpath($path)), __ROOT__.$uploadPath) !== 0)
 				error(lang('mod.permissionDenied')); //仅允许在上传的文件后追加数据
-			if(config('mod.installed') && !error()) do_hooks('file.save', $input); //执行挂钩函数
+			if(config('mod.installed') && !error()) do_hooks('file.save', $file); //执行挂钩函数
 			if(error()) return false; //如果遇到错误，则不再继续
-			if($src){ //追加数据
+			if($append){ //追加数据
 				if($dataURIScheme)
-					$result = file_put_contents($path, $input['tmp_data'], FILE_APPEND);
+					$result = file_put_contents($path, $file['tmp_data'], FILE_APPEND);
 				else
-					$result = file_put_contents($path, file_get_contents($input['tmp_name']), FILE_APPEND);
+					$result = file_put_contents($path, file_get_contents($file['tmp_name']), FILE_APPEND);
 			}else{
 				if($dataURIScheme)
-					$result = file_put_contents($path, $input['tmp_data']); //保存 Data URI scheme 文件
+					$result = file_put_contents($path, $file['tmp_data']); //保存 Data URI scheme 文件
 				else
-					$result = move_uploaded_file($input['tmp_name'], $path); //保存常规文件
+					$result = move_uploaded_file($file['tmp_name'], $path); //保存常规文件
 			}
 			if($result === false) return false;
 		}
@@ -82,33 +107,22 @@ final class file extends mod{
 
 	/** moreImage() 复制更多尺寸图像或删除更多尺寸图像 */
 	private static function moreImage($src, $action){
-		if(is_img($src)){
-			$ext = '.'.pathinfo($src, PATHINFO_EXTENSION);
-			$filename = substr($src, 0, strrpos($src, $ext));
-			$pxes = config('file.upload.imageSizes'); //获取配置尺寸
+		if(class_exists('image') && is_img($src)){
+			$ext = '.'.extname($src);
+			$basename = substr($src, 0, -strlen($ext));
+			$pxes = str_replace(' ', '', config('file.upload.imageSizes')); //获取配置尺寸
 			if($pxes){
-				$pxes = explode('|', $pxes);
-				for ($i=0; $i < count($pxes); $i++) { //为每个尺寸创建/删除副本，副本命名如 src_64.png
+				foreach (explode('|', $pxes) as $px) { //为每个尺寸创建/删除副本，副本命名如 src_64.png
 					if($action == 'copy'){ //创建
-						Image::open($src)->resize((int)trim($pxes[$i]))->save($filename.'_'.$pxes[$i].$ext);
+						Image::open($src)->resize((int)$px)->save($basename.'_'.$px.$ext);
 					}elseif($action == 'delete'){ //删除
-						if(file_exists($filename.'_'.trim($pxes[$i]).$ext))
-							unlink($filename.'_'.trim($pxes[$i]).$ext);
+						if(file_exists($file = $basename.'_'.$px.$ext))
+							unlink($file);
 					}
 				}
 			}
 		}
 		return new self;
-	}
-
-	/** copyMoreImage() 复制更多尺寸的图像 */
-	private static function copyMoreImage($src){
-		return self::moreImage($src, 'copy');
-	}
-
-	/** deleteMoreImage() 删除更多尺寸图像 */
-	private static function deleteMoreImage($src){
-		return self::moreImage($src, 'delete');
 	}
 
 	/**
@@ -136,14 +150,8 @@ final class file extends mod{
 					$type = substr($head, $start) ?: 'text/plain';
 					$data = $body;
 				}
-				if($fname){
-					$name = $fname;
-				}else{
-					$ext = array_search($type, load_config_file('mime.ini')); //获取 mime 类型对应的后缀名
-					$name =  md5($data).$ext;
-				}
 				$_FILES['file'][] = array( //将文件保存在超全局变量 $_FILES 中
-					'name' => $name, //文件名
+					'name' => $fname, //文件名
 					'type' => $type, //mime 类型
 					'error' => '', //错误信息
 					'tmp_name' => '', //缓存文件名
@@ -163,18 +171,19 @@ final class file extends mod{
 		if($src && strapos($src, __ROOT__) === 0)
 			$src = substr($src, strlen(__ROOT__));
 		$data = array();
-		foreach ($_FILES as $key => $file) { //遍历 $_FILES 并执行文件保存操作
-			if(is_assoc($file)) $file = array($file);
-			for ($i=0; $i < count($file); $i++) {
-				if($fname) $file[$i]['file_name'] = $fname;
-				if($src) $file[$i]['file_src'] = $src;
-				self::uploadChecker($file[$i]);
+		foreach ($_FILES as $files) { //遍历 $_FILES 并执行文件保存操作
+			if(is_assoc($files)) $files = array($files);
+			foreach ($files as &$file) {
+				if($fname) $file['file_name'] = $fname;
+				if($src) $file['file_src'] = $src;
+				self::uploadChecker($file);
 				if(error()) return error(); //遇到错误则停止上传操作
-				if(!$file[$i]['error']){
-					if($savepath = self::saveUpload($file[$i])){
-						self::copyMoreImage($savepath);
+				if(!$file['error']){
+					if($savepath = self::saveUpload($file, $encoding)){
+						self::moreImage($savepath, 'copy'); //复制更多图片
 						if(empty($arg['file_name']))
-							$arg['file_name'] = $file[$i]['name'];
+							$arg['file_name'] = $file['name'];
+						if($encoding) $savepath = iconv($encoding, 'UTF-8', $savepath);
 						$arg['file_src'] = $savepath;
 						if($installed && !$src){
 							$result = self::get(array('file_src'=>$arg['file_src'])); //检查文件记录是否已存在
@@ -189,18 +198,18 @@ final class file extends mod{
 							do_hooks('file.add.complete', $result['data']); //执行上传文件后的回调函数
 							$data[] = array_merge($arg, $result['data']);
 						}else{
-							$data[] = array_merge($arg, $file[$i]);
+							$data[] = array_merge($arg, $file);
 						}
 					}else{
 						$error = error();
-						$file[$i]['error'] = $error ? $error['data'] : lang('file.uploadFailed');
+						$file['error'] = $error ? $error['data'] : lang('file.uploadFailed');
 					}
 				}
-				if($file[$i]['error']) $data[] = $file[$i];
+				if($file['error']) $data[] = $file;
 			}
 		}
-		for ($i=0; $i < count($data); $i++) { 
-			if(($installed && (isset($data[$i]['file_id']) || ($src && empty($data[$i]['error'])))) || (!$installed && empty($data[$i]['error'])))
+		foreach ($data as $datum) {
+			if(($installed && (isset($datum['file_id']) || ($src && empty($datum['error'])))) || (!$installed && empty($datum['error'])))
 				return success($data); //只要有一个文件上传成功则返回成功
 		}
 		return error($data);
@@ -222,9 +231,11 @@ final class file extends mod{
 	static function delete($arg = array()){
 		if(is_string($arg) && !is_numeric($arg))
 			$arg = array('file_src' => $arg);
-		if(empty($arg['file_id']) && empty($arg['file_src']))
-			return error(lang('mod.missingArguments'));
 		$installed = config('mod.installed');
+		$keepName = config('file.upload.keepName');
+		$encoding = $keepName ? get_cmd_encoding() : false;
+		if(empty($arg['file_id']) && empty($arg['file_src']) || (!$installed && empty($arg['file_src'])))
+			return error(lang('mod.missingArguments'));
 		$_arg = array();
 		if(!empty($arg['file_id'])) $_arg['file_id'] = $arg['file_id'];
 		if(!empty($arg['file_src'])){
@@ -232,27 +243,27 @@ final class file extends mod{
 				$arg['file_src'] = substr($arg['file_src'], strlen(__ROOT__));
 			$_arg['file_src'] = $arg['file_src'];
 			$src = str_replace('\\', '/', realpath(__ROOT__.$arg['file_src'])); //获取绝对路径
+			if(strapos($src, __ROOT__.config('file.upload.savePath')) !== 0)
+				return error(lang('mod.permissionDenied')); //只允许删除上传的文件
+			if($encoding) $src = iconv('UTF-8', $encoding, $src);
 		}
 		if(($installed && get_file($_arg)) || (!$installed && file_exists($src))){ //判断文件记录是否存在
-			if(!$installed && strapos($src, __ROOT__.config('file.upload.savePath')) !== 0)
-				return error(lang('mod.permissionDenied')); //只允许删除上传的文件
 			if($installed){
 				$arg['file_id'] = file_id();
 				$result = parent::delete($arg); //删除数据库记录
 				if(error()) return error();
 				$src = file_src();
-			}else{
-				$src = $arg['file_src'];
+				if(strapos($src, site_url()) === 0)
+					$src = __ROOT__.substr($src, strlen(site_url())); //将绝对 URL 地址转换为绝对磁盘地址
+				if($encoding) $src = iconv('UTF-8', $encoding, $src);
 			}
-			if(strapos($src, site_url()) === 0)
-				$src = __ROOT__.substr($src, strlen(site_url())); //将绝对 URL 地址转换为绝对磁盘地址
-			$dir = pathinfo($src, PATHINFO_DIRNAME);
 			if($installed)
 				$deleted = $result['success'] ? @unlink($src) : false; //删除文件
 			else
 				$deleted = @unlink($src);
 			if($deleted){ //删除更多副本
-				self::deleteMoreImage($src); //删除图片副本
+				self::moreImage($src, 'delete'); //删除图片副本
+				$dir = dirname($src);
 				if(is_empty_dir($dir)) rmdir($dir); //移除空目录
 			}
 			if($installed){
@@ -348,8 +359,13 @@ final class file extends mod{
 			array_splice($file, $line);
 			$file = array_merge($file, array($str), $arr);
 		}else{ //指定插入列
-			$_str = mb_substr($file[$line], 0, $column, 'UTF-8'); //指定列前面的数据
-			$__str = mb_substr($file[$line], $column, mb_strlen($file[$line], 'UTF-8'), 'UTF-8'); //指定列及后面的数据
+			if(extension_loaded('mbstring')){
+				$_str = mb_substr($file[$line], 0, $column, 'UTF-8'); //指定列前面的数据
+				$__str = mb_substr($file[$line], $column, mb_strlen($file[$line], 'UTF-8'), 'UTF-8'); //指定列及后面的数据
+			}else{
+				$_str = substr($file[$line], 0, $column);
+				$__str = substr($file[$line], $column, strlen($file[$line]));
+			}
 			$file[$line] = $_str.$str.$__str;
 		}
 		return self::resetTime();

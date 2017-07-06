@@ -23,6 +23,7 @@ $key = 'Tables_in_'.$dbconf['name'];
 $result = database::query($sql);
 while($result && $table = $result->fetchObject()){
 	$name = $sqlite ? $table->name : $table->$key;
+	if($sqlite && $name == 'sqlite_sequence') continue; //跳过 SQLite 信息表
 	if(strpos($name, $dbconf['prefix']) === 0){
 		$tables[] = $name;
 	}
@@ -43,7 +44,7 @@ foreach($tables as $table){
 $createTable = function($table, $fields) use($sqlite){
 	$sql = "CREATE TABLE `{$table}` (\n";
 	foreach ($fields as $field => $attr) {
-		if($sqlite) $attr = str_ireplace(' AUTO_INCREMENT', '', $attr);
+		if($sqlite) $attr = str_ireplace('AUTO_INCREMENT', 'AUTOINCREMENT', $attr);
 		$sql .= "`{$field}` {$attr},\n";
 	}
 	$sql .= ")";

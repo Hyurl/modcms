@@ -145,7 +145,7 @@ add_action('mod.checkDbUpdate', function(){
 	$result = database::query($sql);
 	while($result && $table = $result->fetchObject()){
 		$name = $sqlite ? $table->name : $table->$key;
-		if(strpos($name, $prefix) === 0){
+		if($prefix && strpos($name, $prefix) === 0){
 			$tables[] = substr($name, strlen($prefix));
 		}
 	}

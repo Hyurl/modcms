@@ -17,7 +17,8 @@ return array(
 		'escapeTags' => '<script><style><iframe>', //过滤上传数据中的 HTML 标签
 		'pathinfoMode' => false, //如果开启, create_url() 创建的路径将包含模板入口文件
 		'jsonSerialize' => true, //使用 JSON 序列化数据
-		'debug' => true, //调试模式，显示错误
+		'debug' => true, //调试模式，显示错误以及修复文件。特殊值：2: 在网页中显示运行信息，3: 在浏览器控制台中显示运行信息
+		'httpAuth' => false, //全局 HTTP 访问认证，如果开启，则必须登录才能访问站点；也可以将其设置为 2，将基本认证替换为摘要认证(仅系统未安装时有效，如果系统已安装，设置 2 也等于 true)
 		'database' => array( //数据库设置
 			'type' => 'mysql', //数据库类型
 			'host' => 'localhost', //主机地址
@@ -53,6 +54,7 @@ return array(
 			'staticURI' => 'page/{page}.html', //伪静态地址
 			),
 		'errorPage' => array( //错误页面设置(相对于模板目录)
+			401 => '401.php', //401 页面
 			403 => '403.php', //403 页面
 			404 => '404.php', //404 页面
 			500 => '500.php', //500 页面
@@ -79,11 +81,12 @@ return array(
 		'password' => array( //字段设置
 			'minLength'=>5, //最小长度
 			'maxLength'=>18, //最大长度
+			'encryptKey'=>'MODPHP', //HTTP 摘要认证时，本地用户密码加密/解密的密钥
 			),
 		'level' => array( //级别设置
 			'admin' => 5, //管理员
 			'editor' => 4, //编辑
-			)
+			),
 		),
 	'file' => array( //文件模块设置
 		'keys' => array( //字段设置
@@ -95,6 +98,7 @@ return array(
 			'acceptTypes' => 'jpg|jpeg|png|gif|bmp', //接受类型(后缀)
 			'maxSize' => 1024*2, //最大体积(单位 KB)
 			'imageSizes' => '64|96|128', //自动添加图像尺寸(宽度, 单位: px)
+			'keepName' => false, //保留原始文件名(文件名重复则自动添加 MD5 后缀)，false 则仅使用 MD5 保存
 			)
 		),
 	'category' => array( //分类目录模块设置

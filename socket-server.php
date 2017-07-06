@@ -1,6 +1,13 @@
 <?php
+// ModPHP 压缩包名称，如果设置，ModPHP 将从 ZIP 中加载内核
+defined('MOD_ZIP') or define('MOD_ZIP', '');
+
 set_time_limit(0); //设置脚本永不超时
-require_once('mod/common/init.php');
+if(!extension_loaded('sockets'))
+	exit("Extension 'sockets' is not loaded, cannot start socket server.");
+
+require_once (MOD_ZIP ? 'zip://'.__DIR__.'/'.MOD_ZIP.'#' : '').'mod/common/init.php'; //引入初始化程序
+
 /**
  * SocketServer 说明：
  * 直接执行 socket-server.php 将 ModPHP 运行于 Socket 服务器模式。
@@ -37,7 +44,7 @@ SocketServer::on('open', function($event){ //绑定连接事件
 		'user_id' => config('mod.installed') ? me_id() : 0, //用户 ID
 		);
 })->on('message', function($event){ //绑定消息事件
-	global $SOCKET_INFO, $SOCKET_USER, ${'DENIES'.__TIME__};
+	global $SOCKET_INFO, $SOCKET_USER, ${'DENIES'.INIT_TIME};
 	$installed = config('mod.installed');
 	do_hooks('socket.message', $event);
 	if(error()) goto sendResult;
@@ -57,8 +64,8 @@ SocketServer::on('open', function($event){ //绑定连接事件
 			'file'=>"data:{$type},{$event['data']}",
 			);
 	}
-	$_GET['obj'] = @$data['obj'];
-	$_GET['act'] = @$data['act'];
+	$_GET['obj'] = isset($data['obj']) ? $data['obj'] : '';
+	$_GET['act'] = isset($data['act']) ? $data['act'] : '';
 	$obj = strtolower($_GET['obj']);
 	$act = $_GET['act'];
 	unset($data['obj'], $data['act']);
@@ -75,7 +82,7 @@ SocketServer::on('open', function($event){ //绑定连接事件
 				$data['HTTP_REFERER'] = $scheme.'://'.$host.$port.$header[1];
 			}
 		}
-		$_SERVER['HTTP_REFERER'] = @$data['HTTP_REFERER'] ?: ''; //设置来路页面
+		$_SERVER['HTTP_REFERER'] = isset($data['HTTP_REFERER']) ? $data['HTTP_REFERER'] : ''; //设置来路页面
 		$init = array('__DISPLAY__' => null);
 		if($installed){
 			do_hooks('mod.init', $init); //系统初始化接口
@@ -111,7 +118,7 @@ SocketServer::on('open', function($event){ //绑定连接事件
 		report_404();
 	}elseif(is_500()){
 		report_500();
-	}elseif(($obj == 'mod' || is_subclass_of($obj, 'mod')) && (method_exists($obj, $act) || is_callable(hooks($obj.'.'.$act))) && !in_array($obj.'::'.strtolower($act), ${'DENIES'.__TIME__})){
+	}elseif(($obj == 'mod' || is_subclass_of($obj, 'mod')) && (method_exists($obj, $act) || is_callable(hooks($obj.'.'.$act))) && !in_array($obj.'::'.strtolower($act), ${'DENIES'.INIT_TIME})){
 		$uid = $installed ? me_id() : 0;
 		sendResult:
 		if(!error()) do_hooks('mod.client.call', $data);
@@ -135,7 +142,7 @@ SocketServer::on('open', function($event){ //绑定连接事件
 			$SOCKET_INFO[$srcId]['session_id'] = session_id();
 			$SOCKET_INFO[$srcId]['user_id'] = me_id();
 		}
-	}elseif($installed && !$obj && !$act && @$data[$sname] == session_id()){
+	}elseif($installed && !$obj && !$act && isset($data[$sname]) && $data[$sname] == session_id()){
 		SocketServer::send(json_encode(user::getMe())); //重现会话操作，将登录用户的信息发送给客户端
 	}else{
 		forbidden:
@@ -165,7 +172,7 @@ if(!SocketServer::server()){
 		is_agent() ? report_500($STDOUT) : exit($STDOUT."\n");
 	}
 	//启动监听
-	SocketServer::listen(@$_SERVER['argv'][1] ?: config('mod.SocketServer.port'), function($socket) use($STDOUT){
+	SocketServer::listen(isset($_SERVER['argv'][1]) ? $_SERVER['argv'][1] : config('mod.SocketServer.port'), function($socket) use($STDOUT){
 		if(!is_agent()) fwrite(STDOUT, $STDOUT."\n");
 	});
 }

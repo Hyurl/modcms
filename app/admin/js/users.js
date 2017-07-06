@@ -75,7 +75,7 @@ $(function(){
 					}else{
 						var title = Lang.viewHisUserCenter;
 					}
-					userListTbody.append('<tr><td data-id="'+data[i].user_id+'">'+id+'</td><td><a title="'+title+'" href="users.html?user_id='+data[i].user_id+'">'+data[i].user_name+'</a></td><td>'+data[i].user_nickname+'</td><td>'+(gender[data[i].user_gender] || '')+'</td><td>'+data[i].user_email+'</td></tr>');
+					userListTbody.append('<tr data-id="'+data[i].user_id+'"><td>'+id+'</td><td><a title="'+title+'" href="users.html?user_id='+data[i].user_id+'">'+data[i].user_name+'</a></td><td>'+data[i].user_nickname+'</td><td>'+(gender[data[i].user_gender] || '')+'</td><td>'+data[i].user_email+'</td></tr>');
 					id++;
 				}
 				TOTAL = result.total;

@@ -31,36 +31,19 @@ function conv_request_vars(&$input = null, $config = array()){
 }
 
 /**
- * load_config() 加载配置文件，用户配置优先
- * @param  string $file 配置文件名
- * @param  string $dir  [可选]所在文件夹
- * @return array|false
+ * load_config_file() 载入 ModPHP 配置目录中的配置文件
+ * @param  string $file 文件名
+ * @return array        配置数组
  */
-function load_config($file, $dir = ''){
-	$config = array();
-	$import = function($file){
-		$ext = pathinfo($file, PATHINFO_EXTENSION);
-		if($ext == 'ini') //载入 ini
-			return parse_ini_file($file);
-		elseif($ext == 'json') //载入 json
-			return json_decode(file_get_contents($file));
-		else //载入 php
-			return include $file;
-	};
-	$file1 = __ROOT__.'mod/config/'.$file;
-	$file2 = $dir ? $dir.$file : __ROOT__.'user/config/'.$file;
-	if(file_exists($file2)){ //从用户目录加载
-		$config = $import($file2);
-		if(!$dir && $file == 'config.php' && file_exists($file1)){ //从内核目录加载 config.php
-			$_config = $import($file1);
-			$config = array_xmerge($_config, $config);
-		}
-	}elseif(!$dir && file_exists($file1)){ //从内核目录加载
-		$config =$import($file1);
+function load_config_file($file){
+	$config = @load_config(__ROOT__.'user/config/'.$file) ?: array();
+	if($config && $file == 'config.php'){
+		$config = array_xmerge(load_config(__CORE__.'config/'.$file) ?: array(), $config);
+	}elseif(!$config){
+		$config = load_config(__CORE__.'config/'.$file) ?: array();
 	}
 	return $config;
 }
-function_alias('load_config', 'load_config_file');
 
 /**
  * hooks() 存储 Api Hook 回调函数
@@ -165,7 +148,7 @@ function_alias('do_hooks', 'do_actions');
  */
 function config($key = '', $value = null){
 	static $config = array();
-	if(!$config) $config = load_config('config.php'); //从文件载入配置
+	if(!$config) $config = load_config_file('config.php');
 	if(!$key) return $config;
 	if($value === null && is_string($key)){
 		$key = "['".str_replace('.', "']['", $key)."']";
@@ -189,7 +172,7 @@ function config($key = '', $value = null){
  */
 function database($key = '', $withAttr = false){
 	static $db = array();
-	if(!$db) $db = load_config('database.php');
+	if(!$db) $db = load_config_file('database.php');
 	if(!$key) return $db;
 	return isset($db[$key]) ? ($withAttr ? $db[$key] : array_keys($db[$key])) : null;
 }
@@ -204,7 +187,7 @@ function database($key = '', $withAttr = false){
  */
 function staticuri($file = '', $format = ''){
 	static $uri = array();
-	if(!$uri) $uri = load_config('static-uri.php');
+	if(!$uri) $uri = load_config_file('static-uri.php');
 	if(!$file) return $uri;
 	if(is_string($file) && strapos($file, __ROOT__) === 0) //替换为相对于 __ROOT__ 的路径
 		$file = substr($file, strlen(__ROOT__));
@@ -234,7 +217,7 @@ function lang($key = ''){
 	$args = array_slice(func_get_args(), 1);
 	if(!$lang){
 		$file = strtolower(config('mod.language')).'.php'; //对应示例： zh-CN => zh-cn.php
-		$lang = load_config($file, __ROOT__.'user/lang/') ?: load_config($file, __ROOT__.'mod/lang/') ?: load_config('en-us.php', __ROOT__.'mod/lang/'); //载入语言包
+		$lang = load_config(__ROOT__.'user/lang/'.$file) ?: load_config(__CORE__.'lang/'.$file) ?: load_config(__CORE__.'lang/en-us.php') ?: array(); //载入语言包
 	}
 	if(!$key) return $lang;
 	if(is_assoc($key)){ //设置语言提示
@@ -319,13 +302,13 @@ function is_client_call($obj = '', $act = ''){
 	if((__SCRIPT__ != 'mod.php' && !is_socket()))
 		return false;
 	elseif($obj && $act) //同时比较 obj 和 act
-		return !strcasecmp($obj, @$_GET['obj']) && !strcasecmp($act, @$_GET['act']);
+		return isset($_GET['obj'], $_GET['act']) && !strcasecmp($obj, $_GET['obj']) && !strcasecmp($act, $_GET['act']);
 	elseif($obj) //比较 obj
-		return !strcasecmp($obj, @$_GET['obj']);
+		return isset($_GET['obj']) && !strcasecmp($obj, $_GET['obj']);
 	elseif($act) //比较 act
-		return !strcasecmp($act, @$_GET['act']);
+		return isset($_GET['act']) && !strcasecmp($act, $_GET['act']);
 	else
-		return @$_GET['obj'] || @$_GET['act'];
+		return !empty($_GET['obj']) || !empty($_GET['act']);
 }
 
 /**
@@ -333,7 +316,7 @@ function is_client_call($obj = '', $act = ''){
  * @return boolean
  */
 function is_socket(){
-	return @$_SERVER['SOCKET_SERVER'] == 'on';
+	return isset($_SERVER['SOCKET_SERVER']) && $_SERVER['SOCKET_SERVER'] == 'on';
 }
 function_alias('is_socket', 'is_websocket');
 
@@ -409,10 +392,11 @@ function create_url($format, $args){
 	$args = is_array($args) ? $args : array_slice(func_get_args(), 1); //参数值列表
 	$index = config('mod.pathinfoMode') ? 'index.php/' : '';
 	if(is_assoc($args)){
-		$keys = array_map(function($k){ //关键字
-			return '{'.$k.'}';
-		}, array_keys($args));
+		$keys = array_keys($args);
 		$values = array_values($args); //替换值
+		foreach ($keys as &$key) {
+			$key = '{'.$key.'}';
+		}
 		return site_url($index).@str_replace($keys, $values, $format);
 	}elseif(preg_match_all('/{(.+)}/U', $format, $matches)){
 		return site_url($index).str_replace($matches[0], $args, $format); //将除了第一个参数外的其他参数作为替换值
@@ -431,22 +415,23 @@ function analyze_url($format, $url = ''){
 	$uri = strstr($url, '?', true) ?: $url;
 	$uri = urldecode($uri); //对 URI 地址进行转义解码
 	if(strapos($uri, site_url('index.php')) === 0) //URL 以网站地址 + index.php 开始
-		$uri = site_url().substr($uri, strlen(site_url())+10);
+		$uri = substr($uri, strlen(site_url())+10);
 	elseif(strapos($uri, site_url()) === 0) //URL 以网站地址开始
 		$uri = substr($uri, strlen(site_url()));
 	$format = explode('/', trim($format, '/')); //使用 / 作为分隔符
 	$uri = explode('/', trim($uri, '/'));
 	$end = count($format)-1;
 	$args = array();
-	for ($i=0; $i < count($format); $i++) {
+	$count = count($format);
+	for ($i=0; $i < $count; $i++) {
 		if(!isset($uri[$i])) continue;
 		if($i == $end){
-			$ext1 = strstr($format[$i], '.');
-			$ext2 = strrchr($uri[$i], '.');
+			$ext1 = strrchr($format[$i], '.'); //伪静态后缀
+			$ext2 = strrchr($uri[$i], '.'); // URI 后缀
 			if($ext1 != $ext2) return false; //判断后缀名是否相同(如果有)
-			elseif($ext1){
-				$format[$i] = strstr($format[$i], '.', true);
-				$uri[$i] = strstr($uri[$i], '.', true);
+			elseif($len = strlen($ext1)){
+				$format[$i] = substr($format[$i], 0, -$len);
+				$uri[$i] = substr($uri[$i], 0, -$len);
 			}
 		}
 		if($format[$i][0] == '{' && $format[$i][strlen($format[$i])-1] == '}'){
@@ -537,7 +522,7 @@ function import($file, $tag = '', $attr = ''){
 	}else{
 		$url = '';
 	}
-	$ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+	$ext = extname($file);
 	$tag = strtolower(trim($tag, '<>'));
 	$attr = $attr ? " $attr" : '';
 	if(!$url && $tag) return null;
@@ -656,11 +641,11 @@ function display_file($url = '', $set = false){
 	if(!$tpl)
 		return $file = $tplPath.config('site.errorPage.404'); //无模板则报告 404 错误
 	if($tpl != $tplPath.$home){ //URL 地址对应一个真实的文件
-		$ext = '.'.strtolower(pathinfo($tpl, PATHINFO_EXTENSION));
-		if($ext != '.'){
-			$cts = load_config('mime.ini'); //加载 Mime 类型配置
-			$mime = @$cts[$ext] ?: 'text/plain';
-		}
+		$ext = '.'.extname($tpl);
+        if($ext != '.'){
+            $types = load_config_file('mime.ini'); //加载 Mime 类型配置
+            $mime = isset($types[$ext]) ? $types[$ext] : 'text/plain';
+        }
 		if($isIndex) set_content_type($mime); //设置响应头中的 Mime 类型
 		if(staticuri($tpl) && $args = analyze_url(staticuri($tpl), $uri)){ //尝试解析 URL
 			if($isIndex) $_GET = array_merge($_GET, $args);
@@ -676,7 +661,7 @@ function display_file($url = '', $set = false){
 			$config = config();
 			//尝试获取模块记录
 			foreach(database() as $key => $value){
-				if(!empty($config[$key]['staticURI'])){
+				if(!empty($config[$key]['staticURI']) && !empty($config[$key]['template'])){
 					$URI = $config[$key]['staticURI'];
 					$get = 'get_'.$key;
 					if($args = analyze_url($URI, $uri)){ //解析 URL 地址
@@ -687,7 +672,7 @@ function display_file($url = '', $set = false){
 						}
 						if(isset($where) && ($result = database::open(0)->select($key, "{$key}_id", $where)) && $result->fetchObject()){ //检查记录是否存在
 							if($isIndex) $_GET = array_merge($_GET, $args);
-							$file = $tplPath.@$config[$key]['template'];
+							$file = $tplPath.$config[$key]['template'];
 							if($_file !== $file || $sid !== session_id()){
 								$_file = $file;
 								$sid = session_id(); //更新会话
@@ -700,12 +685,12 @@ function display_file($url = '', $set = false){
 			}
 			//尝试根据自定义永久链接获取记录
 			foreach(database() as $key => $value){
-				if(isset($value[$key.'_link'])){
+				if(isset($value[$key.'_link']) && !empty($config[$key]['template'])){
 					if($link = substr($url, strlen(site_url($index)))){
 						$get = 'get_'.$key;
 						$result = database::open(0)->select($key, "{$key}_id", "`{$key}_link` = '{$link}'"); //检查记录是否存在
 						if($result && $result->fetchObject()){
-							$file = $tplPath.@$config[$key]['template'];
+							$file = $tplPath.$config[$key]['template'];
 							if($_file !== $file || $sid !== session_id()){
 								$_file = $file;
 								$sid = session_id();
@@ -904,14 +889,14 @@ function register_module_functions($module = ''){
 		}
 	}';
 	eval($code); //运行代码
-	for ($i=0; $i < count($keys); $i++) { 
-		if(strpos($keys[$i], $module) === 0){
-			$func = $keys[$i];
-			if(stripos($keys[$i], '_parent') === false){
+	foreach ($keys as $k) {
+		if(strpos($k, $module) === 0){
+			$func = $k;
+			if(stripos($k, '_parent') === false){
 				$code = '
 				if(!function_exists("'.$func.'")){
 					function '.$func.'($key = ""){
-						$result = the_'.$module.'("'.$keys[$i].'");
+						$result = the_'.$module.'("'.$k.'");
 						if(!$key) return $result ?: null;
 						else if(isset($result[$key])) return $result[$key];
 						else if(strpos($key, "'.$module.'_") !== 0){
@@ -948,7 +933,7 @@ function register_module_functions($module = ''){
 				}';
 			}
 		}else{
-			if($_table = get_table_by_primkey($keys[$i])){
+			if($_table = get_table_by_primkey($k)){
 				$code = '
 				if(!function_exists("'.$module.'_'.$_table.'")){
 					function '.$module.'_'.$_table.'($key = ""){
@@ -980,17 +965,19 @@ function register_module_functions($module = ''){
 
 /**
  * report_http_error() 报告 HTTP 错误
- * @param string $code 状态码，403，404 或 500
+ * @param string $code 状态码，401，403，404 或 500
  * @param string $msg  [可选]错误提示
  */
 function report_http_error($code, $msg = ''){
 	$uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : (display_file() ?: __SCRIPT__);
 	$status = array(
+		401 => 'Unauthorized',
 		403 => 'Forbidden',
 		404 => 'Not Found',
 		500 => 'Internal Server Error',
 		);
 	$html = array(
+		401 => "<p>This server could not verify that you are authorized to access the document requested.</p><p>Either you supplied the wrong credentials (e.g., bad password), or your browser doesn't understand how to supply the credentials required.</p>",
 		403 => "<p>You don't have permission to access ".$uri." on this server.</p>",
 		404 => "<p>The requested URL ".$uri." was not found on this server.</p>",
 		500 => "<p>The server encountered an internal error or misconfiguration and was unable to complete your request.</p><p>Please contact the server administrator".(isset($_SERVER['SERVER_ADMIN']) ? ", {$_SERVER['SERVER_ADMIN']}" : '')." and inform them of the time the error occurred, and anything you might have done that may have caused the error.</p>\n\t<p>More information about this error may be available in the server error log.</p>",
@@ -1011,7 +998,7 @@ function report_http_error($code, $msg = ''){
 	if($file && file_exists($file) && !$msg){
 		display_file($file, true);
 	}else{
-		echo $msg ?: "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\n<html>\n<head>\n\t<title>{$code} {$status[$code]}</title>\n</head>\n<body>\n\t<h1>{$status[$code]}</h1>\n\t{$html[$code]}\n</body>\n</html>";
+		echo $msg ?: "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\n<html>\n<head>\n\t<title>{$code} {$status[$code]}</title>\n</head>\n<body>\n\t<h1>{$code} {$status[$code]}</h1>\n\t{$html[$code]}\n</body>\n</html>";
 		if(is_agent()){
 			do_hooks('mod.template.load.complete');
 			exit();
@@ -1020,11 +1007,11 @@ function report_http_error($code, $msg = ''){
 }
 
 /**
- * report_403/404/500() 报告 403/404/500 错误
- * is_403/404/500() 判断是否为错误页面
+ * report_401/403/404/500() 报告 401/403/404/500 错误
+ * is_401/403/404/500() 判断是否为错误页面
  * @param  string $msg 错误提示
  */
-foreach (array(403, 404, 500) as $code) {
+foreach (array(401, 403, 404, 500) as $code) {
 	eval('
 	function report_'.$code.'($msg = ""){
 		report_http_error('.$code.', $msg);
@@ -1035,6 +1022,7 @@ foreach (array(403, 404, 500) as $code) {
 }
 unset($code);
 
+if(extension_loaded('sockets')):
 /**
  * socket_retrive_session() socket 模式下重现会话
  * @param  string $sid   会话 ID
@@ -1054,12 +1042,13 @@ function socket_retrive_session($sid, $event){
 	}
 	return false;
 }
+endif;
 
 /**
  * strapos() 查找字符串中第一次出现的位置，根据操作系统自动决定是否使用大小写敏感
  * @param  string  $str   规定要搜索的字符串
  * @param  string  $find  规定要查找的字符串
- * @param  integer $start 规定在何处开始搜索
+ * @param  integer $start [可选]规定在何处开始搜索
  * @return mixed          返回字符串在另一字符串中第一次出现的位置，如果没有找到字符串则返回 FALSE。
  */
 function strapos($str, $find, $start = 0){
@@ -1131,4 +1120,66 @@ function get_module_funcs($module = ''){
 		if(!in_array($func, $funcs)) unset($_funcs[$i]); //去除不存在的函数名
 	}
 	return $_funcs;
+}
+
+if(!function_exists('mime_content_type')):
+/**
+ * mime_content_type() 获取一个文件的 MIME 类型
+ * @param  string $filename 文件名
+ * @return string           文件的 MIME 类型，如果没有匹配，则返回空字符串
+ */
+function mime_content_type($filename){
+	static $mime = array();
+	if(!$mime) $mime = load_config_file('mime.ini'); //加载 mime 类型扩展
+	$ext = '.'.extname($filename);
+	return isset($mime[$ext]) ? $mime[$ext] : "";
+}
+endif;
+
+/**
+ * http_auth_login() 使用 HTTP 访问认证登录账户
+ * @param  string $realm [可选]设置域信息
+ * @param  string $type  [可选]认证方式，1：基本认证(默认)，2：摘要认证(仅系统未安装时有效)
+ *                       如果使用摘要认证登录，那么程序会自动生成一个全局变量 $digest
+ *                       来保存解析后的认证信息。
+ * @return array         操作结果
+ */
+function http_auth_login($realm = "HTTP Authentication", $type = 1){
+	if(!config('mod.installed') && ($type === 2 || !empty($_SERVER['PHP_AUTH_DIGEST']))){
+		$key = config('user.password.encryptKey'); //密码解密密钥
+		$users = array();
+		$userMeta = array();
+		foreach(load_config_file('users.php') as $i => $user){ //遍历用户
+			$user = explode(':', $user);
+			if(count($user) == 3){ //合法的用户描述符
+				$users[$user[0]] = decrypt($user[1], $key);
+				$userMeta[$user[0]] = array(
+					'user_id' => $i+1,
+					'user_level' => (int)$user[2]
+					);
+			}
+		}
+		$username = http_digest_auth($users, 'report_401', $realm, $GLOBALS['digest']);
+		_user('me_id', $userMeta[$username]['user_id']); //设置登录信息
+		_user('me_level', $userMeta[$username]['user_level']);
+		return user::getMe();
+	}else{
+		if(empty($_SERVER['PHP_AUTH_USER']) || !isset($_SERVER['PHP_AUTH_PW'])){
+			header('WWW-Authenticate: Basic realm="'.$realm.'"'); //发送要求验证头部
+			report_401(); //报告 401 并阻止输出
+		}else{
+			$loginKey = config('user.keys.login');
+			$loginKey = strstr($loginKey, '|', true) ?: $loginKey;
+			$arg = array( //登陆参数
+				$loginKey => $_SERVER['PHP_AUTH_USER'], //用户登录字段
+				'user_password' => $_SERVER['PHP_AUTH_PW'] //用户密码
+				);
+			$result = user::login($arg); //登录
+			if(!$result['success']){
+				unset($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
+				http_auth_login($realm);
+			}
+			return $result;
+		}
+	}
 }

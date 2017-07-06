@@ -79,7 +79,7 @@ function admin_count_records($table, $arg = array()){
 		$where = array();
 		foreach ($arg as $key => $value) {
 			if(in_array($key, database($table))){
-				$where[$key] = $value;
+				$where[$key] = trim($value, '{}');
 			}
 		}
 		$result = $where ? database::open(0)->select($table, 'count(*) as count', $where) : false;

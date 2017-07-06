@@ -2,51 +2,67 @@
 /**
  * 系统初始化程序，加载系统运行所需的各类文件及配置
  */
+/** 定义常量 */
 define('INIT_MEMORY', memory_get_usage()); //初始内存占用
-list($NSmsec, $NSsec) = explode(' ', microtime());
-define('INIT_TIME', round($NSsec+$NSmsec, 3), true); //初始运行时间
+define('INIT_TIME', microtime(true)); //初始运行时间
+define('MOD_VERSION', '2.2.9'); //ModPHP 版本
+defined('MOD_ZIP') or define('MOD_ZIP', ''); //ModPHP 压缩文件夹
+defined('STDIN') or define('STDIN', fopen('php://stdin','r')); //基本输出
+defined('STDOUT') or define('STDOUT', fopen('php://stdout','w')); //基本输出
+defined('STDERR') or define('STDERR', fopen('php://stderr','w')); //基本错误
+/** 以下常量不区分大小写 */
+$file = MOD_ZIP ? dirname(realpath(MOD_ZIP)) : dirname(dirname(realpath(__DIR__)));
+define('__ROOT__', str_replace('\\', '/', $file.'/'), true); //网站根目录
+define('__CORE__', (MOD_ZIP ? 'zip://'.__ROOT__.MOD_ZIP.'#mod/' : __ROOT__.'mod/'), true); //内核目录
+$file = str_replace('\\', '/', realpath($_SERVER['SCRIPT_FILENAME']));
+define('__SCRIPT__', substr($file, strlen(__ROOT__)) ?: $file, true); //执行脚本
+
 error_reporting(E_ALL ^ E_STRICT); //抑制严格性错误
 if(version_compare(PHP_VERSION, '5.3.0') < 0) //ModPHP 需要运行在 PHP 5.3+ 环境
 	exit('PHP version lower 5.3.0, unable to start ModPHP.');
 
-/** 定义常量 MOD_VERSION, __ROOT_, __SCRIPT__ */
-define('MOD_VERSION', '2.2.2'); //ModPHP 版本
-define('__ROOT__', str_replace('\\', '/', dirname(dirname(__DIR__))).'/', true); //网站根目录
-$NSFile = str_replace('\\', '/', realpath($_SERVER['SCRIPT_FILENAME']));
-define('__SCRIPT__', substr($NSFile, strlen(__ROOT__)) ?: $NSFile, true); //执行脚本
-define('__TIME__', time(), true); //系统运行时间，不再建议使用，将在未来版本中删除
-
-/** 补全系统常量 */
-if(!defined('STDIN')) define('STDIN', fopen('php://stdin','r'));
-if(!defined('STDOUT')) define('STDOUT', fopen('php://stdout','w'));
-if(!defined('STDERR')) define('STDERR', fopen('php://stderr','w'));
 if(__SCRIPT__ == 'mod/common/init.php') return false;
 
-ini_set('default_charset', 'UTF-8'); //设置默认脚本编码
-ini_set('user_agent', 'ModPHP/'.MOD_VERSION); //设置 PHP 远程请求客户端
+/** 加载核心函数文件 */
+include_once __CORE__.'functions/extension.func.php';
+include_once __CORE__.'functions/mod.func.php';
 
-//自动加载类文件
+$GLOBALS['CORE'.INIT_TIME] = array(); //ZIP 内核文件列表
+if(MOD_ZIP){
+	foreach (zip_list(__ROOT__.MOD_ZIP, true) as $file) {
+		if(strpos($file, 'mod/') === 0) $GLOBALS['CORE'.INIT_TIME][] = substr($file, 4);
+	}
+}else{
+	foreach(glob(__ROOT__.'mod/*/*.php') as $file){
+		if(strpos($file, __CORE__) === 0) $GLOBALS['CORE'.INIT_TIME][] = substr($file, strlen(__CORE__));
+	}
+}
+
+//自动加载类文件（优先从用户目录加载）
 spl_autoload_register(function($class){
-	$class1 = strtolower($class);
-	foreach (array('user', 'mod') as $path) {
-		if(is_file($file = __ROOT__."$path/classes/$class1.class.php")){
-			include $file; //按小写类名称引入
-			break;
-		}elseif(is_file($file = __ROOT__."$path/classes/$class.class.php")){
-			include $file; //按调用的类名称引入
-			break;
-		}
+	$class1 = strtolower($class); //小写类名
+	if(is_file($file = __ROOT__."user/classes/$class.class.php")){ //从用户目录按原类名导入
+		include_once $file;
+		return;
+	}elseif(is_file($file = __ROOT__."user/classes/$class1.class.php")){ //从用户目录按小写类名导入
+		include_once $file;
+		return;
+	}
+	//引入某些类时先检查 PHP 扩展是否启用
+	if($class1 == 'database' && !extension_loaded('pdo')) return;
+	if($class1 == 'image' && !extension_loaded('gd')) return;
+	if($class1 == 'socketserver' && !extension_loaded('sockets')) return;
+	if(in_array($file = "classes/$class1.class.php", $GLOBALS['CORE'.INIT_TIME])){ //从内核目录加载
+		include_once __CORE__.$file;
 	}
 });
 
-/** 加载核心函数文件 */
-include_once __ROOT__.'mod/functions/extension.func.php';
-include_once __ROOT__.'mod/functions/mod.func.php';
-
-$NSInstalled = config('mod.installed');
-$NSDatabase = database();
+$installed = config('mod.installed');
+$database = database();
 
 set_content_type('text/html'); //设置默认文档类型
+ini_set('default_charset', 'UTF-8'); //设置默认脚本编码
+ini_set('user_agent', 'ModPHP/'.MOD_VERSION); //设置 PHP 远程请求客户端
 date_default_timezone_set(config('mod.timezone')); //设置默认时区
 if(is_browser()){ //开/关调试模式
 	ini_set('display_errors', config('mod.debug'));
@@ -55,78 +71,27 @@ if(is_browser()){ //开/关调试模式
 }
 
 /** 加载默认函数文件 */
-foreach (glob(__ROOT__.'mod/functions/*.php') as $NSFile) {
-	if($NSFile == __ROOT__.'mod/functions/console.func.php' && !is_console())
-		continue; //console.func.php 仅在交互式控制台中引入
-	$NSBasename = strstr(basename($NSFile), '.', true);
-	if(!$NSInstalled && isset($NSDatabase[$NSBasename]))
-		continue; //模块函数文件仅在系统安装后引入
-	include_once $NSFile;
+foreach ($GLOBALS['CORE'.INIT_TIME] as $file) {
+	if(strpos($file, 'functions/') === 0){
+		$basename = basename($file, '.func.php');
+		if($basename == 'console' && !is_console())
+			continue; //console.func.php 仅在交互式控制台中引入
+		if(!$installed && $basename != 'user' && $basename != 'file' && isset($database[$basename]))
+			continue; //模块函数文件仅在系统安装后引入
+		include_once __CORE__.$file;
+	}
 }
 
-if($NSInstalled) register_module_functions(); //注册模块函数
+if($installed) register_module_functions(); //注册模块函数
 
 //预初始化
-$NSPreInit = function() use($NSInstalled){
+$preinit = function() use($installed){
 	/** 自动重定向至固定网站地址 */
-	if(is_agent() && strapos(url(), site_url()) !== 0 && !is_proxy() && strapos(str_replace('\\', '/', realpath($_SERVER['SCRIPT_FILENAME'])), __ROOT__) === 0)
+	if(is_agent() && strpos(url(), site_url()) !== 0 && !is_proxy_server() && strapos(str_replace('\\', '/', realpath($_SERVER['SCRIPT_FILENAME'])), __ROOT__) === 0)
 		redirect(site_url().substr(url(), strlen(detect_site_url())), 301);
 
-	/** 配置 Session */
-	$sess = config('mod.session');
-	ini_set('session.gc_maxlifetime', $sess['maxLifeTime']*60); //生存期
-	if($sess['name']) session_name($sess['name']); //Session 名称
-	$path = $sess['savePath'];
-	if($path){
-		if($path[0] != '/' && $path[1] != ':') $path = __ROOT__.$path;
-		session_save_path($path); //会话文件保存目录
-	}
-	if(is_agent()){
-		$url = parse_url(trim(site_url(), '/'));
-		$path = @$url['path'] ?: '/';
-		session_set_cookie_params(0, $path); //客户端 Cookie 作用域
-		$sname = session_name();
-		$sid = @$_COOKIE[$sname] ?: @$_REQUEST[$sname];
-		if($sid){
-			if(empty($_COOKIE[$sname])){ //如果不使用 Cookie 传输 Session ID
-				session_id($sid);
-				ini_set('session.use_cookies', 'off'); //则关闭使用 Cookie 的设置
-			}
-			session_start(); //被动开启 Session
-		}
-	}
-
-	/** 解析 URL 参数并填充 $_GET */
-	if(__SCRIPT__ == 'mod.php'){
-		$url = parse_url(url());
-		if(isset($url['query']) && preg_match('/[_0-9a-zA-Z]+::.*/', $url['query'])){ //形式：obj::act|arg1:value1[|...]
-			array_shift($_GET);
-			$delimiter = strpos($url['query'], '|') ? '|' : '&'; //分隔符
-			$arg = explode($delimiter, $url['query']);
-			$arg[0] = explode('::', $arg[0]);
-			$_GET['obj'] = $arg[0][0];
-			$_GET['act'] = $arg[0][1];
-			$arg = array_slice($arg, 1);
-			foreach ($arg as $param) {
-				$sep = strpos($param, ':') ? ':' : '='; //分隔符
-				$param = explode($sep, $param);
-				$_GET = array_merge($_GET, array($param[0] => @$param[1]));
-			}
-		}elseif(preg_match('/mod.php\/(.+)\/(.+)/i', $url['path'])){ //形式：obj/act/arg1/value1[/...]
-			$url['path'] = substr(url(), strlen(site_url())+8);
-			$url['path'] = explode('/', $url['path']);
-			if(isset($url['path'][0], $url['path'][1])){
-				$_GET['obj'] = $url['path'][0];
-				$_GET['act'] = $url['path'][1];
-				for ($i=2; $i < count($url['path']); $i += 2) { 
-					$_GET = array_merge($_GET, array($url['path'][$i] => @$url['path'][$i+1] ?: ''));
-				}
-			}
-		}
-	}
-
 	/** 连接数据库 */
-	if($NSInstalled){
+	if($installed){
 		$conf = config('mod.database');
 		database::open(0)
 				->set('type', $conf['type'])
@@ -137,14 +102,76 @@ $NSPreInit = function() use($NSInstalled){
 				->login($conf['username'], $conf['password']);
 		if(database::$error) exit(database::$error); //遇到错误，终止程序
 	}
+
+	/** 配置 Session */
+	$sess = config('mod.session');
+	ini_set('session.gc_maxlifetime', $sess['maxLifeTime']*60); //生存期
+	if($sess['name']) session_name($sess['name']); //Session 名称
+	$path = $sess['savePath'];
+	if($path){
+		if($path[0] != '/' && $path[1] != ':') $path = __ROOT__.$path;
+		session_save_path($path); //会话文件保存目录
+	}
+
+	if(is_agent()){
+		/** 设置会话 Cookie */
+		$url = parse_url(trim(site_url(), '/'));
+		$path = isset($url['path']) ? $url['path'] : '/';
+		session_set_cookie_params(0, $path); //客户端 Cookie 作用域
+		$sname = session_name();
+		$sid = !empty($_COOKIE[$sname]) ? $_COOKIE[$sname] : (isset($_REQUEST[$sname]) ? $_REQUEST[$sname] : '');
+		if($sid){
+			if(empty($_COOKIE[$sname])){ //如果不使用 Cookie 传输 Session ID
+				session_id($sid);
+				ini_set('session.use_cookies', 'off'); //则关闭使用 Cookie 的设置
+			}
+			session_start(); //被动开启 Session
+		}
+
+		/** 解析 URL 参数并填充 $_GET */
+		if(__SCRIPT__ == 'mod.php'){
+			$url = parse_url(url());
+			if(isset($url['query']) && preg_match('/[_0-9a-zA-Z]+::.*/', $url['query'])){ //形式：obj::act|arg1:value1[|...]
+				array_shift($_GET);
+				$delimiter = strpos($url['query'], '|') ? '|' : '&'; //分隔符
+				$arg = explode($delimiter, $url['query']);
+				$arg[0] = explode('::', $arg[0]);
+				$_GET['obj'] = $arg[0][0];
+				$_GET['act'] = $arg[0][1];
+				$arg = array_slice($arg, 1);
+				foreach ($arg as $param) {
+					$sep = strpos($param, ':') ? ':' : '='; //分隔符
+					$param = explode($sep, $param);
+					$_GET = array_merge($_GET, array($param[0] => isset($param[1]) ? $param[1] : ''));
+				}
+			}elseif(preg_match('/mod.php\/(.+)\/(.+)/i', $url['path'])){ //形式：obj/act/arg1/value1[/...]
+				$url['path'] = substr(url(), strlen(site_url())+8);
+				$url['path'] = explode('/', $url['path']);
+				if(isset($url['path'][0], $url['path'][1])){
+					$_GET['obj'] = $url['path'][0];
+					$_GET['act'] = $url['path'][1];
+					$count = count($url['path']);
+					for ($i=2; $i < $count; $i += 2) { 
+						$_GET = array_merge($_GET, array($url['path'][$i] => isset($url['path'][$i+1]) ? $url['path'][$i+1] : ''));
+					}
+				}
+			}
+		}
+
+		//HTTP 访问认证
+		if((config('mod.httpAuth') && !is_logined()) || (!$installed && !empty($_SERVER['PHP_AUTH_DIGEST']))){
+			http_auth_login("HTTP Authentication", config('mod.httpAuth'));
+		}
+	}
 };
-$NSPreInit();
+$preinit();
 
 /** 加载自定义函数文件 */
-foreach (glob(__ROOT__.'user/functions/*.php') as $NSFile) {
-	include_once $NSFile;
+foreach (glob(__ROOT__.'user/functions/*.php') as $file) {
+	include_once $file;
 }
-unset($NSInstalled, $NSDatabase, $NSBasename, $NSmsec, $NSsec, $NSFile, $NSPreInit); //释放变量
+
+unset($installed, $database, $file, $basename, $preinit); //释放变量
 
 /** 加载模板函数文件 */
 if(file_exists(template_path('functions.php'))) include_once template_path('functions.php');
@@ -166,7 +193,8 @@ function init(){
 		);
 
 	/** 加载自动恢复程序 */
-	include_once __ROOT__.'mod/common/recover.php';
+	if(config('mod.debug'))
+		include_once __CORE__.'common/recover.php';
 
 	/** 配置模板引擎 */
 	template::$rootDir = __ROOT__;

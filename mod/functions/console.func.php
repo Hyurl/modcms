@@ -46,9 +46,7 @@ function install($user, $pass){
 /** update_log() 查看更新日志 */
 function update_log($file = 'update-log.txt', $first = false){
 	if(php_sapi_name() != 'cli') return;
-	if(PHP_OS == 'WINNT' && !$first)
-		return exec('start notepad "'.__ROOT__.$file.'"'); //使用记事本打开更新日志
-	$logs = str_replace("\r\n", "\n", file_get_contents(__ROOT__.$file));
+	$logs = str_replace("\r\n", "\n", file_get_contents((MOD_ZIP ? 'zip://'.__ROOT__.MOD_ZIP.'#' : __ROOT__).$file));
 	$logs = explode("\n\n", $logs);
 	if($first){
 		echo $logs[0];
@@ -82,13 +80,21 @@ add_action('console.open.check_update', function(){
 	$opt = array('http'=>array('method'=>'GET', 'timeout'=>1));
 	$arg = array('url'=>$url, 'parseJSON'=>false, 'timeout'=>1);
 	try{
-		$file = __ROOT__.'modphp.zip';
-		$ver = @json_decode(file_get_contents($url, false, stream_context_create($opt)) ?: @curl($arg), true); //访问远程链接并获取响应
-		$gt = $ver && !curl_info('error') ? version_compare($ver['version'], MOD_VERSION) : -1;
-		if($gt > 0 || (!$gt && file_exists($file) && $ver['md5'] != md5_file($file))){
-			update($ver); //保存新版本信息
-			$tip = "ModPHP {$ver['version']} ".($gt > 0 ? 'is now availible' : 'has updates').", use \"update\" to get the new version.";
-			fwrite(STDOUT, $tip.PHP_EOL); //输出更新提示
+		$file = __ROOT__.(MOD_ZIP ?: 'modphp.zip');
+		$json = @file_get_contents($url, false, stream_context_create($opt)); //获取版本信息
+		if(!$json && function_exists('curl')){
+			$result = curl($arg); //通过 CURL 获取版本信息
+			if(!curl_info('error'))
+				$json = $result;
+		}
+		if($json){
+			$ver = json_decode($json, true);
+			$gt = version_compare($ver['version'], MOD_VERSION);
+			if($gt > 0 || (!$gt && file_exists($file) && $ver['md5'] != md5_file($file))){
+				update($ver); //保存新版本信息
+				$tip = "ModPHP {$ver['version']} ".($gt > 0 ? 'is now availible' : 'has updates').", use \"update\" to get the new version.";
+				fwrite(STDOUT, $tip.PHP_EOL); //输出更新提示
+			}
 		}
 	}catch(Exception $e){}
 }, false);

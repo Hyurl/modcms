@@ -1,5 +1,23 @@
 <?php
 /**
+ * _user() 存储或者获取用户元信息
+ * @param  string $key   信息名称
+ * @param  [type] $value 信息值
+ * @return mixed         如未设置 $key，则返回所有存储的信息；
+ *                       如只设置 $key，则返回对应的信息，不存在则返回 null；
+ *                       如果同时设置 $key 和 $value，则将 $key 对应的值设置为 $value 并始终返回 $value。
+ */
+function _user($key = "", $value = null){
+	static $user = array();
+	if(!$key) return $user ?: null;
+	if($value === null){
+		return isset($user[$key]) ? $user[$key] : null;
+	}else{
+		return $user[$key] = $value;
+	}
+}
+
+/**
  * get_me() 当前登录用户信息获取函数
  * @param  string $key  [可选]数组键名
  * @return array|string 如果未设置 $key 参数，则返回整个数组，
@@ -12,7 +30,7 @@ function get_me($key = ''){
 		$sid = session_id();
 		$result = array();
 		$_result = user::getMe();
-		error(null);
+		error(null); //清空错误消息（如果有）
 		if(!$_result['success']) return null;
 		else $result = $_result['data'];
 	}
@@ -20,26 +38,9 @@ function get_me($key = ''){
 	else if(isset($result[$key])) return $result[$key];
 	else if(strpos($key, 'user_') !== 0){
 		$key = 'user_'.$key;
-		return @$result[$key];
+		return isset($result[$key]) ? $result[$key] : null;
 	}
 }
-
-/** 依次创建 me_*() 函数 */
-foreach (database('user') as $key) {
-	$_key = substr($key, 5);
-	$code = '
-	function me_'.$_key.'($key = ""){
-		$result = get_me("'.$key.'");
-		if(!$key) return $result ?: null;
-		elseif(isset($result[$key])) return $result[$key];
-		elseif(strpos($key, "user_") !== 0){
-			$key = "user_".$key;
-			return @$result[$key];
-		}
-	}';
-	eval($code); //计算并运行代码
-}
-unset($code, $key, $_key); //释放变量
 
 /** is_logined() 判断用户是否登录 */
 function is_logined(){
@@ -80,6 +81,25 @@ function is_profile($key = 0){
 	}
 	return false;
 }
+
+if(config('mod.installed')):
+
+/** 依次创建 me_*() 函数 */
+foreach (database('user') as $key) {
+	$_key = substr($key, 5);
+	$code = '
+	function me_'.$_key.'($key = ""){
+		$result = get_me("'.$key.'");
+		if(!$key) return $result ?: null;
+		elseif(isset($result[$key])) return $result[$key];
+		elseif(strpos($key, "user_") !== 0){
+			$key = "user_".$key;
+			return isset($result[$key]) ? $result[$key] : null;
+		}
+	}';
+	eval($code); //计算并运行代码
+}
+unset($code, $key, $_key); //释放变量
 
 /** 设置默认用户级别 */
 add_hook('user.add.set_level', function($arg){
@@ -169,3 +189,4 @@ add_hook('user.update.check_password', function($arg){
 	}
 	return $arg;
 }, false);
+endif;
