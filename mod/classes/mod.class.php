@@ -169,12 +169,12 @@ class mod{
 		$link = static::TABLE.'_link';
 		$primkey = static::PRIMKEY;
 		if(!empty($arg[$link])){
-			$hasRoot = strapos($arg[$link], site_url()) === 0; //判断链接是否为绝对 URL 地址
+			$hasRoot = path_starts_with($arg[$link], site_url()); //判断链接是否为绝对 URL 地址
 			$index = config('mod.pathinfoMode') ? 'index.php/' : ''; //pathinfo 模式
 			if($act != 'get'){
 				if($hasRoot) //获取相对链接
 					$arg[$link] = substr($arg[$link], strlen(site_url()));
-				if(strapos($arg[$link], 'index.php/') === 0)
+				if(path_starts_with($arg[$link], 'index.php/'))
 					$arg[$link] = substr($arg[$link], 10); //去掉链接的 index.php/ 前缀
 				if(file_exists($arg[$link]))
 					return error(lang('mod.linkUnavailable')); //链接不能与文件名冲突
@@ -395,17 +395,18 @@ class mod{
 				if(empty($arg['src']) || empty($arg['md5']))
 					return error(lang('mod.missingArguments'));
 				$file = __ROOT__.(MOD_ZIP ?: 'modphp.zip');
-				//尝试获取安装包
-				$tmp = @file_get_contents($arg['src']);
-				if(!$tmp && function_exists('curl')){
-					$tmp = curl(array('url'=>$arg['src'], 'followLocation'=>1));
-					if(curl_info('error'))
-						$tmp = "";
+				$tmp = null;
+				if(ini_get('allow_url_fopen')){
+					$tmp = @file_get_contents($arg['src']); //获取更新包
+				}elseif(function_exists('curl')){
+					$tmp = curl(array('url'=>$arg['src'], 'followLocation'=>2)); //使用 CURL 获取更新包
 				}
-				$len = @file_put_contents($file, $tmp);
-				if($len && md5_file($file) == $arg['md5']){ //通过 MD5 验证安装包完整性
-					$ok = MOD_ZIP ? true : (function_exists('zip_extract') && zip_extract($file, __ROOT__)); //解压安装包
-					export(load_config_file('config.php'), __ROOT__.'user/config/config.php'); //更新配置
+				if($tmp){
+					$len = @file_put_contents($file, $tmp); //写出更新包
+					if($len && md5_file($file) == $arg['md5']){ //通过 MD5 验证安装包完整性
+						$ok = MOD_ZIP ? true : (function_exists('zip_extract') && zip_extract($file, __ROOT__)); //解压安装包
+						export(load_config_file('config.php'), __ROOT__.'user/config/config.php'); //更新配置
+					}
 				}
 			}else{ //更新数据库
 				include __CORE__.'common/update.php'; //调用执行数据库更新程序

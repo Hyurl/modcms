@@ -12,7 +12,8 @@ return array (
     'escapeTags' => '<script><style><iframe>',
     'pathinfoMode' => false,
     'jsonSerialize' => true,
-    'debug'=>true,
+    'debug' => true,
+    'httpAuth' => false,
     'database' => 
     array (
       'host' => 'localhost',
@@ -84,15 +85,10 @@ return array (
     ),
     'errorPage' => 
     array (
+      401 => '401.html',
       403 => '403.html',
       404 => '404.html',
       500 => '500.html',
-    ),
-    'maintenance' => 
-    array (
-      'pages' => '',
-      'exception' => 'is_admin()',
-      'report' => 'report_500()',
     ),
     'admin' => 
     array (

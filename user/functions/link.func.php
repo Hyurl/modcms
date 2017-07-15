@@ -1,4 +1,3 @@
 <?php
-add_action(array('link.add', 'link.update', 'link.delete'), function(){
-	if(!is_admin() && is_editor()) return error(lang('mod.permissionDenied'));
-});
+/** 添加/更新/删除链接时检查用户权限 */
+add_action(array('link.add', 'link.update', 'link.delete'), 'link::checkPermission');

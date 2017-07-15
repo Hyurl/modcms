@@ -19,7 +19,7 @@ $(function(){
 		event.stopPropagation();
 		if($(this).is('.has-children')){
 			$(this).next('li').slideToggle();
-			$(this).children('i').toggleClass('glyphicon-chevron-down').toggleClass('glyphicon-chevron-right');
+			$(this).children('span').toggleClass('glyphicon-chevron-down').toggleClass('glyphicon-chevron-right');
 		}else{
 			$('#folder-list').find('.active').removeClass('active');
 			$(this).addClass('active');

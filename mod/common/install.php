@@ -9,22 +9,21 @@
 	<?php
 	$host = 'http://modphp.hyurl.com/';
 	$url = $host.'version';
-	$file = __ROOT__.'modphp.zip';
+	$file = __ROOT__.(MOD_ZIP ?: 'modphp.zip');
 	$update = url() == site_url('install.php?update');
 	$uninstall = url() == site_url('install.php?uninstall');
-	$opt = array('http'=>array('method'=>'GET', 'timeout'=>1));
-	$arg = array('url'=>$url, 'parseJSON'=>false, 'timeout'=>1);
-	$json = @file_get_contents($url, false, stream_context_create($opt)); //获取版本信息
-	if(!$json && function_exists('curl')){
-		$result = curl($arg); //通过 CURL 获取版本信息
-		if(!curl_info('error'))
-			$json = $result;
+	$ver = null;
+	if(ini_get('allow_url_fopen')){
+		$opt = array('http'=>array('timeout'=>1));
+		$json = @file_get_contents($url, false, stream_context_create($opt)); //获取版本信息
+		$ver = $json ? json_decode($json, true) : null;
+	}elseif(function_exists('curl')){
+		$arg = array('url'=>$url, 'followLocation'=>2, 'parseJSON'=>true, 'timeout'=>1);
+		$ver = curl($arg); //通过 CURL 获取版本信息
 	}
-	if($json){
-		$ver = json_decode($json, true);
+	if($ver && isset($ver['version'])){
 		$gt = version_compare($ver['version'], MOD_VERSION);
 	}else{
-		$ver  = "";
 		$gt = -1;
 	}
 	if($gt > 0 || (!$gt && file_exists($file) && $ver['md5'] != md5_file($file))){
@@ -49,7 +48,7 @@
 			texts = {install: '安装', update: '更新', uninstall: '卸载'},
 			text = texts[act];
 		btn = $(btn);
-		btn.innerText = text+'中...';
+		btn.textContent = text+'中...';
 		btn.setAttribute('disabled', 'disabled');
 		if(typeof data == 'object'){
 			for(var i in data){
@@ -60,35 +59,25 @@
 			str = data;
 		}
 		xhr.open('POST', 'mod.php?mod::'+act, true);
-		xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
-		xhr.onreadystatechange = function(){
+		xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+		xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+		xhr.onload = xhr.onerror = function(){
 			var result = xhr.responseText;
-			if(xhr.readyState == 4){
-				console.log(result);
-				if(xhr.status == 200){
-					try{
-						result = result.match(/\{.*\}/)[0];
-						result = JSON.parse(result);
-						alert(result.data);
-						if(result.success){
-							btn.innerText = text+'成功！';
-							go_home();
-						}else{
-							btn.innerText = text+'失败！';
-						}
-					}catch(e){
-						alert(result);
-						btn.innerText = text+'失败！';
-					}
-				}else{
-					alert(result);
-					btn.innerText = text+'失败！';
+			if(xhr.status == 200){
+				result = JSON.parse(result.match(/\{.*\}/)[0]);
+				alert(result.data);
+				btn.textContent = text+(result.success ? '成功！' : '失败！');
+				if(result.success){
+					go_home();
 				}
-				setTimeout(function(){
-					btn.innerText = text;
-					btn.removeAttribute('disabled');
-				}, 2000);
+			}else{
+				alert(result || '与服务器的连接出现错误！');
+				btn.textContent = text+'失败！';
 			}
+			setTimeout(function(){
+				btn.textContent = text;
+				btn.removeAttribute('disabled');
+			}, 2000);
 		};
 		xhr.send(str);
 	}

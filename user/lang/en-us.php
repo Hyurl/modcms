@@ -192,6 +192,8 @@ return array (
     'catDescTip'=>'Descript the usage of this category.',
     'catAlias'=>'Alias',
     'catParent'=>'Parent Category',
+    'rollIdSucceeded'=>'Category sequence changed.',
+    'rollIdFailed'=>'Unable to change category sequence.',
   ),
   'post' => 
   array (
@@ -523,14 +525,6 @@ return array (
     'page404'=>'404 Not Found',
     'page500'=>'500 Server Error',
     'errorPageDesc'=>'These error pages will automatically display to visitors if error occurs. If the setting pages do not exist, then default pages will be displayed.',
-    'maintenance'=>'Maintenance Pages',
-    'maintenancePages'=>'Current Pages',
-    'maintenanceException'=>'Except Conditions',
-    'maintenanceReport'=>'Report Error',
-    'maintenancePagesTip'=>'Use | for spliting multiple pages.',
-    'maintenanceExceptionTip'=>'Set is_admin() or other expressions.',
-    'maintenanceReportTip'=>'Set report_500() or other report error functions.',
-    'maintenanceDesc'=>'you can deny visitors from pages which is on error by setting maintenance pages until them being fixed and reopen. Note, they are relative to the template directories.',
     'sessionNameTip'=>'AKA Session Cookie name',
     'lifeTime'=>'Life Time',
     'lifeTimeTip'=>'Unit: minutes.',

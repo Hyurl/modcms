@@ -1,7 +1,7 @@
 $(function(){
 	/** 定义全局变量 */
 	min_width = 640; //小屏幕设备的最大屏幕宽度
-	timer = 30; //定时器(单位 秒)
+	timer = 10; //定时器(单位 秒)
 	container = $('#container'); //主体容器
 	sidebar = $('#aside-menu'); //侧边菜单栏
 	copyright = $('#copyright'); //版权标识

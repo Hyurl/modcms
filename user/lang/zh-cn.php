@@ -192,6 +192,8 @@ return array (
     'catDescTip'=>'简单描述这个目录的用途',
     'catAlias'=>'别名',
     'catParent'=>'父目录',
+    'rollIdSucceeded'=>'分类目录顺序已更改。',
+    'rollIdFailed'=>'无法更改分类目录顺序。',
   ),
   'post' => 
   array (
@@ -523,14 +525,6 @@ return array (
     'page404'=>'404 找不到页面',
     'page500'=>'500 内部错误',
     'errorPageDesc'=>'这些页面会在网页出现错误时自动显示给访问者，如果所设置的文件并不存在，则系统会调用默认的错误页面。',
-    'maintenance'=>'维护页面',
-    'maintenancePages'=>'正在维护的页面',
-    'maintenanceException'=>'例外条件',
-    'maintenanceReport'=>'错误报告函数',
-    'maintenancePagesTip'=>'多个页面使用 | 分隔',
-    'maintenanceExceptionTip'=>'使用一个权限判断函数',
-    'maintenanceReportTip'=>'使用一个错误页面报告函数',
-    'maintenanceDesc'=>'你可以通过设置维护页面来快速阻止访问者浏览出现问题的模板页面，直至将其修复并重新开放。注意，它们是相对于模板目录的。',
     'sessionNameTip'=>'即 Session Cookie 的名称',
     'lifeTime'=>'生存期',
     'lifeTimeTip'=>'单位：分钟',

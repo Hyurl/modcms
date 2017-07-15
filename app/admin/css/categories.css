@@ -27,9 +27,7 @@
 }
 #category-list .list-group-item>.glyphicon{float: right; padding: 13px; margin-top: -12px; cursor: pointer;}
 #category-list .list-group-item>.glyphicon:hover{background-color: #ddd;}
-/*#category-list .glyphicon+.badge{
-	margin-right: 0;
-}*/
+#category-list .list-group-item>.glyphicon.glyphicon-arrow-up, #category-list .list-group-item>.glyphicon.glyphicon-arrow-down{display: none;}
 #category-details{
 	display: inline-block;
 	padding: 10px;

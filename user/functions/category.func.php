@@ -5,3 +5,5 @@ add_action(array('category.add', 'category.update'), function($input){
 		return error(lang('category.invalidName'));
 	}
 });
+
+add_action("category.rollId", "extensions\category::rollId", false);

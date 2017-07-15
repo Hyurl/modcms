@@ -44,7 +44,7 @@ $postType = lang('post.postTypes');
 
 if(empty($_GET['action']) || $_GET['action'] == 'search'){
 	$arg = $_GET;
-	if(empty($arg['user_id']) && !IS_AUTH) $arg['user_id'] = ME_ID;
+	if(empty($arg['user_id'])) $arg['user_id'] = ME_ID;
 	$_arg = $arg;
 	unset($_arg['category_id']);
 	unset($_arg['post_id']);

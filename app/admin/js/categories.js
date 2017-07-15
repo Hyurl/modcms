@@ -57,7 +57,7 @@ $(function(){
 		showListMenu();
 	}
 
-	$('li.list-children').prev('li').children('.glyphicon').click(function(event){
+	$('li.list-children').prev('li').children('.glyphicon-chevron-down, .glyphicon-chevron-right').click(function(event){
 		event.stopPropagation();
 		var $this = $(this);
 		if($this.is('.glyphicon-chevron-down')){
@@ -166,4 +166,33 @@ $(function(){
 	}else{
 		catEditForm.find('#category_name').focus();
 	}
+
+	/** 显示上下移动按钮 */
+	$('.list-group-item').hover(function(){
+		catList.find('.glyphicon-arrow-up, .glyphicon-arrow-down').hide();
+		$(this).children('.glyphicon-arrow-up, .glyphicon-arrow-down').show();
+	});
+	
+	/** 上下移动按钮的功能 */
+	$('.glyphicon-arrow-up, .glyphicon-arrow-down').on('click', function(e){
+		e.stopPropagation();
+		var up = $(this).is('.glyphicon-arrow-up'),
+			li = $(this).parent('li'),
+			sibling = up ? li.prev('li') : li.next('li');
+		if(sibling.is('.list-children')){
+			sibling = up ? sibling.prev('li') : sibling.next('li');
+		}
+		var id1 = li.attr('data-category_id'),
+			id2 = sibling.attr('data-category_id'),
+			arg = {id1: id1, id2: id2};
+			console.log(arg);
+		if(id1 == undefined || id2 == undefined) return;
+		$.post(SITE_URL+'mod.php?category::rollId', arg, function(result){
+			if(result.success){
+				window.location.reload();
+			}else{
+				alert(result.data);
+			}
+		});
+	});
 });

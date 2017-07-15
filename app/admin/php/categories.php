@@ -13,15 +13,16 @@ function admin_list_categories($tree, $hasBorder = false){
 			}
 			echo '<li class="list-group-item'.($hasBorder ? ' has-border' : '').(@$_GET['category_id'] == $subtree['category_id'] ? ' active' : '').'"'.$data.'>';
 				$posts = '<span class="badge" title="'.lang('category.contentPostsCount', $subtree['category_posts']).'">'.$subtree['category_posts'].'</span>';
+				$upsideDown = '<span class="glyphicon glyphicon-arrow-down"></span><span class="glyphicon glyphicon-arrow-up"></span>';
 			if(is_array($subtree['category_children'])){
 				echo $subtree['category_alias'] ?: $subtree['category_name'];
-				echo '<span class="glyphicon glyphicon-chevron-down"></span>'.$posts.'</li>';
-				echo '<li class="list-group-item list-children">';
+				echo '<span class="glyphicon glyphicon-chevron-down"></span>'.$posts.$upsideDown.'</li>';
+				echo '<li class="list-group-item list-children" data-category_parent="'.$subtree['category_id'].'">';
 				admin_list_categories($subtree['category_children'], true);
 				echo '</li>';
 			}else{
 				echo $subtree['category_alias'] ?: $subtree['category_name'];
-				echo $posts.'</li>';
+				echo $posts.$upsideDown.'</li>';
 			}
 		}
 	}

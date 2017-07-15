@@ -1,189 +1,39 @@
 <?php
 /** 在获取上传文件时将路径转换为绝对路径 */
-add_action(array('file.get', 'user.get', 'post.get', 'comment.get', 'link.get'), function($data){
-	if(!empty($data['file_src']) && strpos($data['file_src'], '://') === false){ //文件源地址
-		$data['file_src'] = site_url().$data['file_src'];
-	}
-	if(!empty($data['post_thumbnail']) && strpos($data['post_thumbnail'], '://') === false){ //文章缩略图
-		$data['post_thumbnail'] = site_url().$data['post_thumbnail'];
-	}
-	if(!empty($data['user_avatar']) && strpos($data['user_avatar'], '://') === false){ //用户头像
-		$data['user_avatar'] = site_url().$data['user_avatar'];
-	}
-	if(!empty($data['link_logo']) && strpos($data['link_logo'], '://') === false){ //友情链接 LOGO
-		$data['link_logo'] = site_url().$data['link_logo'];
-	}
-	if(!empty($data['post_content'])){ //替换文章中的文件链接
-		$original = array('src="upload/', 'href="upload/');
-		$replacement = array('src="'.site_url().'upload/', 'href="'.site_url().'upload/');
-		$data['post_content'] = str_replace($original, $replacement, $data['post_content']);
-		if(is_single() && preg_match_all('/href="(.*)"/Ui', $data['post_content'], $matches)){
-			for ($i=0;$i<count($matches[1]); $i++) {
-				if(!stripos($matches[1][$i], '://')){
-					$data['post_content'] = str_replace($matches[0][$i], 'href="'.site_url().$matches[1][$i].'"', $data['post_content']);
-				}
-			}
-		}
-	}
-	return $data;
-});
+add_action(array(
+	'file.get',
+	'user.get',
+	'post.get',
+	'comment.get',
+	'link.get'
+	), 'common::getAbsolutePath');
 
 /** 在更新/新建用户/文章时将头像/图片/链接更改为相对路径 */
-add_action(array('user.add', 'user.update', 'post.add', 'post.update', 'link.add', 'link.update'), function($arg){
-	if(!empty($arg['user_avatar']) && strapos($arg['user_avatar'], site_url()) === 0){
-		$arg['user_avatar'] = substr($arg['user_avatar'], strlen(site_url()));
-	}
-	if(!empty($arg['post_thumbnail']) && strapos($arg['post_thumbnail'], site_url()) === 0){
-		$arg['post_thumbnail'] = substr($arg['post_thumbnail'], strlen(site_url()));
-	}
-	if(!empty($arg['link_logo']) && strapos($arg['link_logo'], site_url()) === 0){
-		$arg['link_logo'] = substr($arg['link_logo'], strlen(site_url()));
-	}
-	if(!empty($arg['post_content'])){
-		$original = array('src="'.site_url().'upload/', 'href="'.site_url().'upload/');
-		$replacement = array('src="upload/', 'href="upload/');
-		$arg['post_content'] = str_replace($original, $replacement, $arg['post_content']);
-	}
-	return $arg;
-});
+add_action(array(
+	'user.add',
+	'user.update',
+	'post.add',
+	'post.update',
+	'link.add',
+	'link.update'), 'common::getRelativePath');
 
 /** 空分类目录报告 404 错误 */
-add_hook('mod.init', function($init){
-	if(is_category()){
-		$_GET['category_id'] = category_id();
-		$_GET['post_type'] = 0;
-		if(get_multi_post($_GET)){
-			get_multi_post(0);
-		}else if(!empty($_GET['page']) && $_GET['page'] != 1 && !is_client_call()){
-			$init['__DISPLAY__'] = false;
-		}
-	}
-	return $init;
-});
+add_hook('mod.init', 'common::emptyCategoryreport404');
 
 /** 加载文章时检测分类目录是否匹配 */
-add_action('mod.init', function($init){
-	if(is_single()){
-		foreach(post_category() as $key => $value){
-			if(isset($_GET[$key]) && $value != $_GET[$key]){
-				$init['__DISPLAY__'] = false;
-			}
-		}
-	}
-	return $init;
-});
+add_action('mod.init', 'common::checkCategoryWhenLoadingPosts');
 
 /** 检查模板/插件更新 */
-add_action('mod.checkUpdate', function($arg){
-	if(error()) return error();
-	if(!is_admin()) return error(lang('mod.permissionDenied'));
-	if(empty($arg['versionURL']) || empty($arg['type']) || empty($arg['version'])) return error(lang('mod.missingArguments'));
-	try{
-		$result = json_decode(file_get_contents($arg['versionURL']), true) ?: curl(array('url'=>$arg['versionURL'], 'parseJSON'=>true));
-		return success($result, array('type'=>$arg['type'], 'version'=>$arg['version']));
-	}catch(Exception $e){
-		return error(lang('admin.noNewVersionTip'));
-	}
-}, false);
+add_action('mod.checkUpdate', 'extensions\mod::checkUpdate', false);
 
 /** 更新 CMS 系统 */
-add_action('mod.updateCMS', function($arg){
-	if(error()) return error();
-	$ok = false;
-	if(config('mod.installed') && !is_console() && (!is_admin() || me_id() != 1)) return error(lang('mod.permissionDenied'));
-	if(empty($arg['src']) || empty($arg['md5'])) return error(lang('mod.missingArguments'));
-	$file = __ROOT__.'modcms.zip';
-	$len = file_put_contents($file, @file_get_contents($arg['src']) ?: @curl(array('url'=>$arg['src'], 'followLocation'=>1)));
-	if($len && md5_file($file) == $arg['md5']){
-		$ok = @zip_extract($file, __ROOT__);
-		if($ok){
-			cms_rewrite_config('config.php');
-			cms_rewrite_config('database.php');
-			if(is_dir($dir = template::$saveDir.'app/template/simplet/')){
-				xrmdir($dir); //删除内置模板缓存
-			}
-		}
-	}
-	// unlink($file);
-	return $ok ? success(lang('mod.updated')) : error(lang('admin.systemUpdateFailWarning'));
-}, false);
+add_action('mod.updateCMS', 'extensions\mod::updateCMS', false);
 
 /** 更新模板/插件 */
-add_action('mod.updateComponent', function($arg){
-	if(error()) return error();
-	$ok = false;
-	$isTpl = @$arg['type'] == 'template';
-	if(!is_admin()) return error(lang('mod.permissionDenied'));
-	if(empty($arg['src']) || empty($arg['md5'])) return error(lang('mod.missingArguments'));
-	$file = __ROOT__.(int)INIT_TIME.'.zip';
-	@file_put_contents($file, @file_get_contents($arg['src']) ?: @curl(array('url'=>$arg['src'], 'followLocation'=>1)));
-	if(md5_file($file) == $arg['md5']){
-		$ok = zip_extract($file, __ROOT__.'app/'.($isTpl ? 'template/' : 'plugins/'));
-	}
-	unlink($file);
-	if($ok){
-		return success($isTpl ? lang('admin.templateUpdateSuccess') : lang('admin.pluginUpdateSuccess'));
-	}else{
-		return error($isTpl ? lang('admin.templateUpdateFail') : lang('admin.pluginUpdateFail'));
-	}
-}, false);
+add_action('mod.updateComponent', 'extensions\mod::updateComponent', false);
 
 /** 检测数据库更新 */
-add_action('mod.checkDbUpdate', function(){
-	if(error()) return error();
-	if(!is_admin()) return error(lang('mod.permissionDenied'));
-	$sqlite = database::open(0)->set('type') == 'sqlite';
-	$database = database();
-	$tip = lang('admin.dbUpdateTip');
-	$key = 'Tables_in_'.config('mod.database.name');
-	$prefix = config('mod.database.prefix');
-
-	//获取数据表
-	$tables = array();
-	$sql = $sqlite ? "select name from sqlite_master where type = 'table'" : 'SHOW TABLES';
-	$key = 'Tables_in_'.config('mod.database.name');
-	$result = database::query($sql);
-	while($result && $table = $result->fetchObject()){
-		$name = $sqlite ? $table->name : $table->$key;
-		if($prefix && strpos($name, $prefix) === 0){
-			$tables[] = substr($name, strlen($prefix));
-		}
-	}
-
-	// 获取字段属性
-	foreach ($tables as $i => $table) {
-		if(empty($tables[$table])){
-			$tables[$table] = array();
-			unset($tables[$i]);
-		}
-		$sql = $sqlite ? "pragma table_info(`{$prefix}{$table}`)" : "SHOW COLUMNS FROM `{$prefix}{$table}`";
-		$result = database::query($sql);
-		$name = $sqlite ? 'name' : 'Field';
-		$type = $sqlite ? 'type' : 'Type';
-		while ($result && $column = $result->fetch()) {
-			$tables[$table][$column[$name]] = str_ireplace(array(' UNSIGNED', ' '), '', $column[$type]);
-		}
-	}
-
-	// 比较字段属性
-	foreach($database as $name => $table){
-		if(!isset($tables[$name])) return success($tip);
-		foreach($table as $key => $attr){
-			if(!isset($tables[$name][$key]) || stripos($attr, $tables[$name][$key]) !== 0){
-				return success($tip);
-			}
-		}
-	}
-	foreach($tables as $name => $table){
-		if(!isset($database[$name])) return success($tip);
-		foreach($table as $key => $attr){
-			if(!isset($database[$name][$key]) || stripos($database[$name][$key], $attr) !== 0){
-				return success($tip);
-			}
-		}
-	}
-	return error(lang('admin.noUpdateItems'));
-}, false);
+add_action('mod.checkDbUpdate', 'extensions\mod::checkDbUpdate', false);
 
 /** 预备邮件服务 */
 if(config('mod.mail.host') && config('mod.mail.username')){
@@ -197,38 +47,7 @@ if(config('mod.mail.host') && config('mod.mail.username')){
 }
 
 /** 使用邮件发送验证码 */
-add_action('mod.mailVcode', function($input){
-	if(error()) return error();
-	if(!empty($input['user_email']) && filter_var($input['user_email'], FILTER_VALIDATE_EMAIL)){
-		$action = @$input['action'] ?: lang('admin.sendVcode');
-		$uid = cms_get_uid_by_email($input['user_email']);
-		if(get_user($uid)){
-			if($action == lang('user.register')){
-				return error(lang('user.emailIsUsed'));
-			}else{
-				$user = user_nickname() ?: user_name();
-			}
-		}else{
-			if($action != lang('user.register')) return error(lang('user.emailIsNotUsed'));
-		}
-		if(session_status() != PHP_SESSION_ACTIVE) session_start();
-		$_SESSION['vcode'] = rand_str(5);
-		$_SESSION['time'] = time();
-		$_SESSION['user_email'] = $input['user_email'];
-		$user = isset($user) ? $user : (!empty($input['user_nickname']) ? $input['user_nickname'] : lang('user.label'));
-		$body = '<p>'.lang('admin.emailVcodeTip', $user, $action).'</p>';
-		$body .= '<p style="color: #4f9fcf;font-size:24px;">'.$_SESSION['vcode'].'</p>';
-		$body .= '<p>'.lang('admin.emailIgnoreTip').'</p>';
-		mail::to($input['user_email'])
-			->subject('['.lang('admin.vcode').']'.config('site.name'))
-			->send($body);
-		$params = session_get_cookie_params();
-		setcookie(session_name(), session_id(),  $_SESSION['time']+60*30, $params['path']); //重写客户端 Cookie
-		return success(lang('admin.vcodeSendedTip'));
-	}else{
-		return error(lang('user.invalidEmailFormat'));
-	}
-}, false);
+add_action('mod.mailVcode', 'extensions\mod::mailVcode', false);
 
 function cms_get_content_desc($content, $len = 100){
 	return mb_strlen($content, 'utf-8') > $len ? mb_substr(strip_tags($content), 0, $len-3, 'utf-8').'...' : $content;
@@ -440,19 +259,6 @@ if(!config('mod.installed') && strapos(url(), admin_url('install.html')) !== 0 &
 	redirect(admin_url('install.html'));
 }
 
-/** 创建 comment 表 comment_ip 字段 */
-add_action('mod.init', function(){
-	$database = database();
-	if(!isset($database['comment']['comment_ip'])){
-		$prefix = config('mod.database.prefix');
-		$attr = 'VARCHAR(255) DEFAULT NULL';
-		$database['comment']['comment_ip'] = $attr;
-		if(database::open(0)->query("ALTER TABLE `{$prefix}comment` ADD `comment_ip` {$attr}")){
-			export($database, __ROOT__.'user/config/database.php');
-		}
-	}
-});
-
 /** 设置仅允许管理员进行数据库清理 */
 add_action('mod.init', function(){
 	if(is_client_call('', 'cleanTrash') && !is_admin()){
@@ -503,12 +309,7 @@ if($lang != strtolower(config('mod.language'))){
 unset($lang, $file);
 
 /** 设置并更新时区 */
-add_action('mod.setTimezone', function($input){
-	if(config('mod.installed')) return error(lang('mod.installed'));
-	config('mod.timezone', $input['timezone']);
-	export(config(), __ROOT__.'user/config/config.php');
-	return success(lang('mod.updated'));
-}, false);
+add_action('mod.setTimezone', 'extensions\mod::setTimezone', false);
 
 /** 除了模板目录，其他目录均开启编译器 */
 add_action('mod.template.load', function(){

@@ -93,7 +93,7 @@ $(function(){
 		var target = commentListDiv.find('.active'),
 			length = target.length,
 			hasMe = target.is('[data-user-id="'+ME_ID+'"]');
-			unreviewed = target.is('[data-status="0"]');
+			unreviewed = target.data('status') == "0" || !target.data('status');
 		if(length == 1){
 			if(hasMe){
 				menu[Lang.change] = {};
